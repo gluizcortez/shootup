@@ -1,19 +1,39 @@
-import { applyFriction, facePlayer, muzzlePosition, updateEntry } from './enemyPhysics';
+import { applyFriction, facePlayer, muzzlePosition, updateIncoming } from './enemyPhysics';
 import type { Enemy, EnemyContext, PatoDef } from './types';
 
 /**
- * Pato Pistoleiro: aproxima em saltinhos, para a uma distância confortável,
- * faz pose dramática (telegraph) e dá um único tiro mirado.
+ * Pato Pistoleiro: desce do topo de paraquedas, balançando e atirando lá de cima.
+ * Ao pousar, aproxima em saltinhos. Antes de cada tiro único e mirado faz
+ * pose dramática (telegraph).
  */
 export function updatePato(e: Enemy, def: PatoDef, ctx: EnemyContext, dt: number): void {
   e.shotCooldown = Math.max(0, e.shotCooldown - dt);
   e.stateTimer -= dt;
 
   switch (e.state) {
-    case 'enter':
-      if (updateEntry(e, ctx.bounds)) {
+    case 'incoming':
+      if (updateIncoming(e)) {
+        e.state = 'descend';
+        e.stateTimer = 0;
+        e.vy = def.descentMaxSpeed;
+        e.shotCooldown = ctx.rng.range(0.5, 1.1);
+      }
+      return;
+
+    case 'descend':
+      facePlayer(e, ctx);
+      if (e.grounded) {
         e.state = 'approach';
-        e.hopTimer = ctx.rng.range(0.05, 0.25);
+        e.hopTimer = ctx.rng.range(0.15, 0.35);
+        return;
+      }
+      // Balança no paraquedas (stateTimer decresce: usamos como relógio).
+      e.vx = Math.sin(-e.stateTimer * 2.4 + e.uid) * def.swaySpeed;
+      if (e.shotCooldown <= 0 && e.y > ctx.bounds.ceilingY + 50) {
+        e.state = 'aim';
+        e.stateTimer = def.aimTime;
+        e.vx = 0;
+        ctx.telegraph(e, def.aimTime);
       }
       return;
 
@@ -45,11 +65,12 @@ export function updatePato(e: Enemy, def: PatoDef, ctx: EnemyContext, dt: number
 
     case 'aim':
       applyFriction(e, dt);
+      if (!e.grounded) e.vx *= 0.9;
       facePlayer(e, ctx);
       if (e.stateTimer <= 0) {
         const m = muzzlePosition(e);
         ctx.fire(e, Math.atan2(ctx.playerY - m.y, ctx.playerX - m.x));
-        e.vx = -e.facing * 60; // coice cômico da pistolinha
+        if (e.grounded) e.vx = -e.facing * 60; // coice cômico da pistolinha
         e.state = 'recover';
         e.stateTimer = def.recoverTime;
         e.shotCooldown = def.shotCooldown * ctx.rng.range(0.85, 1.2);
@@ -59,8 +80,13 @@ export function updatePato(e: Enemy, def: PatoDef, ctx: EnemyContext, dt: number
     case 'recover':
       applyFriction(e, dt);
       if (e.stateTimer <= 0) {
-        e.state = 'approach';
-        e.hopTimer = 0.1;
+        if (e.airborneEntry && !e.grounded) {
+          e.state = 'descend';
+          e.stateTimer = 0;
+        } else {
+          e.state = 'approach';
+          e.hopTimer = 0.1;
+        }
       }
       return;
 

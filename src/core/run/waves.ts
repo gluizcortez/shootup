@@ -5,7 +5,8 @@ export interface WaveSpawn {
   kind: EnemyKind;
   /** Segundos após o início da onda. */
   delay: number;
-  side: -1 | 1 | 'random';
+  /** Coluna de entrada no topo: 0 = esquerda, 1 = direita. */
+  x: number | 'random';
 }
 
 export interface WaveDef {
@@ -26,7 +27,7 @@ export interface WaveConfig {
 export interface ScheduledSpawn {
   kind: EnemyKind;
   at: number;
-  side: -1 | 1;
+  x: number;
 }
 
 export type WavePhase = 'intermission' | 'active';
@@ -51,12 +52,12 @@ export function generateWave(n: number, rng: Rng): WaveDef {
   const spawns: WaveSpawn[] = [];
   let t = 0;
   for (let i = 0; i < patos; i++) {
-    spawns.push({ kind: 'pato_pistoleiro', delay: t, side: 'random' });
+    spawns.push({ kind: 'pato_pistoleiro', delay: t, x: 'random' });
     t += rng.range(0.6, 1.4);
   }
   let g = 1.5;
   for (let i = 0; i < galinhas; i++) {
-    spawns.push({ kind: 'galinha_rambo', delay: g, side: 'random' });
+    spawns.push({ kind: 'galinha_rambo', delay: g, x: 'random' });
     g += rng.range(2.0, 3.5);
   }
   return { spawns, callout: rng.pick(GENERATED_CALLOUTS) };
@@ -82,7 +83,7 @@ export function beginWave(s: WaveState, cfg: WaveConfig, rng: Rng): void {
     .map((sp) => ({
       kind: sp.kind,
       at: sp.delay,
-      side: sp.side === 'random' ? (rng.chance(0.5) ? -1 : 1) : sp.side,
+      x: sp.x === 'random' ? rng.range(0.05, 0.95) : sp.x,
     }))
     .sort((a, b) => a.at - b.at) as ScheduledSpawn[];
   s.total = s.queue.length;
@@ -104,7 +105,7 @@ export function tickWaves(
   rng: Rng,
   aliveCount: number,
   dt: number,
-  spawn: (kind: EnemyKind, side: -1 | 1) => void,
+  spawn: (kind: EnemyKind, xNorm: number) => void,
 ): WaveTickResult {
   if (s.phase === 'intermission') {
     s.timer -= dt;
@@ -119,7 +120,7 @@ export function tickWaves(
   let alive = aliveCount;
   while (s.queue.length > 0 && (s.queue[0] as ScheduledSpawn).at <= s.elapsed && alive < cfg.maxAlive) {
     const next = s.queue.shift() as ScheduledSpawn;
-    spawn(next.kind, next.side);
+    spawn(next.kind, next.x);
     s.spawned++;
     alive++;
   }

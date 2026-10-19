@@ -161,10 +161,11 @@ export class World {
     return { x: m.x + s.x * facing, y: m.y + s.y };
   }
 
-  spawnEnemy(kind: EnemyKind, side: -1 | 1): Enemy {
-    const e = createEnemy(this.nextUid++, this.config.enemies[kind], side, this.config.bounds);
+  /** Anuncia um animal no topo, na coluna `xNorm` (0 = esquerda, 1 = direita). */
+  spawnEnemy(kind: EnemyKind, xNorm: number): Enemy {
+    const e = createEnemy(this.nextUid++, this.config.enemies[kind], xNorm, this.config.bounds);
     this.enemies.push(e);
-    this.emit({ type: 'enemySpawned', uid: e.uid, kind, side });
+    this.emit({ type: 'enemyIncoming', uid: e.uid, kind, x: e.x, warn: e.def.warnTime });
     return e;
   }
 
@@ -238,7 +239,10 @@ export class World {
       } else {
         e.vx *= 0.9;
       }
-      integrateEnemy(e, b, dt);
+      const impact = integrateEnemy(e, b, dt);
+      if (impact > 0) {
+        this.emit({ type: 'enemyLanded', uid: e.uid, kind: e.def.id, x: e.x, y: e.y + e.def.hh, impact });
+      }
     }
   }
 
@@ -294,7 +298,7 @@ export class World {
   private hitEnemies(p: Projectile): boolean {
     const box = this.enemyBox;
     for (const e of this.enemies) {
-      if (!e.alive) continue;
+      if (!e.alive || e.state === 'incoming') continue;
       box.x = e.x;
       box.y = e.y;
       box.hw = e.def.hw;
@@ -368,7 +372,7 @@ export class World {
     pb.hh = m.hh;
     const eb = this.enemyBox;
     for (const e of this.enemies) {
-      if (e.state === 'enter') continue;
+      if (e.state === 'incoming') continue;
       eb.x = e.x;
       eb.y = e.y;
       eb.hw = e.def.hw * 0.8;
@@ -402,8 +406,8 @@ export class World {
   }
 
   private stepWaves(dt: number): void {
-    const res = tickWaves(this.waves, this.config.waves, this.rng, this.enemies.length, dt, (kind, side) =>
-      this.spawnEnemy(kind, side),
+    const res = tickWaves(this.waves, this.config.waves, this.rng, this.enemies.length, dt, (kind, x) =>
+      this.spawnEnemy(kind, x),
     );
     if (res === 'started') {
       this.emit({ type: 'waveStarted', wave: this.waves.wave, total: this.waves.total, callout: this.waves.callout });

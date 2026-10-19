@@ -61,7 +61,7 @@ body,
 
 .hud-wave {
   position: absolute;
-  top: 3.5cqh;
+  top: 6cqh;
   left: 9cqw;
   width: 11em;
 }
@@ -96,7 +96,7 @@ body,
 
 .hud-score {
   position: absolute;
-  top: 3.5cqh;
+  top: 6cqh;
   right: 9cqw;
   text-align: right;
   min-width: 10em;

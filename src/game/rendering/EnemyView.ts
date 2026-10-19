@@ -7,6 +7,7 @@ import { normalizeAngle, Spring } from './spring';
 const INV = 1 / TEX_SCALE;
 
 interface Rig {
+  chute: Phaser.GameObjects.Image | null;
   body: Phaser.GameObjects.Image;
   prop: Phaser.GameObjects.Image;
   gun: Phaser.GameObjects.Image;
@@ -22,6 +23,8 @@ export class EnemyView {
   readonly root: Phaser.GameObjects.Container;
   private readonly rig: Rig;
   private readonly shadow: Phaser.GameObjects.Image;
+  /** Seta de aviso no topo da tela enquanto o animal está para entrar. */
+  private readonly marker: Phaser.GameObjects.Image;
   private readonly squash = new Spring(380, 12);
   private flash = 0;
   private wasGrounded = true;
@@ -40,8 +43,11 @@ export class EnemyView {
   ) {
     this.rig = kind === 'pato_pistoleiro' ? this.buildPato(scene) : this.buildGalinha(scene);
     this.shadow = scene.add.image(0, floorY + 1, 'shadow').setScale(0.9 * INV).setDepth(9);
+    this.marker = scene.add.image(0, 14, 'fx_drop').setScale(INV).setDepth(95).setVisible(false);
     const r = this.rig;
-    this.root = scene.add.container(0, 0, [r.body, r.prop, r.gun, r.glow, r.excl]).setDepth(25);
+    const parts = [r.body, r.prop, r.gun, r.glow, r.excl];
+    if (r.chute) parts.unshift(r.chute);
+    this.root = scene.add.container(0, 0, parts).setDepth(25);
     this.release();
   }
 
@@ -55,7 +61,11 @@ export class EnemyView {
       .setScale(INV);
     const glow = scene.add.image(16, -16, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
     const excl = scene.add.image(4, -58, 'fx_excl').setScale(INV).setVisible(false);
-    return { body, prop, gun, gunX: -2, gunY: -14, glow, excl, exclY: -58 };
+    const chute = scene.add
+      .image(4, -22, 'pato_chute')
+      .setOrigin(0.5, 40 / TEX.patoChute.h)
+      .setScale(INV);
+    return { chute, body, prop, gun, gunX: -2, gunY: -14, glow, excl, exclY: -80 };
   }
 
   private buildGalinha(scene: Phaser.Scene): Rig {
@@ -68,13 +78,14 @@ export class EnemyView {
       .setScale(INV);
     const glow = scene.add.image(36, -21, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
     const excl = scene.add.image(4, -72, 'fx_excl').setScale(INV).setVisible(false);
-    return { body, prop, gun, gunX: -11, gunY: -21, glow, excl, exclY: -72 };
+    return { chute: null, body, prop, gun, gunX: -11, gunY: -21, glow, excl, exclY: -72 };
   }
 
   bind(e: Enemy): void {
     this.uid = e.uid;
     this.root.setVisible(true).setActive(true).setAlpha(1).setRotation(0);
     this.shadow.setVisible(true);
+    this.rig.chute?.setVisible(true).setRotation(0);
     this.flash = 0;
     this.telegraphT = 0;
     this.telegraphDur = 0;
@@ -89,6 +100,7 @@ export class EnemyView {
     this.uid = -1;
     this.root.setVisible(false).setActive(false);
     this.shadow.setVisible(false);
+    this.marker.setVisible(false);
   }
 
   onHit(): void {
@@ -125,6 +137,27 @@ export class EnemyView {
     const y = lerp(e.py, e.y, alpha) + e.def.hh;
     const r = this.rig;
 
+    // Aviso no topo: pulsa e quica até o animal aparecer.
+    if (e.state === 'incoming') {
+      const pulse = 1 + Math.abs(Math.sin(this.time * 12)) * 0.25;
+      this.marker
+        .setVisible(true)
+        .setPosition(e.x, 16 + Math.abs(Math.sin(this.time * 9)) * 6)
+        .setScale(pulse * INV);
+      this.root.setVisible(false);
+      this.shadow.setVisible(false);
+      return;
+    }
+    if (this.marker.visible) {
+      this.marker.setVisible(false);
+      this.root.setVisible(true);
+      this.shadow.setVisible(true);
+    }
+    if (r.chute) {
+      r.chute.setVisible(e.airborneEntry);
+      if (e.airborneEntry) r.chute.rotation = -e.vx * e.facing * 0.004;
+    }
+
     if (this.flash > 0) {
       this.flash -= dt;
       if (this.flash <= 0) this.clearFlash();
@@ -139,6 +172,7 @@ export class EnemyView {
     // Rotação do corpo: gingado ao andar, pose dramática ao mirar.
     let lean = 0;
     if (e.state === 'aim') lean = -0.16;
+    else if (e.state === 'descend' && this.kind === 'galinha_rambo' && !reducedMotion) lean = Math.sin(this.time * 30) * 0.18; // esperneando na queda
     else if (e.grounded && Math.abs(e.vx) > 15 && !reducedMotion) lean = Math.sin(this.time * 14) * 0.07;
     r.body.rotation += (lean - r.body.rotation) * Math.min(1, dt * 18);
     r.prop.rotation = (this.kind === 'pato_pistoleiro' ? -0.12 : 0) + r.body.rotation * 0.8;

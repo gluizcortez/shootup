@@ -87,6 +87,7 @@ export const TEX = {
   patoBody: { w: 44, h: 40 },
   patoHat: { w: 36, h: 18 },
   patoGun: { w: 22, h: 10, pivotX: 4 },
+  patoChute: { w: 48, h: 42 },
   galinhaBody: { w: 48, h: 56 },
   galinhaGlasses: { w: 22, h: 8 },
   galinhaGun: { w: 56, h: 18, pivotX: 10 },
@@ -159,6 +160,27 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.oCircle(4, 5, 3, 0xf2b705, 1); // ponta da asa
     p.oRound(7, 2, 11, 4, 1, PAL.gunMetal, 1); // pistolinha minúscula
     p.oRound(8, 4.5, 3, 4, 1, PAL.hatBrown, 1);
+  });
+
+  make(scene, 'pato_chute', TEX.patoChute.w, TEX.patoChute.h, (p) => {
+    // Cordinhas até as patas do pato.
+    p.stroke(1, O);
+    p.line(4, 14, 24, 40).line(16, 15, 24, 40).line(32, 15, 24, 40).line(44, 14, 24, 40);
+    // Cúpula listrada coral/branco (meia elipse).
+    const dome = (rx: number, ry: number, from = 0, to = 1): Array<[number, number]> => {
+      const pts: Array<[number, number]> = [];
+      for (let i = 0; i <= 16; i++) {
+        const a = Math.PI + Math.PI * (from + (to - from) * (i / 16));
+        pts.push([24 + Math.cos(a) * rx, 15 + Math.sin(a) * ry]);
+      }
+      if (from > 0 || to < 1) pts.push([24, 15]);
+      return pts;
+    };
+    p.fill(O).poly([...dome(25, 14), [49, 16], [-1, 16]]);
+    p.fill(PAL.coral).poly(dome(23, 12));
+    p.fill(PAL.warmWhite).poly(dome(23, 12, 0.2, 0.4));
+    p.fill(PAL.warmWhite).poly(dome(23, 12, 0.6, 0.8));
+    p.fill(0xffffff, 0.35).ellipse(16, 8, 10, 4);
   });
 
   // ── Galinha Rambo ────────────────────────────────────────────────────
@@ -249,6 +271,14 @@ export function generateTextures(scene: Phaser.Scene): void {
   make(scene, 'fx_excl', 12, 26, (p) => {
     p.oRound(3, 1, 6, 15, 3, PAL.amber, 1.5);
     p.oCircle(6, 21.5, 3, PAL.amber, 1.5);
+  });
+  make(scene, 'fx_drop', 26, 30, (p) => {
+    // Aviso de entrada no topo: seta para baixo com "!".
+    p.fill(O).poly([[1, 6], [25, 6], [13, 29]]);
+    p.fill(PAL.coral).poly([[4.5, 8], [21.5, 8], [13, 25]]);
+    p.fill(PAL.warmWhite).round(11.5, 9.5, 3, 7, 1.5).circle(13, 19.5, 1.7);
+    p.fill(O).rect(1, 0, 24, 4);
+    p.fill(PAL.amber).rect(2, 0.8, 22, 2.4);
   });
   make(scene, 'fx_glow', 24, 24, (p) => {
     for (let r = 12; r > 0; r -= 1.5) p.fill(PAL.coral, 0.12).circle(12, 12, r);

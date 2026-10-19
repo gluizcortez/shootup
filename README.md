@@ -43,8 +43,10 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 
 - **Movimento:** acelera e para quase na hora; virar de lado é instantâneo; pulo curto se tocar, longo se segurar; queda mais pesada que a subida; dá para pular logo depois de "sair" do chão (coyote time) e o pulo apertado pouco antes de pousar é lembrado (jump buffer).
 - **Pistola:** flash na boca, cápsula ejetada que quica, recuo visual do braço, mira que pulsa a cada tiro, hitmarker, número de dano (crítico em âmbar com som próprio), flash branco e empurrão no inimigo, nuvem de penas e acessório voando no abate, hitstop curtinho só no abate.
-- **Pato Pistoleiro:** chega em saltinhos, para, faz pose dramática com "!" e brilho na pistolinha, e dá UM tiro mirado em você. Bola coral grande, fácil de ler.
-- **Galinha Rambo:** mantém distância, o cano começa a girar com zumbido subindo (aviso), e solta uma rajada horizontal que a empurra para trás. A rajada passa por baixo de quem pula.
+- **Entrada pelo topo (como em Seraph's Last Stand):** cada animal é anunciado por uma seta coral piscando no topo da tela, com um assobio, e só então cai na arena. A sombra no chão mostra onde vai pousar.
+- **Pato Pistoleiro:** desce devagar de paraquedas, balançando, e atira lá de cima: pose dramática com "!" e brilho na pistolinha, depois UM tiro mirado. Ao pousar, o paraquedas sai voando e ele segue em saltinhos. Bola coral grande, fácil de ler.
+- **Galinha Rambo:** despenca do teto e aterrissa com estrondo. No chão mantém distância, o cano começa a girar com zumbido subindo (aviso) e solta uma rajada horizontal que a empurra para trás. A rajada passa por baixo de quem pula.
+- **Cenário:** estúdio visto da plateia, com a metade de cima livre (treliça de luzes no topo, de onde os animais caem) e o logo apagado no fundo para não competir com os inimigos.
 - **Ondas:** 1–2 só patos, a galinha estreia na 3, depois escala sozinho. Combo multiplica pontos e anima a plateia.
 - **Opções (Esc):** tremor de tela, flashes, números de dano, quantidade de partículas e volume. `prefers-reduced-motion` liga um padrão mais calmo.
 

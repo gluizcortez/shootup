@@ -16,7 +16,10 @@ interface EnemyBaseDef {
   /** Fator aplicado ao knockback recebido (1 = normal, <1 = mais pesado). */
   knockbackScale: number;
   groundFriction: number;
-  entrySpeed: number;
+  /** Tempo do aviso no topo da tela antes de o animal aparecer. */
+  warnTime: number;
+  /** Velocidade máxima de queda na descida (paraquedas = baixa). */
+  descentMaxSpeed: number;
   bulletSpeed: number;
   bulletRadius: number;
   bulletDamage: number;
@@ -27,6 +30,8 @@ interface EnemyBaseDef {
 
 export interface PatoDef extends EnemyBaseDef {
   behaviour: 'pato';
+  /** Balanço lateral do paraquedas (px/s). */
+  swaySpeed: number;
   hopSpeedX: number;
   hopSpeedY: number;
   hopPause: number;
@@ -56,7 +61,8 @@ export interface GalinhaDef extends EnemyBaseDef {
 export type EnemyDef = PatoDef | GalinhaDef;
 
 export type EnemyStateName =
-  | 'enter'
+  | 'incoming'
+  | 'descend'
   | 'approach'
   | 'aim'
   | 'recover'
@@ -83,6 +89,8 @@ export interface Enemy {
   shotCooldown: number;
   burstLeft: number;
   burstTimer: number;
+  /** Ainda descendo do topo (paraquedas aberto / em queda). */
+  airborneEntry: boolean;
   alive: boolean;
 }
 

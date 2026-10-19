@@ -158,8 +158,8 @@ export class ArenaScene extends Phaser.Scene {
         if (this.phase.phase !== 'PLAYING') return;
         this.world.debugTainted = true;
         for (let i = 0; i < 3; i++) {
-          this.world.spawnEnemy('galinha_rambo', i % 2 ? 1 : -1);
-          this.world.spawnEnemy('pato_pistoleiro', i % 2 ? -1 : 1);
+          this.world.spawnEnemy('galinha_rambo', 0.1 + i * 0.4);
+          this.world.spawnEnemy('pato_pistoleiro', 0.25 + i * 0.25);
         }
       });
     }

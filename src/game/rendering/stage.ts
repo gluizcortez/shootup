@@ -4,10 +4,13 @@ import { PAL } from './palette';
 import { TEX_SCALE } from './textures';
 
 const S = TEX_SCALE;
+const TRUSS_Y = 10;
 
 /**
- * Estúdio de TV (placeholder). Tudo estático vira UMA textura; só luzes,
- * lâmpadas e plateia são objetos animados, e baratos.
+ * Estúdio de TV visto da plateia (placeholder). Os animais caem do urdimento
+ * no topo, então a metade de cima fica livre: só céu escuro do estúdio, a
+ * treliça de luzes e feixes suaves. Tudo estático vira UMA textura; só
+ * luzes, lâmpadas e plateia são objetos animados, e baratos.
  */
 export class Stage {
   private readonly bulbs: Phaser.GameObjects.Image[] = [];
@@ -23,64 +26,57 @@ export class Stage {
     this.bakeTextures();
     scene.add.image(0, 0, 'stage_bg').setOrigin(0).setScale(1 / S).setDepth(-100);
 
-    for (const [x, flip] of [
-      [60, 1],
-      [VIEW_WIDTH - 60, -1],
+    // Refletores pendurados na treliça, varrendo a zona de queda.
+    for (const [x, phase] of [
+      [210, 0],
+      [480, 2.1],
+      [750, 4.2],
     ] as const) {
       const spot = scene.add
-        .image(x, -10, 'spot_cone')
+        .image(x, TRUSS_Y + 6, 'spot_cone')
         .setOrigin(0.5, 0)
         .setScale(1 / S)
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setAlpha(0.5)
+        .setAlpha(0.32)
         .setDepth(-90);
-      spot.setData('flip', flip);
+      spot.setData('phase', phase);
       this.spots.push(spot);
     }
 
-    // Lâmpadas em volta do telão.
-    const fx = 330;
-    const fy = 52;
-    const fw = 300;
-    const fh = 150;
-    const add = (x: number, y: number) =>
-      this.bulbs.push(scene.add.image(x, y, 'px_dot').setScale(0.55).setTint(PAL.amber).setDepth(-80));
-    for (let x = fx; x <= fx + fw; x += 20) {
-      add(x, fy);
-      add(x, fy + fh);
-    }
-    for (let y = fy + 20; y < fy + fh; y += 20) {
-      add(fx, y);
-      add(fx + fw, y);
+    // Lâmpadas de camarim nas bordas das cortinas.
+    for (const x of [ARENA.left + 46, ARENA.right - 46]) {
+      for (let y = 40; y < ARENA.floorY - 10; y += 22) {
+        this.bulbs.push(scene.add.image(x, y, 'px_dot').setScale(0.5).setTint(PAL.amber).setDepth(-80));
+      }
     }
 
-    const title = scene.add
-      .text(VIEW_WIDTH / 2, fy + 62, 'SHOOTUP!', {
-        fontFamily: '"Arial Black", "Trebuchet MS", system-ui, sans-serif',
-        fontSize: '54px',
-        color: '#FFC857',
-        stroke: '#0D0F15',
-        strokeThickness: 8,
-      })
-      .setOrigin(0.5)
-      .setDepth(-80)
-      .setResolution(2);
-    title.setShadow(0, 5, '#FF5964', 0, false, true);
+    // Logo do programa: grande e apagado no fundo, nunca competindo com os animais.
     scene.add
-      .text(VIEW_WIDTH / 2, fy + 112, "THE WORLD'S WORST SHOW", {
-        fontFamily: '"Trebuchet MS", system-ui, sans-serif',
-        fontSize: '15px',
-        fontStyle: 'bold',
-        color: '#42DEC4',
-        letterSpacing: 3,
+      .text(VIEW_WIDTH / 2, 300, 'SHOOTUP!', {
+        fontFamily: '"Arial Black", "Trebuchet MS", system-ui, sans-serif',
+        fontSize: '120px',
+        color: '#2c2342',
+        stroke: '#1d1729',
+        strokeThickness: 10,
       })
       .setOrigin(0.5)
-      .setDepth(-80)
+      .setDepth(-85)
+      .setResolution(2);
+    scene.add
+      .text(VIEW_WIDTH / 2, 372, "THE WORLD'S WORST SHOW", {
+        fontFamily: '"Trebuchet MS", system-ui, sans-serif',
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#2f6f6a',
+        letterSpacing: 6,
+      })
+      .setOrigin(0.5)
+      .setDepth(-85)
       .setResolution(2);
 
-    // Patrocinadores fictícios.
-    this.sponsor(170, 150, 'PIPOCA\nBOOM', '#FF5964', -0.06);
-    this.sponsor(VIEW_WIDTH - 170, 150, 'SEGUROS\nQUÁ-QUÁ', '#B37CFF', 0.05);
+    // Patrocinadores fictícios em faixas verticais nas cortinas.
+    this.banner(36, 250, 'PIPOCA\nBOOM', '#FF5964');
+    this.banner(VIEW_WIDTH - 36, 250, 'SEGUROS\nQUÁ-QUÁ', '#B37CFF');
 
     // Plateia em silhueta, na frente do palco (abaixo do chão, não atrapalha a leitura).
     for (let i = 0; i < 26; i++) {
@@ -95,20 +91,18 @@ export class Stage {
     }
   }
 
-  private sponsor(x: number, y: number, text: string, color: string, angle: number): void {
-    const board = this.scene.add.rectangle(x, y, 110, 64, PAL.plum).setStrokeStyle(3, PAL.outline).setDepth(-85);
-    board.setRotation(angle);
+  private banner(x: number, y: number, text: string, color: string): void {
+    this.scene.add.rectangle(x, y, 60, 120, PAL.plum).setStrokeStyle(3, PAL.outline).setDepth(-84);
     this.scene.add
       .text(x, y, text, {
         fontFamily: '"Arial Black", system-ui, sans-serif',
-        fontSize: '16px',
+        fontSize: '11px',
         color,
         align: 'center',
-        lineSpacing: -4,
+        lineSpacing: 6,
       })
       .setOrigin(0.5)
-      .setRotation(angle)
-      .setDepth(-84)
+      .setDepth(-83)
       .setResolution(2);
   }
 
@@ -124,8 +118,7 @@ export class Stage {
     }
     if (!reducedMotion) {
       for (const s of this.spots) {
-        const flip = s.getData('flip') as number;
-        s.setRotation(flip * (-0.35 + Math.sin(this.time * 0.6 + flip) * 0.25));
+        s.setRotation(Math.sin(this.time * 0.5 + (s.getData('phase') as number)) * 0.35);
       }
     }
     const amp = reducedMotion ? 0 : 1.5 + this.excitement * 7;
@@ -149,9 +142,9 @@ export class Stage {
     }
     if (!tex.exists('spot_cone')) {
       const g = this.scene.make.graphics({ x: 0, y: 0 }, false);
-      const w = 260;
-      const h = 520;
-      g.fillGradientStyle(0xfff1c1, 0xfff1c1, 0xfff1c1, 0xfff1c1, 0.35, 0.35, 0, 0);
+      const w = 220;
+      const h = 470;
+      g.fillGradientStyle(0xfff1c1, 0xfff1c1, 0xfff1c1, 0xfff1c1, 0.3, 0.3, 0, 0);
       g.fillTriangle((w / 2) * S, 0, 0, h * S, w * S, h * S);
       g.generateTexture('spot_cone', w * S, h * S);
       g.destroy();
@@ -162,13 +155,21 @@ export class Stage {
     const floor = ARENA.floorY * S;
     const H = VIEW_HEIGHT * S;
 
-    // Parede do fundo com degradê.
-    g.fillGradientStyle(0x2a2140, 0x2a2140, PAL.charcoal, PAL.charcoal, 1);
+    // Fundo: o "céu" escuro do estúdio no alto, clareando até a parede do palco.
+    g.fillGradientStyle(0x0c0a14, 0x0c0a14, 0x2a2140, 0x2a2140, 1);
     g.fillRect(0, 0, W, floor);
-    // Painéis verticais sutis.
-    g.fillStyle(0xffffff, 0.025);
-    for (let x = 0; x < W; x += 80 * S) g.fillRect(x, 0, 40 * S, floor);
-    // Cortinas laterais.
+    // Feixes verticais bem sutis: a zona de queda.
+    g.fillStyle(0xffffff, 0.018);
+    for (let x = 120; x < VIEW_WIDTH - 100; x += 120) g.fillRect(x * S, 0, 46 * S, floor);
+    // Parede baixa com painéis, só perto do chão.
+    g.fillStyle(0x31274a, 1);
+    g.fillRect(0, floor - 90 * S, W, 90 * S);
+    g.fillStyle(0x3a2f56, 1);
+    for (let x = 0; x < VIEW_WIDTH; x += 80) g.fillRect((x + 4) * S, floor - 84 * S, 72 * S, 78 * S);
+    g.fillStyle(PAL.turquoise, 0.35);
+    g.fillRect(0, floor - 92 * S, W, 2 * S);
+
+    // Cortinas laterais (abertas em cima: o urdimento fica à vista).
     for (const side of [0, 1]) {
       const x0 = side === 0 ? 0 : W - 70 * S;
       g.fillStyle(0x5c1f3a, 1);
@@ -178,19 +179,23 @@ export class Stage {
       g.fillStyle(0x000000, 0.25);
       g.fillRect(side === 0 ? x0 + 64 * S : x0, 0, 6 * S, floor);
     }
-    // Sanefa.
-    g.fillStyle(0x5c1f3a, 1);
-    g.fillRect(0, 0, W, 22 * S);
-    g.fillStyle(PAL.amber, 1);
-    g.fillRect(0, 22 * S, W, 3 * S);
 
-    // Telão.
-    g.fillStyle(PAL.outline, 1);
-    g.fillRoundedRect(322 * S, 44 * S, 316 * S, 166 * S, 14 * S);
-    g.fillStyle(0x1b1530, 1);
-    g.fillRoundedRect(330 * S, 52 * S, 300 * S, 150 * S, 10 * S);
-    g.fillStyle(PAL.turquoise, 0.08);
-    for (let y = 56; y < 200; y += 6) g.fillRect(334 * S, y * S, 292 * S, 2 * S);
+    // Treliça de luz no topo: de onde os animais "caem" no palco.
+    g.fillStyle(0x4b5266, 1);
+    g.fillRect(0, (TRUSS_Y - 4) * S, W, 3 * S);
+    g.fillRect(0, (TRUSS_Y + 4) * S, W, 3 * S);
+    g.lineStyle(1.5 * S, 0x4b5266, 1);
+    for (let x = 0; x < VIEW_WIDTH; x += 16) {
+      g.lineBetween(x * S, (TRUSS_Y - 2) * S, (x + 8) * S, (TRUSS_Y + 5) * S);
+      g.lineBetween((x + 8) * S, (TRUSS_Y + 5) * S, (x + 16) * S, (TRUSS_Y - 2) * S);
+    }
+    // Refletores pendurados.
+    for (const x of [210, 480, 750]) {
+      g.fillStyle(PAL.outline, 1);
+      g.fillRoundedRect((x - 10) * S, (TRUSS_Y + 2) * S, 20 * S, 12 * S, 3 * S);
+      g.fillStyle(0xfff1c1, 1);
+      g.fillRect((x - 7) * S, (TRUSS_Y + 11) * S, 14 * S, 3 * S);
+    }
 
     // Piso do palco.
     g.fillStyle(0x3a2f4f, 1);

@@ -12,6 +12,8 @@ export type SfxId =
   | 'enemyShotGalinha'
   | 'telegraphPato'
   | 'telegraphGalinha'
+  | 'incoming'
+  | 'slam'
   | 'jump'
   | 'land'
   | 'hurt'
@@ -147,6 +149,16 @@ export class AudioSystem {
         this.sweep(ctx, out, t, 'square', 60, 240, dur, 0.05, true);
         return t + dur;
       }
+      case 'incoming': {
+        // Assobio descendo: "lá vem coisa do teto".
+        const dur = Math.max(0.3, param);
+        this.sweep(ctx, out, t, 'sine', 1800 * vary, 700, dur, 0.07, true);
+        return t + dur;
+      }
+      case 'slam':
+        this.sweep(ctx, out, t, 'sine', 140, 38, 0.3, 0.6);
+        this.noiseBurst(ctx, out, t, 0.18, 600, 0.8, 0.5, 'lowpass');
+        return t + 0.3;
       case 'jump':
         this.sweep(ctx, out, t, 'sine', 300 * vary, 560, 0.09, 0.14);
         return t + 0.1;

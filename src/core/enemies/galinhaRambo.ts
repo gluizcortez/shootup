@@ -1,19 +1,27 @@
 import { approach, DEG_TO_RAD } from '../math/scalar';
-import { applyFriction, facePlayer, updateEntry } from './enemyPhysics';
+import { applyFriction, facePlayer, updateIncoming } from './enemyPhysics';
 import type { Enemy, EnemyContext, GalinhaDef } from './types';
 
 /**
- * Galinha Rambo: mantém distância, gira o cano (telegraph) e solta uma rajada
+ * Galinha Rambo: despenca do topo e aterrissa com estrondo. No chão, mantém distância, gira o cano (telegraph) e solta uma rajada
  * horizontal. Cada tiro a empurra para trás. Dá para pular por cima da rajada.
  */
 export function updateGalinha(e: Enemy, def: GalinhaDef, ctx: EnemyContext, dt: number): void {
   e.stateTimer -= dt;
 
   switch (e.state) {
-    case 'enter':
-      if (updateEntry(e, ctx.bounds)) {
+    case 'incoming':
+      if (updateIncoming(e)) {
+        e.state = 'descend';
+        e.vy = 120;
+      }
+      return;
+
+    case 'descend':
+      facePlayer(e, ctx);
+      if (e.grounded) {
         e.state = 'position';
-        e.shotCooldown = ctx.rng.range(0.4, 1.0);
+        e.shotCooldown = ctx.rng.range(0.5, 1.0);
       }
       return;
 
