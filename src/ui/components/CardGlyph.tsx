@@ -8,6 +8,8 @@ const GLYPHS: Record<string, string> = {
   sinuca_mortal: 'M4 32 16 10l8 14L36 6l2 2-14 22-8-14L7 34z',
   mira_cirurgica: 'M20 4a16 16 0 1 0 0.01 0zm0 5a11 11 0 1 1-0.01 0zM19 0h2v12h-2zM19 28h2v12h-2zM0 19h12v2H0zM28 19h12v2H28z',
   pe_leve: 'M8 26c6-1 9-6 12-12l6 2c-1 5 1 9 6 11v5H6zM2 12h10v2H2zM0 18h8v2H0z',
+  calibre_reforcado: 'M14 4h12v6H14zM12 12h16v24H12zM16 16h8v4h-8z',
+  olho_vivo: 'M2 20C8 10 32 10 38 20 32 30 8 30 2 20zm18-7a7 7 0 1 0 0.01 0zm0 4a3 3 0 1 1-0.01 0z',
   casco_duro: 'M20 36 6 22C1 17 3 8 11 8c4 0 7 2 9 6 2-4 5-6 9-6 8 0 10 9 5 14z',
 };
 
