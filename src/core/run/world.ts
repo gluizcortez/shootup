@@ -22,7 +22,7 @@ import type { ComboState, ComboTuning } from '../scoring/combo';
 import type { GameEvent } from './events';
 import { createWaveState, scaleForWave, tickWaves } from './waves';
 import type { WaveConfig, WaveState } from './waves';
-import { computeStats, rollOffer } from '../upgrades/upgrades';
+import { computeStats, isGolden, rollOffer } from '../upgrades/upgrades';
 import type { Rarity, StatClamp, StatKey, Stats, UpgradeDef } from '../upgrades/types';
 
 export interface PlayerConfig {
@@ -41,6 +41,10 @@ export interface UpgradeConfig {
   pool: readonly UpgradeDef[];
   /** Peso de sorteio por raridade. */
   weights: Record<Rarity, number>;
+  /** Pesos da oferta logo após vencer um chefe (épicas bem mais prováveis). */
+  bossWeights?: Record<Rarity, number>;
+  /** Dano da bala depois de cada ricochete (Sinuca Mortal), como fração. */
+  ricochetDamageMult: number;
   clamps: Partial<Record<StatKey, StatClamp>>;
   /** Cartas por oferta entre ondas. */
   offerSize: number;
@@ -128,6 +132,9 @@ export class World {
   weapon: WeaponDef;
   motorTuning: MotorTuning;
   effective: Stats;
+  /** Habilidades épicas ativas (recalculadas junto com os atributos). */
+  private explode: { count: number; damageFrac: number; speedFrac: number; lifetime: number; golden: boolean } | null = null;
+  private bleed: { damage: number; duration: number; interval: number; golden: boolean } | null = null;
 
   private nextUid = 1;
   private nextSquad = 1;
@@ -251,6 +258,7 @@ export class World {
     this.stats.time += dt;
     this.stepPlayer(input, dt);
     this.stepEnemies(dt);
+    this.stepBleed(dt);
     this.stepProjectiles(dt);
     this.resolveContacts();
     if (tickCombo(this.combo, dt)) this.emit({ type: 'comboBroken', count: 0 });
@@ -383,7 +391,7 @@ export class World {
 
   /**
    * Acerto de bala do jogador. Ordem: dano → perfuração (segue reto) →
-   * ricochete (vira para o inimigo mais próximo) → some.
+   * ricochete (quica no inimigo para um lado qualquer, com dano reduzido) → some.
    * Devolve true se a bala tocou alguém neste passo.
    */
   private hitEnemies(p: Projectile): boolean {
@@ -415,12 +423,20 @@ export class World {
       this.stats.shotsHit++;
       if (p.crit) this.stats.crits++;
       this.emit({ type: 'enemyHit', uid: e.uid, kind: d.id, x: p.x, y: p.y, damage, crit: p.crit, dirX, dirY, shielded });
+      const bl = this.bleed;
+      if (bl) {
+        if (e.bleedTime <= 0) e.bleedTick = bl.interval;
+        e.bleedTime = bl.duration;
+        e.bleedDamage = bl.damage;
+        e.bleedInterval = bl.interval;
+      }
       if (e.hp <= 0) this.killEnemy(e, p.crit);
 
       p.lastHitUid = e.uid;
       if (p.pierceLeft > 0) {
         p.pierceLeft--;
-      } else if (p.ricochetLeft > 0 && this.redirectToNearest(p, e)) {
+      } else if (p.ricochetLeft > 0) {
+        this.bounceOff(p);
         p.ricochetLeft--;
       } else {
         this.projectiles.release(p);
@@ -430,28 +446,60 @@ export class World {
     return false;
   }
 
-  /** Vira a bala para o inimigo vivo mais próximo (exceto `from`). */
-  private redirectToNearest(p: Projectile, from: Enemy): boolean {
-    let best: Enemy | null = null;
-    let bestD = Infinity;
-    for (const o of this.enemies) {
-      if (o === from || !o.alive || o.state === 'incoming') continue;
-      const dd = (o.x - p.x) ** 2 + (o.y - p.y) ** 2;
-      if (dd < bestD) {
-        bestD = dd;
-        best = o;
-      }
-    }
-    if (!best) return false;
+  /** Sinuca Mortal: a bala quica no inimigo atingido e sai voando para um lado qualquer. */
+  private bounceOff(p: Projectile): void {
     const speed = Math.hypot(p.vx, p.vy);
-    const angle = Math.atan2(best.y - p.y, best.x - p.x);
+    const angle = this.rng.range(-Math.PI, Math.PI);
     p.vx = Math.cos(angle) * speed;
     p.vy = Math.sin(angle) * speed;
     p.px = p.x;
     p.py = p.y;
+    p.damage *= this.config.upgrades.ricochetDamageMult;
     p.life = Math.max(p.life, 0.8);
     this.emit({ type: 'ricochet', x: p.x, y: p.y, angle });
-    return true;
+  }
+
+  /** Sangramento da carta Vampiresco: ignora escudo e pode matar. */
+  private stepBleed(dt: number): void {
+    // De trás para frente: killEnemy troca o morto pelo último da lista.
+    for (let i = this.enemies.length - 1; i >= 0; i--) {
+      const e = this.enemies[i] as Enemy;
+      if (e.bleedTime <= 0 || !e.alive) continue;
+      e.bleedTime -= dt;
+      e.bleedTick -= dt;
+      if (e.bleedTick > 0) continue;
+      e.bleedTick += e.bleedInterval;
+      e.hp -= e.bleedDamage;
+      this.emit({ type: 'enemyBled', uid: e.uid, x: e.x, y: e.y - e.def.hh, damage: e.bleedDamage, golden: this.bleed?.golden ?? false });
+      if (e.hp <= 0) this.killEnemy(e, false);
+    }
+  }
+
+  /** Carta Explosivo: o abatido vira uma chuva de balas do jogador. */
+  private explodeEnemy(e: Enemy): void {
+    const ex = this.explode;
+    if (!ex) return;
+    const w = this.weapon;
+    const speed = w.projectileSpeed * ex.speedFrac;
+    const offset = this.rng.range(0, Math.PI * 2);
+    for (let i = 0; i < ex.count; i++) {
+      const a = offset + (i / ex.count) * Math.PI * 2;
+      const b = this.projectiles.spawn(
+        'player',
+        e.x,
+        e.y,
+        Math.cos(a) * speed,
+        Math.sin(a) * speed,
+        w.projectileRadius,
+        w.damage * ex.damageFrac,
+        false,
+        w.knockback * 0.5,
+        ex.lifetime,
+        ex.golden ? 'explosivo_dourado' : 'explosivo',
+      );
+      b.lastHitUid = e.uid;
+    }
+    this.emit({ type: 'enemyExploded', x: e.x, y: e.y, count: ex.count, golden: ex.golden });
   }
 
   private killEnemy(e: Enemy, crit: boolean): void {
@@ -470,6 +518,7 @@ export class World {
       multiplier: this.combo.multiplier,
       crit,
     });
+    this.explodeEnemy(e);
     const idx = this.enemies.indexOf(e);
     if (idx >= 0) {
       this.enemies[idx] = this.enemies[this.enemies.length - 1] as Enemy;
@@ -553,7 +602,9 @@ export class World {
   /** Sorteia cartas e congela a simulação até `pickUpgrade`. */
   openOffer(): void {
     const u = this.config.upgrades;
-    const cards = rollOffer(u.pool, this.owned, u.weights, this.rng, u.offerSize);
+    const afterBoss = this.config.waves.bossWaves?.[this.waves.wave] !== undefined;
+    const weights = afterBoss && u.bossWeights ? u.bossWeights : u.weights;
+    const cards = rollOffer(u.pool, this.owned, weights, this.rng, u.offerSize);
     if (cards.length === 0) return;
     this.offer = cards;
     this.emit({ type: 'upgradeOffer', wave: this.waves.wave, cards: cards.map((c) => c.id) });
@@ -565,11 +616,10 @@ export class World {
     if (!card) return false;
     const stacks = (this.owned.get(id) ?? 0) + 1;
     this.owned.set(id, stacks);
-    const oldMax = this.player.maxHp;
     this.recomputeStats();
     const p = this.player;
-    // Vida máxima nova vem cheia; cura imediata da carta por cima.
-    p.hp = Math.min(p.maxHp, p.hp + Math.max(0, p.maxHp - oldMax) + (card.onPick?.heal ?? 0));
+    // Vida máxima nova vem vazia; só cartas de cura enchem corações.
+    p.hp = Math.min(p.maxHp, p.hp + (card.onPick?.heal ?? 0));
     this.offer = null;
     this.emit({ type: 'upgradePicked', id, stacks });
     return true;
@@ -612,6 +662,34 @@ export class World {
     this.motorTuning.jumpVelocity = st.jumpVelocity;
     this.player.maxHp = st.maxHp;
     this.player.hp = Math.min(this.player.hp, st.maxHp);
+    this.recomputeEffects();
+  }
+
+  private recomputeEffects(): void {
+    this.explode = null;
+    this.bleed = null;
+    for (const [id, stacks] of this.owned) {
+      const def = this.upgradeDefs.get(id);
+      const fx = def?.effect;
+      if (!def || !fx || stacks <= 0) continue;
+      const golden = isGolden(def, stacks);
+      if (fx.kind === 'explode') {
+        this.explode = {
+          count: fx.baseCount + fx.perStack * (stacks - 1),
+          damageFrac: golden ? fx.goldenDamageFrac : fx.damageFrac,
+          speedFrac: fx.speedFrac,
+          lifetime: fx.lifetime,
+          golden,
+        };
+      } else {
+        this.bleed = {
+          damage: fx.damagePerStack * stacks,
+          duration: fx.duration,
+          interval: golden ? fx.goldenTickInterval : fx.tickInterval,
+          golden,
+        };
+      }
+    }
   }
 
   /** Inimigos restantes na onda atual (vivos + ainda por entrar). */

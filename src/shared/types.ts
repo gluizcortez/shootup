@@ -32,11 +32,15 @@ export interface CardInfo {
   id: string;
   name: string;
   description: string;
-  rarity: 'comum' | 'incomum' | 'raro';
+  rarity: 'comum' | 'incomum' | 'raro' | 'epico';
   branch: 'balistica' | 'caos' | 'sobrevivencia';
   /** Stacks já na mão e máximo. */
   stacks: number;
   maxStacks: number;
+  /** Épica que já virou dourada. */
+  golden: boolean;
+  /** Stacks para virar dourada (0 = não tem forma dourada). */
+  goldenAt: number;
 }
 
 export interface CardOffer {

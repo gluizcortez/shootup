@@ -10,6 +10,10 @@ const GLYPHS: Record<string, string> = {
   pe_leve: 'M8 26c6-1 9-6 12-12l6 2c-1 5 1 9 6 11v5H6zM2 12h10v2H2zM0 18h8v2H0z',
   calibre_reforcado: 'M14 4h12v6H14zM12 12h16v24H12zM16 16h8v4h-8z',
   olho_vivo: 'M2 20C8 10 32 10 38 20 32 30 8 30 2 20zm18-7a7 7 0 1 0 0.01 0zm0 4a3 3 0 1 1-0.01 0z',
+  ponta_oca: 'M6 14h20l8 6-8 6H6zM26 17a3 3 0 1 0 0.01 0z',
+  casco_regenerado: 'M20 36 6 22C1 17 3 8 11 8c4 0 7 2 9 6 2-4 5-6 9-6 8 0 10 9 5 14zM18 14h4v5h5v4h-5v5h-4v-5h-5v-4h5z',
+  explosivo: 'M20 2l4 10 10-4-5 10 10 4-10 4 5 10-10-4-4 10-4-10-10 4 5-10-10-4 10-4-5-10 10 4z',
+  vampiresco: 'M4 8h32c0 10-6 16-16 16S4 18 4 8zM10 14l3 10 3-8zM24 16l3 8 3-10zM19 28c-2 4-3 6-3 8a4 4 0 0 0 8 0c0-2-1-4-3-8z',
   casco_duro: 'M20 36 6 22C1 17 3 8 11 8c4 0 7 2 9 6 2-4 5-6 9-6 8 0 10 9 5 14z',
 };
 

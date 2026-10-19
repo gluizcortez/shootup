@@ -44,6 +44,8 @@ export class ProjectileRenderer {
         s.setTexture(enemy ? (coin ? 'b_coin' : 'b_enemy') : 'b_player').setDepth(enemy ? 45 : 40);
         if (!enemy) s.setRotation(0);
         if (p.crit) s.setTint(0xfff3c4);
+        else if (p.sourceId === 'explosivo') s.setTint(0xff5964);
+        else if (p.sourceId === 'explosivo_dourado') s.setTint(0xffe08a);
         else s.clearTint();
         s.setVisible(true);
       }

@@ -3,9 +3,10 @@ import type { UpgradeDef } from '@/core/upgrades/types';
 
 /**
  * Cartas entre ondas. Cada carta é um passo pequeno: o poder vem de juntar
- * várias ao longo da run, não de uma só. Raridade define força e frequência:
- * comum (ajuste leve), incomum (efeito novo, moderado) e rara (muda o jeito
- * de atirar, aparece pouco).
+ * muitas ao longo da run. Raridade define força e frequência:
+ * comum (ajuste mínimo), incomum (moderado), rara (muda o jeito de jogar) e
+ * épica (habilidade especial; quase nunca aparece, exceto depois de um chefe).
+ * Épicas ficam douradas ao acumular 5 stacks.
  * Ordem de cálculo: base → + somas → × produtos → limites (veja computeStats).
  */
 export const UPGRADE_POOL: readonly UpgradeDef[] = [
@@ -13,14 +14,14 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'gatilho_nervoso',
     name: 'Gatilho Nervoso',
-    description: 'Atira 8% mais rápido.',
+    description: 'Atira 1% mais rápido.',
     rarity: 'comum',
     branch: 'balistica',
     tags: ['cadencia'],
-    maxStacks: 5,
+    maxStacks: 10,
     prerequisites: [],
     exclusions: [],
-    modifiers: [{ stat: 'fireInterval', op: 'mul', value: 0.92 }],
+    modifiers: [{ stat: 'fireInterval', op: 'mul', value: 0.99 }],
   },
   {
     id: 'calibre_reforcado',
@@ -37,45 +38,54 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'olho_vivo',
     name: 'Olho Vivo',
-    description: '+4% de chance de crítico.',
+    description: '+1% de chance de crítico.',
     rarity: 'comum',
     branch: 'balistica',
     tags: ['critico'],
-    maxStacks: 3,
+    maxStacks: 10,
     prerequisites: [],
     exclusions: [],
-    modifiers: [{ stat: 'critChance', op: 'add', value: 0.04 }],
+    modifiers: [{ stat: 'critChance', op: 'add', value: 0.01 }],
   },
   {
     id: 'pe_leve',
     name: 'Pé Leve',
-    description: 'Corre 8% mais rápido e pula um tiquinho mais alto.',
+    description: 'Corre 2% mais rápido e pula um tiquinho mais alto.',
     rarity: 'comum',
     branch: 'sobrevivencia',
     tags: ['movimento'],
-    maxStacks: 2,
+    maxStacks: 5,
     prerequisites: [],
     exclusions: [],
     modifiers: [
-      { stat: 'runSpeed', op: 'mul', value: 1.08 },
-      { stat: 'jumpVelocity', op: 'mul', value: 1.03 },
+      { stat: 'runSpeed', op: 'mul', value: 1.02 },
+      { stat: 'jumpVelocity', op: 'mul', value: 1.01 },
     ],
   },
   // ── Incomuns ──
   {
     id: 'mira_cirurgica',
     name: 'Mira Cirúrgica',
-    description: '+6% de chance de crítico e críticos +25% mais fortes.',
+    description: '+2% de chance de crítico.',
     rarity: 'incomum',
     branch: 'balistica',
     tags: ['critico'],
-    maxStacks: 2,
+    maxStacks: 5,
     prerequisites: [],
     exclusions: [],
-    modifiers: [
-      { stat: 'critChance', op: 'add', value: 0.06 },
-      { stat: 'critMultiplier', op: 'add', value: 0.25 },
-    ],
+    modifiers: [{ stat: 'critChance', op: 'add', value: 0.02 }],
+  },
+  {
+    id: 'ponta_oca',
+    name: 'Ponta Oca',
+    description: 'Críticos 5% mais fortes.',
+    rarity: 'incomum',
+    branch: 'balistica',
+    tags: ['critico'],
+    maxStacks: 5,
+    prerequisites: [],
+    exclusions: [],
+    modifiers: [{ stat: 'critMultiplier', op: 'mul', value: 1.05 }],
   },
   {
     id: 'bala_viajante',
@@ -95,37 +105,20 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'casco_duro',
     name: 'Casco Duro',
-    description: '+1 coração máximo e cura 1.',
+    description: '+½ coração máximo (vem vazio).',
     rarity: 'incomum',
     branch: 'sobrevivencia',
     tags: ['vida'],
-    maxStacks: 2,
+    maxStacks: 6,
     prerequisites: [],
     exclusions: [],
-    modifiers: [{ stat: 'maxHp', op: 'add', value: 1 }],
-    onPick: { heal: 1 },
+    modifiers: [{ stat: 'maxHp', op: 'add', value: 0.5 }],
   },
   // ── Raras ──
   {
-    id: 'tiro_duplo',
-    name: 'Tiro Duplo',
-    description: '+1 bala por disparo, mais aberto. Cada bala causa 70% do dano.',
-    rarity: 'raro',
-    branch: 'balistica',
-    tags: ['projeteis'],
-    maxStacks: 2,
-    prerequisites: [],
-    exclusions: [],
-    modifiers: [
-      { stat: 'pellets', op: 'add', value: 1 },
-      { stat: 'spreadDeg', op: 'add', value: 5 },
-      { stat: 'damage', op: 'mul', value: 0.7 },
-    ],
-  },
-  {
     id: 'sinuca_mortal',
     name: 'Sinuca Mortal',
-    description: 'Ao acertar, a bala quica para o inimigo mais próximo (+1 quique).',
+    description: 'Ao acertar, a bala quica no inimigo e sai voando para um lado qualquer. Se pegar outro, causa 50% do dano.',
     rarity: 'raro',
     branch: 'caos',
     tags: ['ricochete'],
@@ -134,11 +127,69 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     exclusions: [],
     modifiers: [{ stat: 'ricochet', op: 'add', value: 1 }],
   },
+  {
+    id: 'casco_regenerado',
+    name: 'Casco Regenerado',
+    description: 'Cura 1 coração.',
+    rarity: 'raro',
+    branch: 'sobrevivencia',
+    tags: ['vida'],
+    maxStacks: 99,
+    prerequisites: [],
+    exclusions: [],
+    modifiers: [],
+    onPick: { heal: 1 },
+  },
+  // ── Épicas ──
+  {
+    id: 'explosivo',
+    name: 'Explosivo',
+    description: 'Inimigos abatidos explodem em 2 balas com 50% do dano. Cada carta extra soma +1 bala. Com 5: DOURADA, 100% do dano.',
+    rarity: 'epico',
+    branch: 'caos',
+    tags: ['explosao'],
+    maxStacks: 5,
+    prerequisites: [],
+    exclusions: [],
+    modifiers: [],
+    effect: {
+      kind: 'explode',
+      baseCount: 2,
+      perStack: 1,
+      damageFrac: 0.5,
+      goldenDamageFrac: 1,
+      goldenAt: 5,
+      speedFrac: 0.55,
+      lifetime: 0.7,
+    },
+  },
+  {
+    id: 'vampiresco',
+    name: 'Vampiresco',
+    description: 'Acertos causam 1 de sangramento por segundo. Cada carta extra soma +1. Com 5: DOURADA, sangra 2× mais rápido.',
+    rarity: 'epico',
+    branch: 'caos',
+    tags: ['sangramento'],
+    maxStacks: 5,
+    prerequisites: [],
+    exclusions: [],
+    modifiers: [],
+    effect: {
+      kind: 'bleed',
+      damagePerStack: 1,
+      duration: 3,
+      tickInterval: 1,
+      goldenTickInterval: 0.5,
+      goldenAt: 5,
+    },
+  },
 ];
 
 export const UPGRADES: UpgradeConfig = {
   pool: UPGRADE_POOL,
-  weights: { comum: 70, incomum: 24, raro: 6 },
+  weights: { comum: 70, incomum: 24, raro: 6, epico: 1 },
+  bossWeights: { comum: 45, incomum: 25, raro: 10, epico: 30 },
+  ricochetDamageMult: 0.5,
   clamps: {
     fireInterval: { min: 0.045, max: 2 },
     pellets: { min: 1, max: 8 },

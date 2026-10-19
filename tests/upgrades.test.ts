@@ -87,13 +87,13 @@ describe('upgrades — oferta', () => {
 
   it('devolve menos cartas quando o baralho acaba e ignora raridade com peso 0', () => {
     const pool = [card('x'), card('y', { rarity: 'raro' })];
-    const out = rollOffer(pool, new Map(), { comum: 1, incomum: 1, raro: 0 }, new Rng(1), 3);
+    const out = rollOffer(pool, new Map(), { comum: 1, incomum: 1, raro: 0, epico: 0 }, new Rng(1), 3);
     expect(out.map((c) => c.id)).toEqual(['x']);
   });
 
   it('todas as cartas do jogo têm ids únicos e mudam algum atributo', () => {
     expect(new Set(UPGRADE_POOL.map((c) => c.id)).size).toBe(UPGRADE_POOL.length);
-    for (const c of UPGRADE_POOL) expect(c.modifiers.length).toBeGreaterThan(0);
+    for (const c of UPGRADE_POOL) expect(c.modifiers.length > 0 || c.onPick !== undefined || c.effect !== undefined).toBe(true);
   });
 });
 
@@ -147,23 +147,53 @@ describe('upgrades — no World', () => {
 
   it('Gatilho Nervoso deixa a arma mais rápida', () => {
     const w = withCard('gatilho_nervoso');
-    expect(w.weapon.fireInterval).toBeCloseTo(WORLD_CONFIG.weapon.fireInterval * 0.92);
+    expect(w.weapon.fireInterval).toBeCloseTo(WORLD_CONFIG.weapon.fireInterval * 0.99);
     expect(WORLD_CONFIG.weapon.fireInterval).toBe(0.6); // a base nunca é alterada
   });
 
-  it('Tiro Duplo dispara 2 balas por tiro', () => {
-    const w = withCard('tiro_duplo');
-    w.step({ ...idle(w), fireHeld: true }, SIM_STEP);
-    expect(w.projectiles.activeCount).toBe(2);
+  it('Tiro Duplo saiu do jogo', () => {
+    expect(UPGRADE_POOL.some((c) => c.id === 'tiro_duplo')).toBe(false);
   });
 
-  it('Casco Duro aumenta a vida máxima e cura', () => {
+  it('Casco Duro dá meio coração vazio, sem curar', () => {
     const w = new World(WORLD_CONFIG, 1);
     w.player.hp = 2;
     w.offer = [UPGRADE_POOL.find((c) => c.id === 'casco_duro') as UpgradeDef];
     w.pickUpgrade('casco_duro');
-    expect(w.player.maxHp).toBe(WORLD_CONFIG.player.maxHp + 1);
-    expect(w.player.hp).toBe(4); // +1 do coração novo, +1 de cura
+    expect(w.player.maxHp).toBe(WORLD_CONFIG.player.maxHp + 0.5);
+    expect(w.player.hp).toBe(2);
+  });
+
+  it('Casco Regenerado cura 1 coração sem passar do máximo', () => {
+    const w = new World(WORLD_CONFIG, 1);
+    w.player.hp = 2;
+    const def = UPGRADE_POOL.find((c) => c.id === 'casco_regenerado') as UpgradeDef;
+    expect(def.rarity).toBe('raro');
+    w.offer = [def];
+    w.pickUpgrade('casco_regenerado');
+    expect(w.player.hp).toBe(3);
+    w.player.hp = w.player.maxHp;
+    w.offer = [def];
+    w.pickUpgrade('casco_regenerado');
+    expect(w.player.hp).toBe(w.player.maxHp);
+  });
+
+  it('épicas quase nunca aparecem, mas aparecem bem mais depois do chefe', () => {
+    const epicShare = (weights: typeof UPGRADES.weights) => {
+      let epic = 0;
+      let total = 0;
+      for (let seed = 1; seed <= 400; seed++) {
+        for (const c of rollOffer(UPGRADE_POOL, new Map(), weights, new Rng(seed), 3)) {
+          total++;
+          if (c.rarity === 'epico') epic++;
+        }
+      }
+      return epic / total;
+    };
+    const normal = epicShare(UPGRADES.weights);
+    const boss = epicShare(UPGRADES.bossWeights!);
+    expect(normal).toBeLessThan(0.03);
+    expect(boss).toBeGreaterThan(normal * 5);
   });
 
   function hoveringPatos(w: World, xs: number[], y: number) {
@@ -192,23 +222,75 @@ describe('upgrades — no World', () => {
     expect(hits).toEqual([a!.uid, b!.uid]);
   });
 
-  it('Sinuca Mortal faz a bala quicar para o inimigo mais próximo', () => {
+  it('Sinuca Mortal: a bala quica no inimigo atingido para um lado qualquer, com metade do dano', () => {
     const w = withCard('sinuca_mortal');
-    const [a, b] = hoveringPatos(w, [400, 520], 160);
-    b!.y = b!.py = 250;
+    const [a] = hoveringPatos(w, [400], 160);
     const p = w.projectiles.spawn('player', 400, 300, 0, -900, 4, 10, false, 0, 1, 'pistol');
     p.ricochetLeft = w.weapon.ricochet;
-    const hits: number[] = [];
     let ricochets = 0;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 30 && ricochets === 0; i++) {
       w.step(idle(w), SIM_STEP);
-      for (const ev of w.events) {
-        if (ev.type === 'enemyHit') hits.push(ev.uid);
-        if (ev.type === 'ricochet') ricochets++;
-      }
+      for (const ev of w.events) if (ev.type === 'ricochet') ricochets++;
       w.events.length = 0;
     }
     expect(ricochets).toBe(1);
-    expect(hits).toEqual([a!.uid, b!.uid]);
+    expect(p.active).toBe(true);
+    expect(p.damage).toBe(5);
+    expect(p.lastHitUid).toBe(a!.uid);
+  });
+
+  function hitOnce(w: World, e: { x: number; y: number }): void {
+    w.projectiles.spawn('player', e.x, e.y + 40, 0, -900, 4, 1, false, 0, 1, 'pistol');
+    for (let i = 0; i < 10; i++) w.step(idle(w), SIM_STEP);
+  }
+
+  function stack(w: World, id: string, n: number): void {
+    const def = UPGRADE_POOL.find((c) => c.id === id) as UpgradeDef;
+    for (let i = 0; i < n; i++) {
+      w.offer = [def];
+      w.pickUpgrade(id);
+    }
+  }
+
+  it('Explosivo: abatido solta 2 balas com 50% do dano; mais cartas, mais balas; com 5, dourada e 100%', () => {
+    const w = withCard('explosivo');
+    const [a] = hoveringPatos(w, [400], 200);
+    a!.hp = 1;
+    w.events.length = 0;
+    hitOnce(w, a!);
+    const boom = w.events.find((e) => e.type === 'enemyExploded');
+    expect(boom).toMatchObject({ count: 2, golden: false });
+    const shards = w.projectiles.items.filter((p) => p.active && p.sourceId === 'explosivo');
+    expect(shards).toHaveLength(2);
+    expect(shards[0]!.damage).toBeCloseTo(w.weapon.damage * 0.5);
+
+    stack(w, 'explosivo', 4);
+    const [b] = hoveringPatos(w, [600], 200);
+    b!.hp = 1;
+    w.events.length = 0;
+    hitOnce(w, b!);
+    expect(w.events.find((e) => e.type === 'enemyExploded')).toMatchObject({ count: 6, golden: true });
+    const gold = w.projectiles.items.filter((p) => p.active && p.sourceId === 'explosivo_dourado');
+    expect(gold[0]!.damage).toBeCloseTo(w.weapon.damage);
+  });
+
+  it('Vampiresco: sangra 1 por segundo por carta; com 5, dourada e tick 2× mais rápido', () => {
+    const w = withCard('vampiresco');
+    const [a] = hoveringPatos(w, [400], 200);
+    a!.hp = 100;
+    hitOnce(w, a!);
+    const after = a!.hp;
+    w.events.length = 0;
+    steps(w, 2.05);
+    expect(after - a!.hp).toBe(2);
+    expect(w.events.filter((e) => e.type === 'enemyBled')).toHaveLength(2);
+
+    stack(w, 'vampiresco', 4);
+    const [b] = hoveringPatos(w, [600], 200);
+    b!.hp = 100;
+    hitOnce(w, b!);
+    const hp0 = b!.hp;
+    steps(w, 2.05);
+    expect(hp0 - b!.hp).toBe(5 * 4); // 5 de dano por tick, tick a cada 0,5 s
   });
 });

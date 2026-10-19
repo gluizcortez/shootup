@@ -1,7 +1,8 @@
 import type { Rng } from '../math/rng';
 import type { Owned, Rarity, StatClamp, StatKey, Stats, UpgradeDef } from './types';
 
-const INTEGER_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['pellets', 'pierce', 'ricochet', 'maxHp']);
+// maxHp não é inteiro: há meios corações.
+const INTEGER_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['pellets', 'pierce', 'ricochet']);
 
 /**
  * Calcula os atributos finais. Ordem fixa (documentada e testada):
@@ -79,4 +80,9 @@ export function rollOffer(
     candidates.splice(idx, 1);
   }
   return out;
+}
+
+/** A habilidade da carta já virou dourada com estes stacks? */
+export function isGolden(def: UpgradeDef, stacks: number): boolean {
+  return def.effect !== undefined && stacks >= def.effect.goldenAt;
 }

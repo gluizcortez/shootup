@@ -178,6 +178,20 @@ export class Feedback {
         this.audio.play('ricochet');
         for (let i = 0, n = this.count(4); i < n; i++) this.spark(ev.x, ev.y, ev.angle + (Math.random() - 0.5) * 0.8, 0.8, PAL.turquoise, 320);
         return;
+      case 'enemyBled': {
+        const tint = ev.golden ? PAL.amber : PAL.coral;
+        for (let i = 0, n = this.count(3); i < n; i++) this.spark(ev.x, ev.y, -Math.PI / 2 + (Math.random() - 0.5) * 1.4, 0.8, tint, 160);
+        if (this.numbersOn) this.texts.spawn(ev.x, ev.y - 6, `${ev.damage}`, ev.golden ? CSS.amber : CSS.coral, 13, 0.5);
+        return;
+      }
+      case 'enemyExploded': {
+        const tint = ev.golden ? PAL.amber : PAL.coral;
+        this.audio.play('shieldBreak');
+        this.shake.add(ev.golden ? 0.3 : 0.18);
+        this.ring(ev.x, ev.y, tint);
+        for (let i = 0, n = this.count(10); i < n; i++) this.spark(ev.x, ev.y, Math.random() * Math.PI * 2, 1.1, tint, 380);
+        return;
+      }
       case 'upgradeOffer':
         this.audio.play('cardOffer');
         return;

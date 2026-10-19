@@ -12,6 +12,7 @@ import type { Settings } from '@/shared/settings';
 import type { CardInfo, HudSnapshot } from '@/shared/types';
 import { ARENA, RENDER_ZOOM, SIM_STEP, TERRAIN, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
 import { Terrain } from '@/core/physics/terrain';
+import { isGolden } from '@/core/upgrades/upgrades';
 import { WORLD_CONFIG } from '../data/world';
 import { EnemyView } from '../rendering/EnemyView';
 import type { EnemyVisual } from '../rendering/EnemyView';
@@ -330,7 +331,7 @@ export class ArenaScene extends Phaser.Scene {
     const mode = musicModeFor({
       inRun: phase !== 'MENU' && phase !== 'GAME_OVER',
       bossActive: w.enemies.some((e) => e.def.boss && e.state !== 'incoming'),
-      lowHp: w.player.alive && w.player.hp === 1,
+      lowHp: w.player.alive && w.player.hp <= 1,
     });
     music.update(mode, dt);
   }
@@ -375,7 +376,7 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.updateMusic(phase, dt);
     // Vida no fim: coração batendo (o HUD pulsa em vermelho junto).
-    if (phase === 'PLAYING' && w.player.alive && w.player.hp === 1) {
+    if (phase === 'PLAYING' && w.player.alive && w.player.hp <= 1) {
       this.heartbeatTimer -= dt;
       if (this.heartbeatTimer <= 0) {
         this.heartbeatTimer = HEARTBEAT_EVERY;
@@ -499,6 +500,8 @@ export class ArenaScene extends Phaser.Scene {
       branch: def.branch,
       stacks: this.world.owned.get(def.id) ?? 0,
       maxStacks: def.maxStacks,
+      golden: isGolden(def, this.world.owned.get(def.id) ?? 0),
+      goldenAt: def.effect?.goldenAt ?? 0,
     };
   }
 

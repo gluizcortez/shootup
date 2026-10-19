@@ -3,14 +3,28 @@ import { useGame } from '../store/gameStore';
 import { CardGlyph } from './CardGlyph';
 import { Counter } from './Counter';
 
+const HEART = 'M12 20 L3.5 11.5 C0.5 8.5 1.5 2.5 6.5 2.5 C9 2.5 11 4 12 6 C13 4 15 2.5 17.5 2.5 C22.5 2.5 23.5 8.5 20.5 11.5 Z';
+
+/** Corações com metades: vida e máximo andam de ½ em ½. Meio coração de capacidade aparece cortado. */
 function Hearts({ hp, max }: { hp: number; max: number }) {
   return (
     <div className="hud-hearts" aria-label={`Vida ${hp} de ${max}`}>
-      {Array.from({ length: max }, (_, i) => (
-        <svg key={i} className={`heart ${i < hp ? 'full' : 'empty'}`} viewBox="0 0 24 22" aria-hidden="true">
-          <path d="M12 20 L3.5 11.5 C0.5 8.5 1.5 2.5 6.5 2.5 C9 2.5 11 4 12 6 C13 4 15 2.5 17.5 2.5 C22.5 2.5 23.5 8.5 20.5 11.5 Z" />
-        </svg>
-      ))}
+      {Array.from({ length: Math.ceil(max) }, (_, i) => {
+        const fill = Math.max(0, Math.min(1, hp - i));
+        const capHalf = max - i < 1;
+        const state = fill >= 1 ? 'full' : fill > 0 ? 'half' : 'empty';
+        return (
+          <svg key={i} className={`heart ${state}${capHalf ? ' cap-half' : ''}`} viewBox="0 0 24 22" aria-hidden="true">
+            <clipPath id={`heart-half-${i}`}>
+              <rect x="0" y="0" width="12" height="22" />
+            </clipPath>
+            <g clipPath={capHalf ? `url(#heart-half-${i})` : undefined}>
+              <path className="heart-bg" d={HEART} />
+              {state === 'half' && <path className="heart-fill" d={HEART} clipPath={`url(#heart-half-${i})`} />}
+            </g>
+          </svg>
+        );
+      })}
     </div>
   );
 }
@@ -91,7 +105,7 @@ function Hand() {
   return (
     <div className="hud-hand" data-testid="hud-hand">
       {hand.map((c) => (
-        <div key={c.id} className={`chip chip--${c.rarity}`} title={c.description}>
+        <div key={c.id} className={`chip chip--${c.rarity}${c.golden ? ' chip--gold' : ''}`} title={c.description}>
           <CardGlyph card={c} />
           <span>{c.name}</span>
           {c.stacks > 1 && <b>×{c.stacks}</b>}
@@ -116,7 +130,7 @@ export function Hud() {
   const hp = useGame((s) => s.hud.hp);
   const maxHp = useGame((s) => s.hud.maxHp);
   const weapon = useGame((s) => s.hud.weaponName);
-  const danger = hp === 1 && maxHp > 1;
+  const danger = hp > 0 && hp <= 1 && maxHp > 1;
   return (
     <div className={`hud ${danger ? 'hud--danger' : ''}`}>
       {danger && <div className="danger-vignette" aria-hidden="true" />}

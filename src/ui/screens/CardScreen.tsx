@@ -4,7 +4,7 @@ import type { CardInfo } from '@/shared/types';
 import { CardGlyph } from '../components/CardGlyph';
 import { actions, useGame } from '../store/gameStore';
 
-const RARITY_LABEL: Record<CardInfo['rarity'], string> = { comum: 'COMUM', incomum: 'INCOMUM', raro: 'RARA' };
+const RARITY_LABEL: Record<CardInfo['rarity'], string> = { comum: 'COMUM', incomum: 'INCOMUM', raro: 'RARA', epico: 'ÉPICA' };
 const BRANCH_LABEL: Record<CardInfo['branch'], string> = {
   balistica: 'Balística',
   caos: 'Caos',
@@ -46,11 +46,12 @@ function Card({
 
   const state = picked === null ? '' : picked === card.id ? 'card--picked' : 'card--discarded';
   const next = card.stacks + 1;
+  const goldNext = card.goldenAt > 0 && next >= card.goldenAt;
   return (
     <button
       ref={ref}
       type="button"
-      className={`card card--${card.rarity} ${state}`}
+      className={`card card--${card.rarity}${goldNext ? ' card--gold' : ''} ${state}`}
       style={{ '--i': index } as CSSProperties}
       data-testid={`card-${card.id}`}
       disabled={picked !== null}
@@ -62,7 +63,7 @@ function Card({
     >
       <span className="card-inner">
         <span className="card-key">{index + 1}</span>
-        <span className="card-rarity">{RARITY_LABEL[card.rarity]}</span>
+        <span className="card-rarity">{goldNext ? 'VIRA DOURADA!' : RARITY_LABEL[card.rarity]}</span>
         <span className="card-art">
           <CardGlyph card={card} />
         </span>
@@ -70,7 +71,7 @@ function Card({
         <span className="card-desc">{card.description}</span>
         <span className="card-foot">
           <span className="card-branch">{BRANCH_LABEL[card.branch]}</span>
-          {card.maxStacks > 1 && (
+          {card.maxStacks > 1 && card.maxStacks <= 10 && (
             <span className="card-stacks" aria-label={`Nível ${next} de ${card.maxStacks}`}>
               {Array.from({ length: card.maxStacks }, (_, i) => (
                 <i key={i} className={i < card.stacks ? 'own' : i === card.stacks ? 'new' : ''} />

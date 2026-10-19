@@ -229,6 +229,11 @@ export interface Enemy {
   enraged: boolean;
   /** Timer secundário (ex.: próxima reunião do porco). */
   altTimer: number;
+  /** Sangramento (carta Vampiresco): segundos restantes, dano por tick, intervalo e próximo tick. */
+  bleedTime: number;
+  bleedDamage: number;
+  bleedInterval: number;
+  bleedTick: number;
   alive: boolean;
 }
 

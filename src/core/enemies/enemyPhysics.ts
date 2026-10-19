@@ -39,6 +39,10 @@ export function createEnemy(uid: number, def: EnemyDef, xNorm: number, bounds: A
     attack: 0,
     enraged: false,
     altTimer: 0,
+    bleedTime: 0,
+    bleedDamage: 0,
+    bleedInterval: 1,
+    bleedTick: 0,
     alive: true,
   };
 }

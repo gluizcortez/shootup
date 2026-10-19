@@ -19,7 +19,7 @@ export type StatKey =
 
 export type Stats = Record<StatKey, number>;
 
-export type Rarity = 'comum' | 'incomum' | 'raro';
+export type Rarity = 'comum' | 'incomum' | 'raro' | 'epico';
 export type Branch = 'balistica' | 'caos' | 'sobrevivencia';
 
 /** `add` soma `value` por stack; `mul` multiplica por `value` a cada stack. */
@@ -45,7 +45,35 @@ export interface UpgradeDef {
   modifiers: readonly Modifier[];
   /** Efeito imediato ao escolher (ex.: curar). */
   onPick?: { heal?: number };
+  /** Habilidade especial (cartas épicas). Fica dourada ao chegar em `goldenAt` stacks. */
+  effect?: UpgradeEffect;
 }
+
+export type UpgradeEffect =
+  | {
+      /** Inimigo abatido explode em projéteis do jogador. */
+      kind: 'explode';
+      /** Projéteis com 1 stack; cada stack extra soma `perStack`. */
+      baseCount: number;
+      perStack: number;
+      /** Fração do dano da arma por projétil (normal e dourada). */
+      damageFrac: number;
+      goldenDamageFrac: number;
+      goldenAt: number;
+      /** Velocidade como fração da velocidade da bala da arma. */
+      speedFrac: number;
+      lifetime: number;
+    }
+  | {
+      /** Acertos aplicam sangramento: `damagePerStack` × stacks a cada tick. */
+      kind: 'bleed';
+      damagePerStack: number;
+      /** Segundos de sangramento após o último acerto. */
+      duration: number;
+      tickInterval: number;
+      goldenTickInterval: number;
+      goldenAt: number;
+    };
 
 export interface StatClamp {
   min: number;

@@ -190,8 +190,13 @@ body,
   transform: scale(0.78);
 }
 
-.heart.empty path {
+.heart.empty path,
+.heart.half .heart-bg {
   fill: var(--c-plum-2);
+}
+
+.heart.half .heart-fill {
+  fill: var(--c-coral);
 }
 
 .hud-weapon {
@@ -995,11 +1000,30 @@ kbd {
   --rar: var(--c-amber);
 }
 
-/* Rara brilha: tem que dar vontade de pegar. */
-.card--raro .card-inner {
+.card--epico {
+  --rar: var(--c-coral);
+}
+
+.card--gold {
+  --rar: #ffe08a;
+}
+
+/* Rara, épica e dourada brilham: tem que dar vontade de pegar. */
+.card--raro .card-inner,
+.card--epico .card-inner,
+.card--gold .card-inner {
   animation:
     pop 300ms var(--ease-spring),
     rare-glow 1.4s ease-in-out 300ms infinite;
+}
+
+.card--epico .card-inner {
+  background: linear-gradient(160deg, #3d1f3a, var(--c-plum) 60%);
+}
+
+.card--gold .card-inner {
+  background: linear-gradient(160deg, #5a4314, var(--c-plum) 65%);
+  animation-duration: 300ms, 0.8s;
 }
 
 @keyframes rare-glow {
@@ -1207,6 +1231,9 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .chip--gold,
+  .card--epico .card-inner,
+  .card--gold .card-inner,
   .card,
   .card--raro .card-inner {
     animation: none;
@@ -1257,6 +1284,28 @@ kbd {
 
 .chip--raro {
   --rar: var(--c-amber);
+}
+
+.chip--epico {
+  --rar: var(--c-coral);
+}
+
+/* Habilidade épica com 5 stacks: dourada e reluzente. */
+.chip--gold {
+  --rar: #ffe08a;
+  background: linear-gradient(110deg, #6b4f12 20%, #ffd76a 45%, #6b4f12 70%);
+  background-size: 250% 100%;
+  text-shadow: 0 1px 0 var(--c-outline);
+  animation: gold-sheen 1.6s linear infinite;
+}
+
+@keyframes gold-sheen {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
 }
 
 .chip .card-glyph {
