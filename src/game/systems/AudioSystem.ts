@@ -190,11 +190,17 @@ export class AudioSystem {
         this.sweep(ctx, out, t + 0.12, 'sine', 1600, 2400, 0.08, 0.06);
         return t + 0.22;
       case 'telegraphGalinha': {
-        // Cano girando: zumbido que sobe durante todo o aviso.
+        // Armando a arma: "tec-tec-tec" de engrenagem que acelera + assobio macio subindo + "cocó!" no fim.
         const dur = Math.max(0.2, param);
-        this.sweep(ctx, out, t, 'sawtooth', 120, 950, dur, 0.09, true);
-        this.sweep(ctx, out, t, 'square', 60, 240, dur, 0.05, true);
-        return t + dur;
+        const clicks = 5;
+        for (let i = 0; i < clicks; i++) {
+          const at = t + dur * (1 - Math.pow(1 - i / clicks, 1.6));
+          this.sweep(ctx, out, at, 'triangle', 1700 + i * 120, 1300 + i * 120, 0.03, 0.07);
+        }
+        this.sweep(ctx, out, t, 'sine', 520, 1050, dur, 0.035, true);
+        this.sweep(ctx, out, t + dur - 0.12, 'sine', 760 * vary, 640, 0.06, 0.1);
+        this.sweep(ctx, out, t + dur - 0.05, 'sine', 1020 * vary, 820, 0.07, 0.1);
+        return t + dur + 0.03;
       }
       case 'incoming': {
         // Assobio descendo: "lá vem coisa do teto".
