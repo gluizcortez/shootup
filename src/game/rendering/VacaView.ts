@@ -7,30 +7,36 @@ import { TEX, TEX_SCALE } from './textures';
 import { Spring } from './spring';
 
 const INV = 1 / TEX_SCALE;
-/** Altura das pernas: o tronco fica apoiado nelas (origem do container = pés). */
-const LEG_TOP = -11;
-const BODY_BOTTOM = -8;
+/** Origem do container = pés. Quadril e ombros em px acima do chão. */
+const HIP = -16;
+const BODY_BOTTOM = -13;
+const SHOULDER_Y = -33;
+const BELL_Y = -39;
+
+type Img = Phaser.GameObjects.Image;
 
 /**
- * Vaca Loca: corpo + quatro pernas articuladas + sininho.
- * Poses por estado: bate o casco no aviso, galopa inclinada na investida
- * e cambaleia com estrelinhas quando está tonta.
+ * Vaca Loca bípede: corre em duas patas com os braços (cascos) balançando.
+ * Poses por estado: pisa forte de punhos erguidos no aviso, sprint
+ * inclinado na investida, cambaleia com estrelinhas quando tonta.
  */
 export class VacaView implements EnemyVisual {
   readonly kind = 'vaca_loca' as const;
   readonly root: Phaser.GameObjects.Container;
-  private readonly body: Phaser.GameObjects.Image;
-  private readonly bell: Phaser.GameObjects.Image;
-  /** Traseira esquerda, traseira direita, dianteira esquerda, dianteira direita. */
-  private readonly legs: Phaser.GameObjects.Image[];
-  private readonly stars: Phaser.GameObjects.Image[];
-  private readonly excl: Phaser.GameObjects.Image;
-  private readonly shadow: Phaser.GameObjects.Image;
-  private readonly marker: Phaser.GameObjects.Image;
+  private readonly body: Img;
+  private readonly bell: Img;
+  private readonly legBack: Img;
+  private readonly legFront: Img;
+  private readonly armBack: Img;
+  private readonly armFront: Img;
+  private readonly stars: Img[];
+  private readonly excl: Img;
+  private readonly shadow: Img;
+  private readonly marker: Img;
   private readonly squash = new Spring(320, 11);
   private flash = 0;
   private time = Math.random() * 10;
-  private gallop = 0;
+  private cycle = 0;
   private telegraphT = 0;
   private telegraphDur = 0;
   uid = -1;
@@ -39,25 +45,30 @@ export class VacaView implements EnemyVisual {
     scene: Phaser.Scene,
     private readonly groundAt: (x: number) => number,
   ) {
+    const shade = 0xd9d3cc;
     const leg = (x: number, back: boolean) =>
+      scene.add.image(x, HIP, 'vaca_leg').setOrigin(0.5, 0.05).setScale(INV).setTint(back ? shade : 0xffffff);
+    const arm = (x: number, back: boolean) =>
       scene.add
-        .image(x, LEG_TOP, 'vaca_leg')
-        .setOrigin(0.5, 0)
+        .image(x, SHOULDER_Y, 'vaca_arm')
+        .setOrigin(TEX.vacaArm.pivotX / TEX.vacaArm.w, 0.5)
         .setScale(INV)
-        .setTint(back ? 0xd9d3cc : 0xffffff);
-    this.legs = [leg(-19, true), leg(-12, false), leg(4, true), leg(10, false)];
+        .setTint(back ? shade : 0xffffff);
+    this.legBack = leg(-5, true);
+    this.legFront = leg(4, false);
+    this.armBack = arm(-4, true);
+    this.armFront = arm(5, false);
     this.body = scene.add
       .image(0, BODY_BOTTOM, 'vaca_body')
-      .setOrigin(32 / TEX.vacaBody.w, 1)
+      .setOrigin(20 / TEX.vacaBody.w, 1)
       .setScale(INV);
-    this.bell = scene.add.image(13, -14, 'vaca_bell').setOrigin(0.5, 0).setScale(INV);
-    this.excl = scene.add.image(20, -52, 'fx_excl').setScale(INV).setVisible(false);
-    this.stars = [0, 1, 2].map(() =>
-      scene.add.image(0, 0, 'px_star').setTint(PAL.amber).setScale(1.1).setVisible(false),
-    );
-    const [lb, lf, rb, rf] = this.legs as [Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image];
-    this.root = scene.add.container(0, 0, [lb, rb, this.body, lf, rf, this.bell, this.excl, ...this.stars]).setDepth(24);
-    this.shadow = scene.add.image(0, 0, 'shadow').setScale(1.5 * INV).setDepth(9);
+    this.bell = scene.add.image(8, BELL_Y, 'vaca_bell').setOrigin(0.5, 0).setScale(INV);
+    this.excl = scene.add.image(6, -72, 'fx_excl').setScale(INV).setVisible(false);
+    this.stars = [0, 1, 2].map(() => scene.add.image(0, 0, 'px_star').setTint(PAL.amber).setScale(1.1).setVisible(false));
+    this.root = scene.add
+      .container(0, 0, [this.armBack, this.legBack, this.body, this.legFront, this.bell, this.armFront, this.excl, ...this.stars])
+      .setDepth(24);
+    this.shadow = scene.add.image(0, 0, 'shadow').setScale(1.1 * INV).setDepth(9);
     this.marker = scene.add.image(0, 14, 'fx_drop').setScale(INV).setDepth(95).setVisible(false);
     this.release();
   }
@@ -133,81 +144,96 @@ export class VacaView implements EnemyVisual {
     const speed = Math.abs(e.vx);
     let tilt = 0;
     let bob = 0;
-    const [lb, lf, rb, rf] = this.legs as [Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image, Phaser.GameObjects.Image];
-    let legA = 0;
     let legB = 0;
-    let stompLeg = 0;
+    let legF = 0;
+    let armB = 1.2; // braços caídos ao lado do corpo (apontando para baixo)
+    let armF = 1.2;
+    let liftFront = 0;
 
     switch (e.state) {
       case 'charge': {
-        // Galope: frequência acompanha a velocidade; tronco inclinado para frente.
-        this.gallop += dt * (6 + speed * 0.05);
-        legA = Math.sin(this.gallop) * 0.75;
-        legB = Math.sin(this.gallop + Math.PI) * 0.75;
-        bob = reducedMotion ? 0 : -Math.abs(Math.sin(this.gallop)) * 3;
-        tilt = 0.1;
+        // Sprint de desenho animado: pernas girando, braços bombeando, corpo inclinado.
+        this.cycle += dt * (8 + speed * 0.045);
+        const s = Math.sin(this.cycle);
+        legB = s * 0.95;
+        legF = -s * 0.95;
+        armB = 0.5 - s * 1.1;
+        armF = 0.5 + s * 1.1;
+        bob = reducedMotion ? 0 : -Math.abs(Math.cos(this.cycle)) * 4;
+        tilt = 0.28;
         break;
       }
       case 'stomp': {
-        // Bate o casco dianteiro: levanta e desce rápido, cabeça baixa.
+        // Pisa forte com a pata da frente, punhos (cascos) erguidos e tremendo de raiva.
         this.telegraphT += dt;
-        const k = Math.sin(this.telegraphT * 26);
-        stompLeg = k > 0 ? -k * 0.9 : 0;
-        tilt = 0.07 + (reducedMotion ? 0 : Math.sin(this.telegraphT * 26) * 0.02);
+        const k = Math.sin(this.telegraphT * 22);
+        liftFront = k > 0 ? k * 6 : 0;
+        legF = k > 0 ? -k * 0.5 : 0;
+        const shake = reducedMotion ? 0 : Math.sin(this.time * 40) * 0.12;
+        armB = -1.9 + shake;
+        armF = -1.6 - shake;
+        tilt = -0.05;
         break;
       }
       case 'dizzy':
-        tilt = reducedMotion ? 0 : Math.sin(this.time * 5) * 0.12;
-        legA = Math.sin(this.time * 3) * 0.2;
-        legB = -legA;
+        tilt = reducedMotion ? 0 : Math.sin(this.time * 5) * 0.18;
+        legB = Math.sin(this.time * 4) * 0.25;
+        legF = -legB;
+        armB = 1.2 + Math.sin(this.time * 6) * 0.7; // braços moles balançando
+        armF = 1.2 - Math.sin(this.time * 6) * 0.7;
         break;
       case 'descend':
-        legA = -0.45;
-        legB = 0.45;
+        // Caindo de braços e pernas abertos.
+        legB = 0.5;
+        legF = -0.5;
+        armB = -2.2;
+        armF = -0.9;
         break;
       default:
-        bob = reducedMotion ? 0 : Math.sin(this.time * 3) * 0.6;
+        bob = reducedMotion ? 0 : Math.sin(this.time * 3) * 0.8;
+        armB = 1.25 + Math.sin(this.time * 3) * 0.08;
+        armF = 1.15 - Math.sin(this.time * 3) * 0.08;
         if (speed > 20) {
-          this.gallop += dt * speed * 0.04;
-          legA = Math.sin(this.gallop) * 0.35;
-          legB = -legA;
+          this.cycle += dt * speed * 0.05;
+          legB = Math.sin(this.cycle) * 0.45;
+          legF = -legB;
         }
     }
 
-    lb.rotation = legA;
-    rf.rotation = legA;
-    lf.rotation = legB;
-    rb.rotation = legB + stompLeg;
-    rf.rotation += stompLeg * 0.3;
+    this.legBack.rotation = legB;
+    this.legFront.rotation = legF;
+    this.legFront.y = HIP - liftFront;
+    this.armBack.rotation = armB;
+    this.armFront.rotation = armF;
+    this.armBack.y = this.armFront.y = SHOULDER_Y + bob;
     this.body.y = BODY_BOTTOM + bob;
-    this.bell.y = -14 + bob;
-    this.bell.rotation = reducedMotion ? 0 : Math.sin(this.time * (e.state === 'charge' ? 18 : 4)) * (e.state === 'charge' ? 0.5 : 0.15);
-    this.root.rotation += (-tilt * e.facing - this.root.rotation) * Math.min(1, dt * 12);
+    this.bell.y = BELL_Y + bob;
+    const swing = e.state === 'charge' ? 0.6 : 0.15;
+    this.bell.rotation = reducedMotion ? 0 : Math.sin(this.time * (e.state === 'charge' ? 18 : 4)) * swing;
+    this.root.rotation += (tilt * e.facing - this.root.rotation) * Math.min(1, dt * 12);
 
-    // Aviso "!" com pop durante o bater de casco.
     if (e.state === 'stomp' && this.telegraphDur > 0) {
       const t = Math.min(1, this.telegraphT / this.telegraphDur);
       const pop = t < 0.15 ? (t / 0.15) * 1.3 : 1.3 - Math.min(0.3, (t - 0.15) * 2);
       this.excl.setVisible(true).setScale(pop * INV);
-      this.excl.y = -52 - Math.sin(this.time * 20) * 1.5;
+      this.excl.y = -72 - Math.sin(this.time * 20) * 1.5;
     } else if (this.excl.visible) {
       this.excl.setVisible(false);
       this.telegraphDur = 0;
     }
 
-    // Estrelinhas orbitando a cabeça quando tonta.
     const dizzy = e.state === 'dizzy';
     for (let i = 0; i < this.stars.length; i++) {
-      const s = this.stars[i] as Phaser.GameObjects.Image;
+      const s = this.stars[i] as Img;
       s.setVisible(dizzy);
       if (!dizzy) continue;
       const a = this.time * 6 + (i * Math.PI * 2) / 3;
-      s.setPosition(20 + Math.cos(a) * 13, -40 + Math.sin(a) * 4).setRotation(this.time * 5);
+      s.setPosition(6 + Math.cos(a) * 13, -64 + Math.sin(a) * 4).setRotation(this.time * 5);
     }
 
     const gy = this.groundAt(x);
     const height = Math.max(0, gy - y);
     const sh = Math.max(0.3, 1 - height / 400);
-    this.shadow.setPosition(x, gy + 1).setScale(1.5 * sh * INV).setAlpha(0.4 + sh * 0.4);
+    this.shadow.setPosition(x, gy + 1).setScale(1.1 * sh * INV).setAlpha(0.4 + sh * 0.4);
   }
 }

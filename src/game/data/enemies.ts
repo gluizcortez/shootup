@@ -70,7 +70,7 @@ export const GALINHA_RAMBO: GalinhaDef = {
 };
 
 /**
- * Vaca Loca (melee): cai do topo e anda no chão. Bate o casco (aviso),
+ * Vaca Loca (melee): vaca bípede, corre em duas patas. Cai do topo e anda no chão. Bate o casco (aviso),
  * depois investe em linha reta mais rápido que o jogador corre: a saída é
  * pular por cima ou subir a rampa. Ao bater na parede fica tonta e leva
  * dano extra.
@@ -81,8 +81,8 @@ export const VACA_LOCA: VacaDef = {
   role: 'melee',
   name: 'Vaca Loca',
   maxHp: 110,
-  hw: 26,
-  hh: 20,
+  hw: 15,
+  hh: 29,
   score: 200,
   contactDamage: 1,
   knockbackScale: 0.25,

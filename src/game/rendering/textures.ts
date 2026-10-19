@@ -92,8 +92,9 @@ export const TEX = {
   galinhaBody: { w: 48, h: 56 },
   galinhaGlasses: { w: 22, h: 8 },
   galinhaGun: { w: 56, h: 18, pivotX: 10 },
-  vacaBody: { w: 66, h: 34 },
-  vacaLeg: { w: 8, h: 13 },
+  vacaBody: { w: 44, h: 47 },
+  vacaLeg: { w: 9, h: 18 },
+  vacaArm: { w: 17, h: 8, pivotX: 3 },
   vacaBell: { w: 12, h: 13 },
 } as const;
 
@@ -231,30 +232,38 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.oRound(2.5, 23, 6, 5, 1, PAL.gunMetal, 1);
     p.oRound(12.5, 23, 6, 5, 1, PAL.gunMetal, 1);
   });
-  // ── Vaca Loca ────────────────────────────────────────────────────────
+  // ── Vaca Loca (bípede: corre em duas patas, braços de casco) ─────────
   make(scene, 'vaca_body', TEX.vacaBody.w, TEX.vacaBody.h, (p) => {
-    // Rabo com tufo.
-    p.stroke(2, O).line(8, 12, 2, 21);
-    p.oCircle(2.5, 22, 2.6, PAL.cowSpot, 1);
-    p.oRound(6, 7, 42, 23, 11, PAL.cowWhite); // tronco
-    p.fill(PAL.cowSpot).ellipse(19, 13, 13, 8).ellipse(35, 21, 10, 7).ellipse(12, 24, 6, 5).ellipse(40, 11, 5, 4);
-    p.oEllipse(27, 30, 9, 5, PAL.cowPink, 1); // úbere
-    // Cabeça baixa, de quem vai investir.
-    p.oRound(44, 5, 16, 18, 7, PAL.cowWhite);
-    p.fill(PAL.cowSpot).ellipse(48, 9, 6, 5);
-    p.oRound(50, 15, 14, 10, 4.5, PAL.cowPink, 1.2); // focinho
-    p.fill(O).circle(56, 20, 1.1).circle(60.5, 20, 1.1);
-    p.oEllipse(43, 9, 7, 4, PAL.cowPink, 1); // orelha
-    p.oRound(46, 0, 4, 7, 2, PAL.horn, 1); // chifres
-    p.oRound(54, 0, 4, 7, 2, PAL.horn, 1);
-    p.fill(PAL.warmWhite).circle(54, 11, 3.2); // olho furioso
-    p.fill(PAL.coral).circle(54.8, 11.2, 1.9);
-    p.fill(O).circle(55.2, 11.2, 1);
-    p.fill(O).poly([[50, 6.5], [58, 8.5], [58, 9.8], [50, 8]]); // sobrancelha
+    // Rabo com tufo saindo das costas.
+    p.stroke(2, O).line(9, 34, 2, 40);
+    p.oCircle(2.5, 41, 2.4, PAL.cowSpot, 1);
+    p.oRound(7, 19, 26, 27, 11, PAL.cowWhite); // tronco em pé, barrigudo
+    p.fill(PAL.cowSpot).ellipse(13, 27, 9, 11).ellipse(26, 40, 8, 6).ellipse(29, 24, 4, 5);
+    p.fill(PAL.cowPink).ellipse(24, 34, 9, 10); // barriga rosada
+    // Cabeça grande na frente, olhar de doida e sorriso assustador.
+    p.oRound(12, 4, 22, 19, 8, PAL.cowWhite);
+    p.fill(PAL.cowSpot).ellipse(16, 9, 7, 6);
+    p.oEllipse(11, 9, 7, 4, PAL.cowPink, 1); // orelha
+    p.oRound(15, 0, 4, 6, 2, PAL.horn, 1); // chifres
+    p.oRound(26, 0, 4, 6, 2, PAL.horn, 1);
+    p.oRound(28, 11, 15, 11, 5, PAL.cowPink, 1.2); // focinho
+    p.fill(O).circle(36, 14.5, 1.1).circle(40.5, 14.5, 1.1);
+    p.fill(O).round(29, 18, 12, 3.4, 1.7); // sorrisão
+    p.fill(PAL.warmWhite).rect(30.5, 18.4, 9, 1.4);
+    p.fill(PAL.warmWhite).circle(21, 10, 4); // olhos arregalados, desalinhados
+    p.fill(PAL.warmWhite).circle(28, 8.5, 3.2);
+    p.fill(PAL.coral).circle(22, 10.5, 2);
+    p.fill(O).circle(22.4, 10.6, 1.1).circle(28.8, 8, 1.2);
   });
   make(scene, 'vaca_leg', TEX.vacaLeg.w, TEX.vacaLeg.h, (p) => {
-    p.oRound(1.5, 0, 5, 9, 2, PAL.cowWhite, 1);
-    p.oRound(1, 8, 6, 4, 1.5, PAL.hoof, 1);
+    p.oRound(1.5, 0, 6, 13, 3, PAL.cowWhite, 1);
+    p.fill(PAL.cowSpot).ellipse(4.5, 5, 4, 4);
+    p.oRound(0.5, 12, 8, 5, 1.5, PAL.hoof, 1);
+  });
+  make(scene, 'vaca_arm', TEX.vacaArm.w, TEX.vacaArm.h, (p) => {
+    // Braço com casco na ponta; pivô no ombro (x = pivotX).
+    p.oRound(1, 1.5, 12, 5, 2.5, PAL.cowWhite, 1);
+    p.oRound(11, 0.5, 5, 7, 2, PAL.hoof, 1);
   });
   make(scene, 'vaca_bell', TEX.vacaBell.w, TEX.vacaBell.h, (p) => {
     p.oRound(4, 0, 4, 3, 1, PAL.coral, 1); // coleira
