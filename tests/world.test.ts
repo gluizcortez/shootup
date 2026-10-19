@@ -87,7 +87,7 @@ describe('World — atiradores ficam no alto (Seraph-like)', () => {
       const w = new World(WORLD_CONFIG, 99);
       w.wavesEnabled = false;
       invulnerable(w);
-      const def = WORLD_CONFIG.enemies[kind];
+      const def = kind === 'pato_pistoleiro' ? PATO_PISTOLEIRO : GALINHA_RAMBO;
       const enemies = [w.spawnEnemy(kind, 0.2), w.spawnEnemy(kind, 0.5), w.spawnEnemy(kind, 0.8)];
       const playerTop = WORLD_CONFIG.bounds.floorY - WORLD_CONFIG.player.hh * 2;
       let maxY = -Infinity;
@@ -221,6 +221,7 @@ describe('World — jogador', () => {
 describe('World — ondas e determinismo', () => {
   it('a primeira onda começa sozinha e é limpa ao matar todos', () => {
     const w = new World(WORLD_CONFIG, 77);
+    w.upgradesEnabled = false;
     invulnerable(w);
     const events = collect(w, 30, aimAtFirstEnemy);
     expect(events.find((e) => e.type === 'waveStarted')).toMatchObject({ wave: 1 });
@@ -230,6 +231,7 @@ describe('World — ondas e determinismo', () => {
   it('mesma seed + mesmas entradas = mesma run', () => {
     const play = (seed: number) => {
       const w = new World(WORLD_CONFIG, seed);
+      w.upgradesEnabled = false;
       invulnerable(w);
       collect(w, 20, aimAtFirstEnemy);
       return { score: w.score, kills: w.stats.kills, x: w.player.motor.x, wave: w.waves.wave };

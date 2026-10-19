@@ -19,6 +19,11 @@ export const PAL = {
   hatBand: 0x4a2c14,
   chickenWhite: 0xfaf7f0,
   comb: 0xe63946,
+  cowWhite: 0xfbf8f2,
+  cowSpot: 0x2b2530,
+  cowPink: 0xf4a6b8,
+  horn: 0xf3e3b3,
+  hoof: 0x4a3b3b,
   shadow: 0x000000,
 } as const;
 

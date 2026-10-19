@@ -92,6 +92,9 @@ export const TEX = {
   galinhaBody: { w: 48, h: 56 },
   galinhaGlasses: { w: 22, h: 8 },
   galinhaGun: { w: 56, h: 18, pivotX: 10 },
+  vacaBody: { w: 66, h: 34 },
+  vacaLeg: { w: 8, h: 13 },
+  vacaBell: { w: 12, h: 13 },
 } as const;
 
 export function generateTextures(scene: Phaser.Scene): void {
@@ -228,6 +231,39 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.oRound(2.5, 23, 6, 5, 1, PAL.gunMetal, 1);
     p.oRound(12.5, 23, 6, 5, 1, PAL.gunMetal, 1);
   });
+  // ── Vaca Loca ────────────────────────────────────────────────────────
+  make(scene, 'vaca_body', TEX.vacaBody.w, TEX.vacaBody.h, (p) => {
+    // Rabo com tufo.
+    p.stroke(2, O).line(8, 12, 2, 21);
+    p.oCircle(2.5, 22, 2.6, PAL.cowSpot, 1);
+    p.oRound(6, 7, 42, 23, 11, PAL.cowWhite); // tronco
+    p.fill(PAL.cowSpot).ellipse(19, 13, 13, 8).ellipse(35, 21, 10, 7).ellipse(12, 24, 6, 5).ellipse(40, 11, 5, 4);
+    p.oEllipse(27, 30, 9, 5, PAL.cowPink, 1); // úbere
+    // Cabeça baixa, de quem vai investir.
+    p.oRound(44, 5, 16, 18, 7, PAL.cowWhite);
+    p.fill(PAL.cowSpot).ellipse(48, 9, 6, 5);
+    p.oRound(50, 15, 14, 10, 4.5, PAL.cowPink, 1.2); // focinho
+    p.fill(O).circle(56, 20, 1.1).circle(60.5, 20, 1.1);
+    p.oEllipse(43, 9, 7, 4, PAL.cowPink, 1); // orelha
+    p.oRound(46, 0, 4, 7, 2, PAL.horn, 1); // chifres
+    p.oRound(54, 0, 4, 7, 2, PAL.horn, 1);
+    p.fill(PAL.warmWhite).circle(54, 11, 3.2); // olho furioso
+    p.fill(PAL.coral).circle(54.8, 11.2, 1.9);
+    p.fill(O).circle(55.2, 11.2, 1);
+    p.fill(O).poly([[50, 6.5], [58, 8.5], [58, 9.8], [50, 8]]); // sobrancelha
+  });
+  make(scene, 'vaca_leg', TEX.vacaLeg.w, TEX.vacaLeg.h, (p) => {
+    p.oRound(1.5, 0, 5, 9, 2, PAL.cowWhite, 1);
+    p.oRound(1, 8, 6, 4, 1.5, PAL.hoof, 1);
+  });
+  make(scene, 'vaca_bell', TEX.vacaBell.w, TEX.vacaBell.h, (p) => {
+    p.oRound(4, 0, 4, 3, 1, PAL.coral, 1); // coleira
+    p.fill(O).poly([[2, 12], [3, 3], [9, 3], [10, 12]]);
+    p.fill(PAL.brass).poly([[3, 11], [4, 4], [8, 4], [9, 11]]);
+    p.fill(0xfff1c1).rect(4.5, 5, 1.3, 5);
+    p.oCircle(6, 12, 1.4, PAL.gunMetal, 0.8);
+  });
+
   make(scene, 'fx_flame', 10, 20, (p) => {
     p.fill(PAL.coral).poly([[0, 0], [10, 0], [5, 20]]);
     p.fill(PAL.amber).poly([[1.8, 0], [8.2, 0], [5, 14]]);

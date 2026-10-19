@@ -19,6 +19,12 @@ export type GameEvent =
   | { type: 'playerDied'; x: number; y: number }
   | { type: 'comboBroken'; count: number }
   | { type: 'waveStarted'; wave: number; total: number; callout: string }
-  | { type: 'waveCleared'; wave: number; bonus: number };
+  | { type: 'waveCleared'; wave: number; bonus: number }
+  | { type: 'enemyLanded'; uid: number; kind: EnemyKind; x: number; y: number; speed: number }
+  | { type: 'enemyCharge'; uid: number; kind: EnemyKind; x: number; y: number; dir: number }
+  | { type: 'enemyStunned'; uid: number; kind: EnemyKind; x: number; y: number }
+  | { type: 'ricochet'; x: number; y: number; angle: number }
+  | { type: 'upgradeOffer'; wave: number; cards: readonly string[] }
+  | { type: 'upgradePicked'; id: string; stacks: number };
 
 export type GameEventType = GameEvent['type'];

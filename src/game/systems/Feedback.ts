@@ -13,7 +13,11 @@ const QUALITY_MULT: Record<VfxQuality, number> = { low: 0.35, medium: 0.7, high:
 const FEATHER_TINT: Record<EnemyKind, number[]> = {
   pato_pistoleiro: [PAL.duckYellow, 0xfff3b0, 0xf2b705],
   galinha_rambo: [PAL.chickenWhite, 0xe7e1d6, PAL.comb],
+  vaca_loca: [PAL.cowWhite, PAL.cowSpot, PAL.cowWhite],
 };
+
+const KILL_SFX = { pato_pistoleiro: 'killPato', galinha_rambo: 'killGalinha', vaca_loca: 'killVaca' } as const;
+const KILL_PROP = { pato_pistoleiro: 'pato_hat', galinha_rambo: 'galinha_glasses', vaca_loca: 'vaca_bell' } as const;
 
 export interface FeedbackHooks {
   hitstop(seconds: number): void;
@@ -24,6 +28,7 @@ export interface FeedbackHooks {
   onEnemyHit(uid: number): void;
   onEnemyTelegraph(uid: number, duration: number): void;
   onEnemyShot(uid: number): void;
+  onEnemyLanded(uid: number, speed: number): void;
   onEnemyKilled(uid: number): void;
   onCrosshairHit(crit: boolean): void;
   onCombo(multiplier: number): void;
@@ -92,7 +97,43 @@ export class Feedback {
         return this.enemyKilled(ev);
       case 'enemyTelegraph':
         this.hooks.onEnemyTelegraph(ev.uid, ev.duration);
-        this.audio.play(ev.kind === 'galinha_rambo' ? 'telegraphGalinha' : 'telegraphPato', ev.duration);
+        this.audio.play(
+          ev.kind === 'galinha_rambo' ? 'telegraphGalinha' : ev.kind === 'vaca_loca' ? 'stomp' : 'telegraphPato',
+          ev.duration,
+        );
+        return;
+      case 'enemyLanded': {
+        this.hooks.onEnemyLanded(ev.uid, ev.speed);
+        const k = Math.min(1, ev.speed / 800);
+        this.audio.play('slam');
+        this.shake.add(0.15 + k * 0.25);
+        for (let i = 0, n = this.count(6 + k * 8); i < n; i++) {
+          this.dust(ev.x + (i % 2 ? 1 : -1) * 18, ev.y, (i % 2 ? 1 : -1) * (80 + Math.random() * 160));
+        }
+        return;
+      }
+      case 'enemyCharge':
+        this.audio.play('moo');
+        this.shake.add(0.12);
+        for (let i = 0, n = this.count(8); i < n; i++) this.dust(ev.x - ev.dir * 20, ev.y, -ev.dir * (80 + Math.random() * 200));
+        return;
+      case 'enemyStunned':
+        this.audio.play('dizzy');
+        this.shake.add(0.35);
+        this.hooks.hitstop(0.05);
+        for (let i = 0, n = this.count(8); i < n; i++) this.star(ev.x, ev.y - 10, i % 2 ? PAL.amber : PAL.warmWhite);
+        this.ring(ev.x, ev.y, PAL.amber);
+        return;
+      case 'ricochet':
+        this.audio.play('ricochet');
+        for (let i = 0, n = this.count(4); i < n; i++) this.spark(ev.x, ev.y, ev.angle + (Math.random() - 0.5) * 0.8, 0.8, PAL.turquoise, 320);
+        return;
+      case 'upgradeOffer':
+        this.audio.play('cardOffer');
+        return;
+      case 'upgradePicked':
+        this.audio.play('cardPick');
+        for (let i = 0, n = this.count(24); i < n; i++) this.confetti();
         return;
       case 'enemyShot':
         this.hooks.onEnemyShot(ev.uid);
@@ -229,10 +270,11 @@ export class Feedback {
   private enemyKilled(ev: Extract<GameEvent, { type: 'enemyKilled' }>): void {
     this.hooks.onEnemyKilled(ev.uid);
     this.hooks.onCombo(ev.multiplier);
-    this.audio.play(ev.kind === 'galinha_rambo' ? 'killGalinha' : 'killPato');
-    this.hooks.hitstop(ev.kind === 'galinha_rambo' ? 0.07 : 0.045);
-    this.shake.add(ev.kind === 'galinha_rambo' ? 0.4 : 0.25);
-    const n = this.count(ev.kind === 'galinha_rambo' ? 22 : 16);
+    const heavy = ev.kind !== 'pato_pistoleiro';
+    this.audio.play(KILL_SFX[ev.kind]);
+    this.hooks.hitstop(heavy ? 0.07 : 0.045);
+    this.shake.add(heavy ? 0.4 : 0.25);
+    const n = this.count(heavy ? 22 : 16);
     for (let i = 0; i < n; i++) this.feather(ev.x, ev.y, ev.kind, Math.random() * Math.PI * 2, 1.6);
     for (let i = 0, m = this.count(6); i < m; i++) this.star(ev.x, ev.y, i % 2 ? PAL.amber : PAL.warmWhite);
     for (let i = 0, m = this.count(4); i < m; i++) this.puff(ev.x + (Math.random() - 0.5) * 20, ev.y, 1.4, 0.6);
@@ -245,7 +287,7 @@ export class Feedback {
     }
     // O acessório voa longe: piada visual.
     this.emit({
-      texture: ev.kind === 'galinha_rambo' ? 'galinha_glasses' : 'pato_hat',
+      texture: KILL_PROP[ev.kind],
       x: ev.x,
       y: ev.y - 20,
       vx: (Math.random() - 0.5) * 200,
@@ -260,6 +302,11 @@ export class Feedback {
       const label = ev.multiplier > 1 ? `+${ev.score} ×${ev.multiplier}` : `+${ev.score}`;
       this.texts.spawn(ev.x, ev.y - 34, label, CSS.turquoise, 18, 0.9);
     }
+  }
+
+  /** Poeira levantada por quem corre no chão (chamado pela cena durante a investida). */
+  trail(x: number, y: number, dir: number): void {
+    this.dust(x, y, -dir * (40 + Math.random() * 80));
   }
 
   // ── Primitivas de efeito ───────────────────────────────────────────

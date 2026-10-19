@@ -9,11 +9,13 @@ import { bus } from '@/shared/bus';
 import { FrameStats } from '@/shared/frameStats';
 import { loadSettings, prefersReducedMotion } from '@/shared/settings';
 import type { Settings } from '@/shared/settings';
-import type { HudSnapshot } from '@/shared/types';
+import type { CardInfo, HudSnapshot } from '@/shared/types';
 import { ARENA, RENDER_ZOOM, SIM_STEP, TERRAIN, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
 import { Terrain } from '@/core/physics/terrain';
 import { WORLD_CONFIG } from '../data/world';
 import { EnemyView } from '../rendering/EnemyView';
+import type { EnemyVisual } from '../rendering/EnemyView';
+import { VacaView } from '../rendering/VacaView';
 import { PlayerView } from '../rendering/PlayerView';
 import { ProjectileRenderer } from '../rendering/ProjectileRenderer';
 import { Stage } from '../rendering/stage';
@@ -51,8 +53,10 @@ export class ArenaScene extends Phaser.Scene {
   private hitmarker!: Phaser.GameObjects.Image;
   private crossKick = 0;
   private hitmarkerT = 0;
-  private readonly viewPool: Record<EnemyKind, EnemyView[]> = { pato_pistoleiro: [], galinha_rambo: [] };
-  private readonly liveViews = new Map<number, EnemyView>();
+  private readonly viewPool: Record<EnemyKind, EnemyVisual[]> = { pato_pistoleiro: [], galinha_rambo: [], vaca_loca: [] };
+  private readonly liveViews = new Map<number, EnemyVisual>();
+  private trailTimer = 0;
+  private offerId = 0;
   private readonly simInput: SimInput = { ...EMPTY_INPUT };
   /** Relevo para a renderização (sombras, partículas); o World tem o seu, igual. */
   private readonly terrain = new Terrain(TERRAIN);
@@ -108,6 +112,7 @@ export class ArenaScene extends Phaser.Scene {
         onEnemyHit: (uid) => this.liveViews.get(uid)?.onHit(),
         onEnemyTelegraph: (uid, d) => this.liveViews.get(uid)?.onTelegraph(d),
         onEnemyShot: (uid) => this.liveViews.get(uid)?.onShot(),
+        onEnemyLanded: (uid, speed) => this.liveViews.get(uid)?.onLanded(speed),
         onEnemyKilled: (uid) => this.releaseView(uid),
         onCrosshairHit: (crit) => {
           this.hitmarkerT = 0.09;
@@ -165,6 +170,14 @@ export class ArenaScene extends Phaser.Scene {
           this.world.spawnEnemy('galinha_rambo', 0.1 + i * 0.4);
           this.world.spawnEnemy('pato_pistoleiro', 0.25 + i * 0.25);
         }
+        this.world.spawnEnemy('vaca_loca', 0.2);
+      });
+      // F5: abre uma oferta de cartas na hora (testar cartas sem limpar ondas).
+      kb.on('keydown-F5', (e: KeyboardEvent) => {
+        e.preventDefault();
+        if (this.phase.phase !== 'PLAYING') return;
+        this.world.debugTainted = true;
+        this.world.openOffer();
       });
     }
     // Primeiro gesto libera o áudio do navegador.
@@ -199,6 +212,15 @@ export class ArenaScene extends Phaser.Scene {
         this.resetRun();
         this.setPhase('MENU');
       }),
+      bus.on('ui:pickCard', (id) => {
+        if (this.phase.phase !== 'UPGRADE_SELECT') return;
+        if (!this.world.pickUpgrade(id)) return;
+        this.flushEvents();
+        this.emitHand();
+        bus.emit('game:offer', null);
+        this.setPhase('PLAYING');
+      }),
+      bus.on('ui:cardHover', () => this.audio.play('cardHover')),
       bus.on('ui:settings', (s) => {
         this.settings = s;
         this.feedback.applySettings(s);
@@ -235,6 +257,8 @@ export class ArenaScene extends Phaser.Scene {
     this.hitstop = 0;
     this.deathTimer = -1;
     this.stage.excitement = 0;
+    bus.emit('game:offer', null);
+    this.emitHand();
     this.emitHud(true);
   }
 
@@ -244,8 +268,10 @@ export class ArenaScene extends Phaser.Scene {
     this.setPhase('PLAYING');
   }
 
-  private acquireView(uid: number, kind: EnemyKind): EnemyView {
-    const view = this.viewPool[kind].pop() ?? new EnemyView(this, kind, this.groundAt);
+  private acquireView(uid: number, kind: EnemyKind): EnemyVisual {
+    const view =
+      this.viewPool[kind].pop() ??
+      (kind === 'vaca_loca' ? new VacaView(this, this.groundAt) : new EnemyView(this, kind, this.groundAt));
     this.liveViews.set(uid, view);
     return view;
   }
@@ -279,6 +305,18 @@ export class ArenaScene extends Phaser.Scene {
         view.bind(e);
       }
       view.update(e, alpha, running ? dt : 0, this.reducedMotion);
+    }
+    // Rastro de poeira das investidas.
+    if (running) {
+      this.trailTimer -= dt;
+      if (this.trailTimer <= 0) {
+        this.trailTimer = 0.045;
+        for (const e of w.enemies) {
+          if (e.state === 'charge' && e.grounded && Math.abs(e.vx) > 150) {
+            this.feedback.trail(e.x - e.chargeDir * e.def.hw * 0.7, e.y + e.def.hh, e.chargeDir);
+          }
+        }
+      }
     }
     this.playerView.update(w, alpha, running ? dt : 0);
     this.projectileRenderer.update(w.projectiles, alpha, running ? dt : 0);
@@ -331,6 +369,11 @@ export class ArenaScene extends Phaser.Scene {
       }
     }
 
+    this.flushEvents();
+  }
+
+  /** Repassa eventos da simulação para feedback, HUD e máquina de fases. */
+  private flushEvents(): void {
     for (const ev of this.world.drainEvents(this.eventScratch)) {
       this.feedback.handle(ev);
       if (ev.type === 'waveStarted') {
@@ -339,8 +382,42 @@ export class ArenaScene extends Phaser.Scene {
         bus.emit('game:callout', { id: Date.now(), title: 'ONDA LIMPA!', subtitle: `+${ev.bonus} de bônus da produção` });
       } else if (ev.type === 'playerDied') {
         this.deathTimer = DEATH_SEQUENCE;
+      } else if (ev.type === 'upgradeOffer') {
+        this.openCards(ev.wave);
       }
     }
+  }
+
+  private cardInfo(id: string): CardInfo | null {
+    const def = WORLD_CONFIG.upgrades.pool.find((d) => d.id === id);
+    if (!def) return null;
+    return {
+      id: def.id,
+      name: def.name,
+      description: def.description,
+      rarity: def.rarity,
+      branch: def.branch,
+      stacks: this.world.owned.get(def.id) ?? 0,
+      maxStacks: def.maxStacks,
+    };
+  }
+
+  private openCards(wave: number): void {
+    const offer = this.world.offer;
+    if (!offer) return;
+    const cards = offer.map((c) => this.cardInfo(c.id)).filter((c): c is CardInfo => c !== null);
+    this.input2.releaseAll();
+    bus.emit('game:offer', { id: ++this.offerId, wave, cards });
+    this.setPhase('UPGRADE_SELECT');
+  }
+
+  private emitHand(): void {
+    const hand: CardInfo[] = [];
+    for (const id of this.world.owned.keys()) {
+      const c = this.cardInfo(id);
+      if (c && c.stacks > 0) hand.push(c);
+    }
+    bus.emit('game:hand', hand);
   }
 
   private finishRun(): void {
@@ -370,11 +447,11 @@ export class ArenaScene extends Phaser.Scene {
       combo: w.combo.count,
       multiplier: w.combo.multiplier,
       hp: w.player.hp,
-      maxHp: WORLD_CONFIG.player.maxHp,
+      maxHp: w.player.maxHp,
       weaponName: WORLD_CONFIG.weapon.name,
     };
     // Chave barata: o HUD React só recebe algo quando um número muda.
-    const key = `${hud.wave}|${hud.waveRemaining}|${hud.waveTotal}|${hud.score}|${hud.combo}|${hud.hp}`;
+    const key = `${hud.wave}|${hud.waveRemaining}|${hud.waveTotal}|${hud.score}|${hud.combo}|${hud.hp}|${hud.maxHp}`;
     if (!force && key === this.lastHud) return;
     this.lastHud = key;
     bus.emit('game:hud', hud);

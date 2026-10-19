@@ -1,6 +1,6 @@
 import type { WaveConfig } from '@/core/run/waves';
 
-/** Ondas do protótipo: os animais descem do topo. Primeiro só patos, depois a Galinha Rambo estreia. */
+/** Ondas do protótipo: os animais descem do topo. Primeiro só patos; a Vaca Loca estreia na 2 e a Galinha Rambo na 3. */
 export const WAVES: WaveConfig = {
   firstWaveDelay: 1.2,
   intermission: 2.2,
@@ -21,6 +21,7 @@ export const WAVES: WaveConfig = {
         { kind: 'pato_pistoleiro', delay: 0.8, x: 0.8 },
         { kind: 'pato_pistoleiro', delay: 2.5, x: 'random' },
         { kind: 'pato_pistoleiro', delay: 3.2, x: 'random' },
+        { kind: 'vaca_loca', delay: 4.5, x: 0.7 },
       ],
     },
     {
@@ -40,6 +41,7 @@ export const WAVES: WaveConfig = {
         { kind: 'pato_pistoleiro', delay: 3.5, x: 'random' },
         { kind: 'galinha_rambo', delay: 6, x: 'random' },
         { kind: 'pato_pistoleiro', delay: 6.5, x: 'random' },
+        { kind: 'vaca_loca', delay: 3, x: 0.3 },
       ],
     },
   ],

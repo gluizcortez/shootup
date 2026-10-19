@@ -1,4 +1,4 @@
-import type { EnemyKind, EnemyDef, GalinhaDef, PatoDef } from '@/core/enemies/types';
+import type { EnemyKind, EnemyDef, GalinhaDef, PatoDef, VacaDef } from '@/core/enemies/types';
 
 /**
  * Atiradores no estilo Seraph's Last Stand: descem do topo e PAIRAM no alto,
@@ -69,7 +69,37 @@ export const GALINHA_RAMBO: GalinhaDef = {
   cooldown: 2.6,
 };
 
+/**
+ * Vaca Loca (melee): cai do topo e anda no chão. Bate o casco (aviso),
+ * depois investe em linha reta mais rápido que o jogador corre: a saída é
+ * pular por cima ou subir a rampa. Ao bater na parede fica tonta e leva
+ * dano extra.
+ */
+export const VACA_LOCA: VacaDef = {
+  id: 'vaca_loca',
+  behaviour: 'vaca',
+  role: 'melee',
+  name: 'Vaca Loca',
+  maxHp: 110,
+  hw: 26,
+  hh: 20,
+  score: 200,
+  contactDamage: 1,
+  knockbackScale: 0.25,
+  warnTime: 0.9,
+  descendSpeed: 900,
+  gravity: 1800,
+  stompTime: 0.75,
+  chargeSpeed: 420,
+  chargeAccel: 1300,
+  dizzyTime: 1.6,
+  restTime: 0.9,
+  dizzyDamageMult: 1.5,
+  overshoot: 140,
+};
+
 export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   pato_pistoleiro: PATO_PISTOLEIRO,
   galinha_rambo: GALINHA_RAMBO,
+  vaca_loca: VACA_LOCA,
 };

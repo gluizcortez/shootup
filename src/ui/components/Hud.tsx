@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useGame } from '../store/gameStore';
+import { CardGlyph } from './CardGlyph';
 import { Counter } from './Counter';
 
 function Hearts({ hp, max }: { hp: number; max: number }) {
@@ -69,6 +70,23 @@ function Callout() {
   );
 }
 
+/** Cartas na mão, canto inferior direito. */
+function Hand() {
+  const hand = useGame((s) => s.hand);
+  if (hand.length === 0) return null;
+  return (
+    <div className="hud-hand" data-testid="hud-hand">
+      {hand.map((c) => (
+        <div key={c.id} className={`chip chip--${c.rarity}`} title={c.description}>
+          <CardGlyph card={c} />
+          <span>{c.name}</span>
+          {c.stacks > 1 && <b>×{c.stacks}</b>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Perf() {
   const perf = useGame((s) => s.perf);
   if (!perf) return null;
@@ -92,6 +110,7 @@ export function Hud() {
         <Hearts hp={hp} max={maxHp} />
         <div className="hud-weapon">{weapon.toUpperCase()}</div>
       </div>
+      <Hand />
       <Callout />
       <Perf />
     </div>

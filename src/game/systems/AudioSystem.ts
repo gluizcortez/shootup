@@ -20,7 +20,15 @@ export type SfxId =
   | 'waveStart'
   | 'waveClear'
   | 'gameOver'
-  | 'ui';
+  | 'ui'
+  | 'stomp'
+  | 'moo'
+  | 'dizzy'
+  | 'killVaca'
+  | 'ricochet'
+  | 'cardOffer'
+  | 'cardHover'
+  | 'cardPick';
 
 /** Intervalo mínimo entre repetições do mesmo som (evita empilhar ruído). */
 const MIN_GAP: Partial<Record<SfxId, number>> = {
@@ -28,6 +36,8 @@ const MIN_GAP: Partial<Record<SfxId, number>> = {
   crit: 0.04,
   enemyShotGalinha: 0.05,
   land: 0.08,
+  ricochet: 0.04,
+  cardHover: 0.05,
 };
 
 const MAX_VOICES = 24;
@@ -184,6 +194,46 @@ export class AudioSystem {
       case 'ui':
         this.sweep(ctx, out, t, 'triangle', 1200, 900, 0.04, 0.12);
         return t + 0.05;
+      case 'stomp': {
+        // Casco batendo no chão três vezes durante o aviso.
+        const dur = Math.max(0.3, param);
+        for (let i = 0; i < 3; i++) {
+          const at = t + (i * dur) / 3;
+          this.sweep(ctx, out, at, 'sine', 110, 45, 0.12, 0.4);
+          this.noiseBurst(ctx, out, at, 0.06, 500, 0.8, 0.3, 'lowpass');
+        }
+        return t + dur;
+      }
+      case 'moo':
+        // "Muuu!" bravo: dente de serra grave com vibrato, filtrado.
+        this.sweep(ctx, out, t, 'sawtooth', 150 * vary, 110, 0.55, 0.22, false, 700, 7);
+        this.sweep(ctx, out, t, 'square', 75 * vary, 55, 0.5, 0.08, false, 400);
+        return t + 0.55;
+      case 'dizzy':
+        // Passarinhos girando: três piados agudos.
+        [1800, 2200, 1900].forEach((n, i) => this.sweep(ctx, out, t + 0.05 + i * 0.12, 'sine', n * vary, n * 1.25, 0.07, 0.07));
+        this.sweep(ctx, out, t, 'sine', 160, 40, 0.35, 0.6);
+        this.noiseBurst(ctx, out, t, 0.2, 700, 0.8, 0.55, 'lowpass');
+        return t + 0.45;
+      case 'killVaca':
+        this.sweep(ctx, out, t, 'sawtooth', 220 * vary, 70, 0.6, 0.2, false, 800, 9);
+        this.noiseBurst(ctx, out, t, 0.15, 900, 0.7, 0.45, 'lowpass');
+        return t + 0.6;
+      case 'ricochet':
+        this.sweep(ctx, out, t, 'sine', 2600 * vary, 3900, 0.1, 0.08);
+        this.noiseBurst(ctx, out, t, 0.02, 6000, 1, 0.12, 'highpass');
+        return t + 0.11;
+      case 'cardOffer':
+        // Cartas deslizando na mesa.
+        for (let i = 0; i < 3; i++) this.noiseBurst(ctx, out, t + i * 0.08, 0.07, 3000, 0.7, 0.18, 'bandpass');
+        return t + 0.3;
+      case 'cardHover':
+        this.sweep(ctx, out, t, 'triangle', 1500 * vary, 1700, 0.03, 0.05);
+        return t + 0.04;
+      case 'cardPick':
+        [659, 880, 1318].forEach((n, i) => this.sweep(ctx, out, t + i * 0.05, 'triangle', n, n, 0.1, 0.16));
+        this.noiseBurst(ctx, out, t, 0.06, 2500, 0.8, 0.2, 'bandpass');
+        return t + 0.3;
     }
   }
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { GameHost } from './GameHost';
 import { Hud } from '@/ui/components/Hud';
+import { CardScreen } from '@/ui/screens/CardScreen';
 import { GameOverScreen } from '@/ui/screens/GameOverScreen';
 import { PauseScreen } from '@/ui/screens/PauseScreen';
 import { TitleScreen } from '@/ui/screens/TitleScreen';
@@ -24,7 +25,8 @@ export function App() {
     <div className="stage-frame" data-phase={phase}>
       <GameHost />
       <div className={`overlay ${phase === 'PLAYING' ? 'overlay--playing' : ''}`}>
-        {(phase === 'PLAYING' || phase === 'PAUSED') && <Hud />}
+        {(phase === 'PLAYING' || phase === 'PAUSED' || phase === 'UPGRADE_SELECT') && <Hud />}
+        {phase === 'UPGRADE_SELECT' && <CardScreen />}
         {phase === 'MENU' && <TitleScreen />}
         {phase === 'PAUSED' && <PauseScreen />}
         {phase === 'GAME_OVER' && <GameOverScreen />}

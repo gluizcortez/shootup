@@ -19,6 +19,12 @@ export interface Projectile {
   life: number;
   /** Origem visual: id da arma ou da espécie inimiga. */
   sourceId: string;
+  /** Inimigos que ainda pode atravessar. */
+  pierceLeft: number;
+  /** Quiques restantes para o inimigo mais próximo. */
+  ricochetLeft: number;
+  /** Último inimigo atingido (não acerta o mesmo duas vezes seguidas). */
+  lastHitUid: number;
 }
 
 /**
@@ -48,6 +54,9 @@ export class ProjectilePool {
       knockback: 0,
       life: 0,
       sourceId: '',
+      pierceLeft: 0,
+      ricochetLeft: 0,
+      lastHitUid: -1,
     }));
   }
 
@@ -78,6 +87,9 @@ export class ProjectilePool {
     p.knockback = knockback;
     p.life = life;
     p.sourceId = sourceId;
+    p.pierceLeft = 0;
+    p.ricochetLeft = 0;
+    p.lastHitUid = -1;
     return p;
   }
 

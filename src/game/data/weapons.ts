@@ -15,6 +15,8 @@ export const PISTOL: WeaponDef = {
   critMultiplier: 2,
   knockback: 120,
   barrelLength: 28,
+  pierce: 0,
+  ricochet: 0,
 };
 
 export const WEAPONS = { pistol: PISTOL } as const;

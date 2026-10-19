@@ -60,6 +60,11 @@ export function generateWave(n: number, rng: Rng): WaveDef {
     spawns.push({ kind: 'galinha_rambo', delay: g, x: 'random' });
     g += rng.range(2.0, 3.5);
   }
+  let v = 3;
+  for (let i = 0; i < Math.floor(n / 3); i++) {
+    spawns.push({ kind: 'vaca_loca', delay: v, x: 'random' });
+    v += rng.range(3.0, 5.0);
+  }
   return { spawns, callout: rng.pick(GENERATED_CALLOUTS) };
 }
 

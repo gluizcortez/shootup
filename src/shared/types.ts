@@ -25,6 +25,24 @@ export interface RunSummary {
   debugTainted: boolean;
 }
 
+/** Carta como a UI precisa mostrar (sem a lógica de modificadores). */
+export interface CardInfo {
+  id: string;
+  name: string;
+  description: string;
+  rarity: 'comum' | 'incomum' | 'raro';
+  branch: 'balistica' | 'caos' | 'sobrevivencia';
+  /** Stacks já na mão e máximo. */
+  stacks: number;
+  maxStacks: number;
+}
+
+export interface CardOffer {
+  id: number;
+  wave: number;
+  cards: CardInfo[];
+}
+
 export interface Callout {
   id: number;
   title: string;
@@ -46,6 +64,9 @@ export type GameToUi = {
   summary: RunSummary;
   callout: Callout;
   perf: PerfSnapshot | null;
+  offer: CardOffer | null;
+  /** Cartas na mão (stacks > 0), na ordem em que foram pegas. */
+  hand: CardInfo[];
 };
 
 export type UiToGame = {
@@ -55,6 +76,8 @@ export type UiToGame = {
   restart: void;
   quitToMenu: void;
   settings: Settings;
+  pickCard: string;
+  cardHover: void;
 };
 
 export type BusEvents = { [K in keyof GameToUi as `game:${K}`]: GameToUi[K] } & {

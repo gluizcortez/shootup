@@ -1,9 +1,10 @@
-/** Estados explícitos da run (GDD §10). WAVE_CLEAR/UPGRADE_SELECT chegam na Fase 1. */
-export type RunPhase = 'MENU' | 'PLAYING' | 'PAUSED' | 'GAME_OVER';
+/** Estados explícitos da run (GDD §10). UPGRADE_SELECT = escolhendo carta entre ondas. */
+export type RunPhase = 'MENU' | 'PLAYING' | 'PAUSED' | 'UPGRADE_SELECT' | 'GAME_OVER';
 
 const TRANSITIONS: Record<RunPhase, readonly RunPhase[]> = {
   MENU: ['PLAYING'],
-  PLAYING: ['PAUSED', 'GAME_OVER', 'MENU'],
+  PLAYING: ['PAUSED', 'UPGRADE_SELECT', 'GAME_OVER', 'MENU'],
+  UPGRADE_SELECT: ['PLAYING', 'MENU'],
   PAUSED: ['PLAYING', 'MENU', 'GAME_OVER'],
   GAME_OVER: ['PLAYING', 'MENU'],
 };

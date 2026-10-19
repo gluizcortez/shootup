@@ -2,9 +2,10 @@ import { createWeaponState, pelletAngles, rollDamage, tickWeapon } from '../comb
 import type { WeaponDef, WeaponState } from '../combat/weapon';
 import { ProjectilePool } from '../combat/projectiles';
 import type { Projectile } from '../combat/projectiles';
-import { createEnemy, integrateEnemy, muzzlePosition } from '../enemies/enemyPhysics';
+import { createEnemy, integrateEnemy, muzzlePosition, rangedDef } from '../enemies/enemyPhysics';
 import { updateGalinha } from '../enemies/galinhaRambo';
 import { updatePato } from '../enemies/patoPistoleiro';
+import { updateVaca } from '../enemies/vacaLoca';
 import type { Enemy, EnemyContext, EnemyDef, EnemyKind } from '../enemies/types';
 import { Rng } from '../math/rng';
 import { boxesOverlap, sweptCircleHitsBox } from '../physics/collision';
@@ -18,6 +19,8 @@ import type { ComboState, ComboTuning } from '../scoring/combo';
 import type { GameEvent } from './events';
 import { createWaveState, tickWaves } from './waves';
 import type { WaveConfig, WaveState } from './waves';
+import { computeStats, rollOffer } from '../upgrades/upgrades';
+import type { Rarity, StatClamp, StatKey, Stats, UpgradeDef } from '../upgrades/types';
 
 export interface PlayerConfig {
   hw: number;
@@ -31,6 +34,15 @@ export interface PlayerConfig {
   motor: MotorTuning;
 }
 
+export interface UpgradeConfig {
+  pool: readonly UpgradeDef[];
+  /** Peso de sorteio por raridade. */
+  weights: Record<Rarity, number>;
+  clamps: Partial<Record<StatKey, StatClamp>>;
+  /** Cartas por oferta entre ondas. */
+  offerSize: number;
+}
+
 export interface WorldConfig {
   bounds: ArenaBounds;
   terrain: TerrainDef;
@@ -39,6 +51,7 @@ export interface WorldConfig {
   enemies: Record<EnemyKind, EnemyDef>;
   waves: WaveConfig;
   combo: ComboTuning;
+  upgrades: UpgradeConfig;
   projectileCapacity: number;
 }
 
@@ -57,6 +70,7 @@ export interface PlayerState {
   px: number;
   py: number;
   hp: number;
+  maxHp: number;
   invuln: number;
   aimAngle: number;
   alive: boolean;
@@ -101,12 +115,23 @@ export class World {
   wavesEnabled = true;
   /** Runs com comandos de debug não podem ir para ranking. */
   debugTainted = false;
+  /** Oferece cartas entre ondas (desligado em alguns testes). */
+  upgradesEnabled = true;
+  /** Cartas na mão: id → stacks. */
+  readonly owned = new Map<string, number>();
+  /** Oferta aberta; enquanto existir, a simulação fica congelada esperando a escolha. */
+  offer: UpgradeDef[] | null = null;
+  /** Arma e movimento efetivos (base + cartas). */
+  weapon: WeaponDef;
+  motorTuning: MotorTuning;
+  effective: Stats;
 
   private nextUid = 1;
   private readonly angleScratch: number[] = [];
   private readonly enemyBox: Box = { x: 0, y: 0, hw: 0, hh: 0 };
   private readonly playerBox: Box = { x: 0, y: 0, hw: 0, hh: 0 };
   private readonly ctx: EnemyContext;
+  private readonly upgradeDefs: ReadonlyMap<string, UpgradeDef>;
 
   constructor(
     readonly config: WorldConfig,
@@ -124,6 +149,7 @@ export class World {
       px: motor.x,
       py: motor.y,
       hp: p.maxHp,
+      maxHp: p.maxHp,
       invuln: 0,
       aimAngle: 0,
       alive: true,
@@ -131,6 +157,11 @@ export class World {
     };
     this.projectiles = new ProjectilePool(config.projectileCapacity);
     this.waves = createWaveState(config.waves);
+    this.upgradeDefs = new Map(config.upgrades.pool.map((d) => [d.id, d]));
+    this.weapon = { ...config.weapon };
+    this.motorTuning = { ...p.motor };
+    this.effective = this.baseStats();
+    this.recomputeStats();
 
     const world = this;
     this.ctx = {
@@ -142,6 +173,7 @@ export class World {
       },
       bounds: b,
       rng: this.rng,
+      groundAt: (x) => this.terrain.groundAt(x),
       fire: (e, angle) => this.enemyFire(e, angle),
       telegraph: (e, duration) =>
         this.emit({ type: 'enemyTelegraph', uid: e.uid, kind: e.def.id, state: e.state, duration }),
@@ -170,7 +202,7 @@ export class World {
   /** Anuncia um animal no topo, na coluna `xNorm` (0 = esquerda, 1 = direita). */
   spawnEnemy(kind: EnemyKind, xNorm: number): Enemy {
     const def = this.config.enemies[kind];
-    const hoverY = this.rng.range(def.hoverMinY, def.hoverMaxY);
+    const hoverY = def.role === 'ranged' ? this.rng.range(def.hoverMinY, def.hoverMaxY) : 0;
     const e = createEnemy(this.nextUid++, def, xNorm, this.config.bounds, hoverY);
     this.enemies.push(e);
     this.emit({ type: 'enemyIncoming', uid: e.uid, kind, x: e.x, warn: e.def.warnTime });
@@ -178,6 +210,7 @@ export class World {
   }
 
   step(input: SimInput, dt: number): void {
+    if (this.offer) return; // escolhendo carta: tudo parado
     if (!this.player.alive) {
       // O mundo continua (projéteis voando, inimigos comemorando) mas sem jogador.
       this.stepProjectiles(dt);
@@ -200,7 +233,7 @@ export class World {
     p.py = m.y;
     p.invuln = Math.max(0, p.invuln - dt);
 
-    stepMotor(m, input, this.config.player.motor, this.config.bounds, this.terrain, dt);
+    stepMotor(m, input, this.motorTuning, this.config.bounds, this.terrain, dt);
     if (m.justJumped) this.emit({ type: 'playerJumped', x: m.x, y: m.y + m.hh });
     if (m.justLanded) this.emit({ type: 'playerLanded', x: m.x, y: m.y + m.hh, speed: m.landingSpeed });
 
@@ -209,14 +242,14 @@ export class World {
     const sy = m.y + this.config.player.shoulder.y;
     p.aimAngle = Math.atan2(input.aimY - sy, input.aimX - sx);
 
-    const w = this.config.weapon;
+    const w = this.weapon;
     const shots = tickWeapon(p.weapon, w, input.fireHeld, dt);
     for (let s = 0; s < shots; s++) {
       const mx = sx + Math.cos(p.aimAngle) * w.barrelLength;
       const my = sy + Math.sin(p.aimAngle) * w.barrelLength;
       for (const a of pelletAngles(w, p.aimAngle, this.rng, this.angleScratch)) {
         const roll = rollDamage(w, this.rng);
-        this.projectiles.spawn(
+        const bullet = this.projectiles.spawn(
           'player',
           mx,
           my,
@@ -229,6 +262,8 @@ export class World {
           w.projectileLifetime,
           w.id,
         );
+        bullet.pierceLeft = w.pierce;
+        bullet.ricochetLeft = w.ricochet;
       }
       this.stats.shotsFired++;
       this.emit({ type: 'shot', x: mx, y: my, angle: p.aimAngle, weaponId: w.id });
@@ -241,19 +276,26 @@ export class World {
       e.px = e.x;
       e.py = e.y;
       const def = e.def;
+      const before = e.state;
       if (this.player.alive) {
         if (def.behaviour === 'pato') updatePato(e, def, this.ctx, dt);
-        else updateGalinha(e, def, this.ctx, dt);
+        else if (def.behaviour === 'galinha') updateGalinha(e, def, this.ctx, dt);
+        else updateVaca(e, def, this.ctx, dt);
       } else {
         e.vx *= 0.9;
-        e.vy *= 0.9;
+        if (def.role === 'ranged') e.vy *= 0.9;
       }
-      integrateEnemy(e, b, dt);
+      if (before !== e.state) {
+        if (e.state === 'charge') this.emit({ type: 'enemyCharge', uid: e.uid, kind: def.id, x: e.x, y: e.y + def.hh, dir: e.chargeDir });
+        else if (e.state === 'dizzy') this.emit({ type: 'enemyStunned', uid: e.uid, kind: def.id, x: e.x, y: e.y });
+      }
+      const impact = integrateEnemy(e, b, this.ctx.groundAt, dt);
+      if (impact > 0) this.emit({ type: 'enemyLanded', uid: e.uid, kind: def.id, x: e.x, y: e.y + def.hh, speed: impact });
     }
   }
 
   private enemyFire(e: Enemy, angle: number): void {
-    const d = e.def;
+    const d = rangedDef(e);
     const m = muzzlePosition(e);
     this.projectiles.spawn(
       'enemy',
@@ -302,10 +344,15 @@ export class World {
     }
   }
 
+  /**
+   * Acerto de bala do jogador. Ordem: dano → perfuração (segue reto) →
+   * ricochete (vira para o inimigo mais próximo) → some.
+   * Devolve true se a bala tocou alguém neste passo.
+   */
   private hitEnemies(p: Projectile): boolean {
     const box = this.enemyBox;
     for (const e of this.enemies) {
-      if (!e.alive || e.state === 'incoming') continue;
+      if (!e.alive || e.state === 'incoming' || e.uid === p.lastHitUid) continue;
       box.x = e.x;
       box.y = e.y;
       box.hw = e.def.hw;
@@ -315,17 +362,52 @@ export class World {
       const speed = Math.hypot(p.vx, p.vy) || 1;
       const dirX = p.vx / speed;
       const dirY = p.vy / speed;
-      e.hp -= p.damage;
-      e.vx += dirX * p.knockback * e.def.knockbackScale;
-      e.vy += dirY * p.knockback * 0.6 * e.def.knockbackScale; // tranco no ar
+      const d = e.def;
+      const damage = d.behaviour === 'vaca' && e.state === 'dizzy' ? p.damage * d.dizzyDamageMult : p.damage;
+      e.hp -= damage;
+      e.vx += dirX * p.knockback * d.knockbackScale;
+      // Tranco no ar só para quem voa; quem anda no chão continua no chão.
+      if (d.role === 'ranged') e.vy += dirY * p.knockback * 0.6 * d.knockbackScale;
       this.stats.shotsHit++;
       if (p.crit) this.stats.crits++;
-      this.emit({ type: 'enemyHit', uid: e.uid, kind: e.def.id, x: p.x, y: p.y, damage: p.damage, crit: p.crit, dirX, dirY });
+      this.emit({ type: 'enemyHit', uid: e.uid, kind: d.id, x: p.x, y: p.y, damage, crit: p.crit, dirX, dirY });
       if (e.hp <= 0) this.killEnemy(e, p.crit);
-      this.projectiles.release(p);
+
+      p.lastHitUid = e.uid;
+      if (p.pierceLeft > 0) {
+        p.pierceLeft--;
+      } else if (p.ricochetLeft > 0 && this.redirectToNearest(p, e)) {
+        p.ricochetLeft--;
+      } else {
+        this.projectiles.release(p);
+      }
       return true;
     }
     return false;
+  }
+
+  /** Vira a bala para o inimigo vivo mais próximo (exceto `from`). */
+  private redirectToNearest(p: Projectile, from: Enemy): boolean {
+    let best: Enemy | null = null;
+    let bestD = Infinity;
+    for (const o of this.enemies) {
+      if (o === from || !o.alive || o.state === 'incoming') continue;
+      const dd = (o.x - p.x) ** 2 + (o.y - p.y) ** 2;
+      if (dd < bestD) {
+        bestD = dd;
+        best = o;
+      }
+    }
+    if (!best) return false;
+    const speed = Math.hypot(p.vx, p.vy);
+    const angle = Math.atan2(best.y - p.y, best.x - p.x);
+    p.vx = Math.cos(angle) * speed;
+    p.vy = Math.sin(angle) * speed;
+    p.px = p.x;
+    p.py = p.y;
+    p.life = Math.max(p.life, 0.8);
+    this.emit({ type: 'ricochet', x: p.x, y: p.y, angle });
+    return true;
   }
 
   private killEnemy(e: Enemy, crit: boolean): void {
@@ -420,7 +502,72 @@ export class World {
       const bonus = this.config.waves.clearBonusPerWave * this.waves.wave;
       this.score += bonus;
       this.emit({ type: 'waveCleared', wave: this.waves.wave, bonus });
+      if (this.upgradesEnabled) this.openOffer();
     }
+  }
+
+  /** Sorteia cartas e congela a simulação até `pickUpgrade`. */
+  openOffer(): void {
+    const u = this.config.upgrades;
+    const cards = rollOffer(u.pool, this.owned, u.weights, this.rng, u.offerSize);
+    if (cards.length === 0) return;
+    this.offer = cards;
+    this.emit({ type: 'upgradeOffer', wave: this.waves.wave, cards: cards.map((c) => c.id) });
+  }
+
+  /** Aplica a carta escolhida da oferta aberta. Devolve false se o id não está na oferta. */
+  pickUpgrade(id: string): boolean {
+    const card = this.offer?.find((c) => c.id === id);
+    if (!card) return false;
+    const stacks = (this.owned.get(id) ?? 0) + 1;
+    this.owned.set(id, stacks);
+    const oldMax = this.player.maxHp;
+    this.recomputeStats();
+    const p = this.player;
+    // Vida máxima nova vem cheia; cura imediata da carta por cima.
+    p.hp = Math.min(p.maxHp, p.hp + Math.max(0, p.maxHp - oldMax) + (card.onPick?.heal ?? 0));
+    this.offer = null;
+    this.emit({ type: 'upgradePicked', id, stacks });
+    return true;
+  }
+
+  private baseStats(): Stats {
+    const w = this.config.weapon;
+    const p = this.config.player;
+    return {
+      fireInterval: w.fireInterval,
+      pellets: w.pelletsPerShot,
+      spreadDeg: w.spreadDeg,
+      damage: w.damage,
+      critChance: w.critChance,
+      critMultiplier: w.critMultiplier,
+      projectileSpeed: w.projectileSpeed,
+      pierce: w.pierce,
+      ricochet: w.ricochet,
+      runSpeed: p.motor.runSpeed,
+      jumpVelocity: p.motor.jumpVelocity,
+      maxHp: p.maxHp,
+    };
+  }
+
+  /** Recalcula arma, movimento e vida a partir da base + cartas na mão. */
+  recomputeStats(): void {
+    const st = computeStats(this.baseStats(), this.owned, this.upgradeDefs, this.config.upgrades.clamps);
+    this.effective = st;
+    const w = this.weapon;
+    w.fireInterval = st.fireInterval;
+    w.pelletsPerShot = st.pellets;
+    w.spreadDeg = st.spreadDeg;
+    w.damage = st.damage;
+    w.critChance = st.critChance;
+    w.critMultiplier = st.critMultiplier;
+    w.projectileSpeed = st.projectileSpeed;
+    w.pierce = st.pierce;
+    w.ricochet = st.ricochet;
+    this.motorTuning.runSpeed = st.runSpeed;
+    this.motorTuning.jumpVelocity = st.jumpVelocity;
+    this.player.maxHp = st.maxHp;
+    this.player.hp = Math.min(this.player.hp, st.maxHp);
   }
 
   /** Inimigos restantes na onda atual (vivos + ainda por entrar). */

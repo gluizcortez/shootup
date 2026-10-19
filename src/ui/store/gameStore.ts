@@ -3,7 +3,7 @@ import type { RunPhase } from '@/core/run/runPhase';
 import { bus } from '@/shared/bus';
 import { loadSettings, saveSettings } from '@/shared/settings';
 import type { Settings } from '@/shared/settings';
-import type { Callout, HudSnapshot, PerfSnapshot, RunSummary } from '@/shared/types';
+import type { Callout, CardInfo, CardOffer, HudSnapshot, PerfSnapshot, RunSummary } from '@/shared/types';
 
 export interface UiState {
   phase: RunPhase;
@@ -11,6 +11,8 @@ export interface UiState {
   summary: RunSummary | null;
   callout: Callout | null;
   perf: PerfSnapshot | null;
+  offer: CardOffer | null;
+  hand: CardInfo[];
   settings: Settings;
 }
 
@@ -20,6 +22,8 @@ let state: UiState = {
   summary: null,
   callout: null,
   perf: null,
+  offer: null,
+  hand: [],
   settings: loadSettings(),
 };
 
@@ -36,6 +40,8 @@ bus.on('game:hud', (hud) => set({ hud }));
 bus.on('game:summary', (summary) => set({ summary }));
 bus.on('game:callout', (callout) => set({ callout }));
 bus.on('game:perf', (perf) => set({ perf }));
+bus.on('game:offer', (offer) => set({ offer }));
+bus.on('game:hand', (hand) => set({ hand }));
 
 export function subscribe(fn: () => void): () => void {
   listeners.add(fn);
@@ -64,4 +70,6 @@ export const actions = {
   resume: () => bus.emit('ui:resume', undefined),
   restart: () => bus.emit('ui:restart', undefined),
   quitToMenu: () => bus.emit('ui:quitToMenu', undefined),
+  pickCard: (id: string) => bus.emit('ui:pickCard', id),
+  cardHover: () => bus.emit('ui:cardHover', undefined),
 };

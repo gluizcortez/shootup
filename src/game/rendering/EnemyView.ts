@@ -20,8 +20,21 @@ interface Rig {
   exclY: number;
 }
 
+/** Contrato comum dos visuais de inimigo (pool por espécie na cena). */
+export interface EnemyVisual {
+  readonly kind: EnemyKind;
+  uid: number;
+  bind(e: Enemy): void;
+  release(): void;
+  onHit(): void;
+  onTelegraph(duration: number): void;
+  onShot(): void;
+  onLanded(speed: number): void;
+  update(e: Enemy, alpha: number, dt: number, reducedMotion: boolean): void;
+}
+
 /** Visual de um animal atirador que paira no alto. Reaproveitado via pool por espécie. */
-export class EnemyView {
+export class EnemyView implements EnemyVisual {
   readonly root: Phaser.GameObjects.Container;
   private readonly rig: Rig;
   private readonly shadow: Phaser.GameObjects.Image;
@@ -128,6 +141,8 @@ export class EnemyView {
       this.rig.excl.setVisible(false);
     }
   }
+
+  onLanded(): void {}
 
   private parts(): Phaser.GameObjects.Image[] {
     return [this.rig.body, this.rig.prop, this.rig.gun];

@@ -20,6 +20,10 @@ export interface WeaponDef {
   knockback: number;
   /** Distância do ombro até a boca do cano. */
   barrelLength: number;
+  /** Quantos inimigos a bala atravessa antes de parar. */
+  pierce: number;
+  /** Quantas vezes a bala quica para o inimigo mais próximo ao acertar. */
+  ricochet: number;
 }
 
 export interface WeaponState {

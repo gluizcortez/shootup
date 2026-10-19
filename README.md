@@ -1,7 +1,7 @@
 # ShootUp!
 
 Arena 2D lateral, shoot 'em up roguelite em ondas, com animais cômicos armados.
-Este repositório está na **Fase 0** do [GDD](docs/SHOOTUP_GDD.md): um protótipo jogável focado em movimento, tiro e no primeiro combate contra o **Pato Pistoleiro** e a **Galinha Rambo**. O plano técnico está em [docs/PLANO_FASE0.md](docs/PLANO_FASE0.md).
+Este repositório está na **Fase 0** do [GDD](docs/SHOOTUP_GDD.md), com os primeiros itens da Fase 1: um protótipo jogável focado em movimento e tiro, com o **Pato Pistoleiro**, a **Galinha Rambo**, a **Vaca Loca** (primeiro inimigo corpo a corpo) e **cartas entre ondas**. O plano técnico está em [docs/PLANO_FASE0.md](docs/PLANO_FASE0.md).
 
 ## Como rodar
 
@@ -37,26 +37,42 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 | Pausar / configurações | `Esc` ou `P` |
 | Reiniciar | `R` (na pausa ou no game over), `Enter` no menu |
 | Overlay de desempenho | `F3` (FPS, média e P95 do quadro, contagem de entidades) |
-| Teste de estresse | `F4` spawna 3 galinhas + 3 patos (só em `npm run dev` ou com `?debug` na URL; a run fica marcada como debug) |
+| Escolher carta | Clique, ou `1` / `2` / `3` |
+| Teste de estresse | `F4` spawna 3 galinhas + 3 patos + 1 vaca (só em `npm run dev` ou com `?debug` na URL; a run fica marcada como debug) |
+| Testar cartas | `F5` abre uma oferta de cartas na hora (mesmas condições do `F4`) |
 
 ## Como testar a sensação do jogo
 
 - **Movimento:** acelera e para quase na hora; virar de lado é instantâneo; pulo curto se tocar, longo se segurar; queda mais pesada que a subida; dá para pular logo depois de "sair" do chão (coyote time) e o pulo apertado pouco antes de pousar é lembrado (jump buffer).
 - **Pistola:** flash na boca, cápsula ejetada que quica, recuo visual do braço, mira que pulsa a cada tiro, hitmarker, número de dano (crítico em âmbar com som próprio), flash branco e empurrão no inimigo, nuvem de penas e acessório voando no abate, hitstop curtinho só no abate.
-- **Estrutura de combate (como em Seraph's Last Stand):** você fica no chão e atira para cima. Cada animal é anunciado por uma seta coral piscando no topo, com um assobio, e entra descendo. Os **atiradores nunca vêm até você**: ficam patrulhando no alto, sempre deslocados na horizontal, e atiram para baixo. Só inimigos corpo a corpo (ainda nenhum na Fase 0) se aproximam do jogador. A sombra no chão mostra a coluna de cada atirador.
+- **Estrutura de combate (como em Seraph's Last Stand):** você fica no chão e atira para cima. Cada animal é anunciado por uma seta coral piscando no topo, com um assobio, e entra descendo. Os **atiradores nunca vêm até você**: ficam patrulhando no alto, sempre deslocados na horizontal, e atiram para baixo. Só inimigos corpo a corpo (a Vaca Loca) se aproximam do jogador. A sombra no chão mostra a coluna de cada atirador.
 - **Pato Pistoleiro:** voa pendurado num cachinho de balões de festa. Antes de cada tiro faz pose dramática com "!" e brilho na pistolinha e acompanha você com a mira; depois dá UM tiro mirado. Ao morrer, os balões sobem sozinhos.
 - **Galinha Rambo:** paira mais alto, de jetpack improvisado. O cano começa a girar com zumbido subindo e acompanha você; perto do fim do aviso a mira TRAVA (janela para sair da linha) e sai a rajada naquela direção, empurrando a galinha para trás no ar.
+- **Vaca Loca (corpo a corpo):** cai do topo e anda no chão. Bate o casco três vezes com "!" (aviso), solta um "muuu" e investe em linha reta, mais rápido do que você corre, levantando poeira. Ela não muda de direção no meio da investida: pule por cima ou suba a rampa. Se passar de você, freia e tenta de novo; se bater na parede, fica tonta com estrelinhas e leva 50% a mais de dano. É o único inimigo que causa dano por contato. Estreia na onda 2.
+- **Cartas entre ondas:** ao limpar uma onda o jogo pausa e oferece 3 cartas (sorteadas com a seed da run, pesadas por raridade). Passe o mouse para ver a carta subir, inclinar e brilhar; escolha com clique ou `1`/`2`/`3`. As cartas pegas aparecem no canto inferior direito.
+
+  | Carta | Efeito | Máx. |
+  |---|---|---|
+  | Tiro Duplo | +1 bala por disparo, mais aberto, 80% do dano por bala | 3 |
+  | Gatilho Nervoso | atira 25% mais rápido | 4 |
+  | Bala Viajante | atravessa +1 inimigo e voa 12% mais rápido | 2 |
+  | Sinuca Mortal | ao acertar, quica para o inimigo mais próximo | 2 |
+  | Mira Cirúrgica | +12% de crítico e críticos +50% mais fortes | 3 |
+  | Pé Leve | corre 15% mais rápido e pula mais alto | 2 |
+  | Casco Duro | +1 coração máximo e cura 1 | 3 |
+
+  As cartas são dados em `src/game/data/upgrades.ts`. O cálculo segue sempre a mesma ordem: valor base, depois a soma de todos os bônus fixos, depois o produto de todos os multiplicadores, depois os limites de cada atributo (veja `computeStats` em `src/core/upgrades/upgrades.ts`). Assim a ordem em que as cartas foram pegas não muda o resultado.
 - **Relevo:** o chão tem platôs altos colados às paredes, rampas e morrinhos nos cantos (centro plano). Dá para subir andando, esquivar descendo a ladeira e pular mais alto lá de cima. A forma está em `TERRAIN` (`src/game/data/arena.ts`).
 - **Balas:** pistola a 880 px/s, Pato a 290 px/s e Galinha a 330 px/s, para dar tempo de ler e desviar.
 - **Cenário:** estúdio visto da plateia, com a metade de cima livre (treliça de luzes no topo, de onde os animais caem) e o logo apagado no fundo para não competir com os inimigos.
-- **Ondas:** 1–2 só patos, a galinha estreia na 3, depois escala sozinho. Combo multiplica pontos e anima a plateia.
+- **Ondas:** a 1 só tem patos, a vaca estreia na 2 e a galinha na 3; depois o jogo escala sozinho. Combo multiplica pontos e anima a plateia.
 - **Opções (Esc):** tremor de tela, flashes, números de dano, quantidade de partículas e volume. `prefers-reduced-motion` liga um padrão mais calmo.
 
 ## Arquitetura
 
 ```text
 src/
-  core/      lógica pura (sem Phaser/DOM): física, armas, projéteis, IA, colisão, score, ondas, World
+  core/      lógica pura (sem Phaser/DOM): física, armas, projéteis, IA, colisão, score, ondas, cartas, World
   game/      Phaser: cenas, arte provisória, views com interpolação, VFX, áudio, input, dados (data-driven)
   ui/        React: HUD, título, pausa, game over, tokens visuais
   shared/    event bus tipado, settings, tipos e métricas de quadro
@@ -72,13 +88,14 @@ Decisões principais:
 - **React só para overlays.** O jogo emite um snapshot do HUD apenas quando algum número muda; o contador de pontos anima direto no DOM.
 - Armas, inimigos, ondas e física do jogador ficam em `src/game/data/` como dados tipados.
 
-## Estado da Fase 0
+## Estado
 
-Feito: arena 16:9 adaptável, personagem provisório, movimento/pulo/mira/tiro manual, pistola, colisões (com teste varrido para projéteis rápidos), vida com i-frames, morte em câmera lenta, resumo da run e reinício em um clique, HUD mínimo, pausa e configurações salvas localmente, Pato Pistoleiro e Galinha Rambo, ondas simples.
+Feito: arena 16:9 adaptável, personagem provisório, movimento/pulo/mira/tiro manual, pistola, colisões (com teste varrido para projéteis rápidos), vida com i-frames, morte em câmera lenta, resumo da run e reinício em um clique, HUD mínimo, pausa e configurações salvas localmente, Pato Pistoleiro, Galinha Rambo, Vaca Loca, ondas simples, 7 cartas entre ondas (com perfuração e ricochete).
 
-Fora do escopo (próximas fases, só quando pedido): cartas e árvore de upgrades, shotgun, outros animais e chefes, menu completo, música, Supabase/ranking.
+Ainda não feito (só quando pedido): árvore de sinergias, shotgun, outros animais e chefes, menu completo, música, Supabase/ranking.
 
 Problemas conhecidos:
 - Arte e sons são **placeholders procedurais temporários**, desenhados em código.
 - Os números de FPS só foram medidos num Chromium headless com renderização por software (onde o canvas 2× fica em ~5 FPS). Falta medir em hardware real com o `F3`.
-- Balanceamento (vida, dano, cadência, velocidades) é chute inicial e está todo em `src/game/data/`.
+- Balanceamento (vida, dano, cadência, velocidades, pesos das cartas) é chute inicial e está todo em `src/game/data/`.
+- As cartas ainda não têm arte própria: usam um ícone simples desenhado em SVG.
