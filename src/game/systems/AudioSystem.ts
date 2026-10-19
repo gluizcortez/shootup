@@ -2,6 +2,8 @@
  * SFX 100% sintetizados com WebAudio: originais, sem arquivos e sem licença
  * de terceiros. Placeholders até a mixagem definitiva (GDD §9).
  */
+import { MusicSystem } from './MusicSystem';
+
 export type SfxId =
   | 'shot'
   | 'hit'
@@ -71,6 +73,10 @@ const GALINHA_SCALE = [523, 587, 659, 784, 880, 1046, 1175];
 export class AudioSystem {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private musicGain: GainNode | null = null;
+  /** Trilha sonora; existe só depois que o navegador libera o áudio. */
+  music: MusicSystem | null = null;
+  private musicVolume = 0.5;
   private noise: AudioBuffer | null = null;
   private readonly last = new Map<SfxId, number>();
   private voiceEnds: number[] = [];
@@ -92,6 +98,9 @@ export class AudioSystem {
         comp.ratio.value = 4;
         this.master.connect(comp).connect(this.ctx.destination);
         this.noise = this.makeNoise(this.ctx);
+        this.musicGain = this.ctx.createGain();
+        this.musicGain.connect(comp);
+        this.music = new MusicSystem(this.ctx, this.musicGain, this.noise);
         this.applyVolume();
       }
       if (this.ctx.state === 'suspended') void this.ctx.resume();
@@ -101,14 +110,17 @@ export class AudioSystem {
     }
   }
 
-  setVolume(volume: number, muted: boolean): void {
+  setVolume(volume: number, muted: boolean, musicVolume = this.musicVolume): void {
     this.volume = volume;
     this.muted = muted;
+    this.musicVolume = musicVolume;
     this.applyVolume();
   }
 
   private applyVolume(): void {
-    if (this.master && this.ctx) this.master.gain.setValueAtTime(this.muted ? 0 : this.volume * 0.6, this.ctx.currentTime);
+    if (!this.ctx) return;
+    this.master?.gain.setValueAtTime(this.muted ? 0 : this.volume * 0.6, this.ctx.currentTime);
+    this.musicGain?.gain.setValueAtTime(this.muted ? 0 : this.musicVolume * 0.55, this.ctx.currentTime);
   }
 
   play(id: SfxId, param = 1): void {
@@ -473,5 +485,6 @@ export class AudioSystem {
   destroy(): void {
     void this.ctx?.close().catch(() => undefined);
     this.ctx = null;
+    this.music = null;
   }
 }

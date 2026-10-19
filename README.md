@@ -47,6 +47,10 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 - **Menu principal:** logo pulando letra por letra, selo "AO VIVO" piscando, refletores varrendo o palco e um letreiro com piadas dos patrocinadores. Botões: Jogar, Placar, Como jogar (controles e o elenco de inimigos) e Opções. O recorde atual aparece embaixo.
 - **Placar local:** top 10 salvo só neste navegador (`localStorage`). Ao morrer, se a pontuação entrar no top 10, você digita seu nome (até 12 caracteres) e vê sua posição destacada; no 1º lugar toca uma fanfarra de "NOVO RECORDE!". Runs com comandos de debug não entram. O ranking online (Supabase, validado no servidor) fica para uma fase futura.
 
+## Trilha sonora
+
+"Auditório Turbo": synth-pop anos 80 composta para o jogo e sintetizada em tempo real com WebAudio (`src/game/data/music.ts` + `src/game/systems/MusicSystem.ts`), sem arquivos de áudio. Bateria com caixa "gated reverb", baixo em oitavas, melodia chiptune que alterna com um kazoo. Acelera com o chefe em campo (com sininho de vaca, orquestra "TÃÃÃ" e troca de tom brega) e no último coração; as duas situações somam. Pausa e cartas abafam a música; a derrota toca um trombone triste. Volume próprio em Opções.
+
 ## Como testar a sensação do jogo
 
 - **Movimento:** acelera e para quase na hora; virar de lado é instantâneo; pulo curto se tocar, longo se segurar; queda mais pesada que a subida; dá para pular logo depois de "sair" do chão (coyote time) e o pulo apertado pouco antes de pousar é lembrado (jump buffer).

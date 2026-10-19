@@ -8,6 +8,8 @@ export interface Settings {
   vfxQuality: VfxQuality;
   /** 0..1 */
   sfxVolume: number;
+  /** 0..1 */
+  musicVolume: number;
   muted: boolean;
 }
 
@@ -28,6 +30,7 @@ export function defaultSettings(reducedMotion = prefersReducedMotion()): Setting
     damageNumbers: true,
     vfxQuality: reducedMotion ? 'medium' : 'high',
     sfxVolume: 0.7,
+    musicVolume: 0.5,
     muted: false,
   };
 }
@@ -44,6 +47,7 @@ function sanitize(raw: unknown, base: Settings): Settings {
     damageNumbers: bool(r.damageNumbers, base.damageNumbers),
     vfxQuality: q === 'low' || q === 'medium' || q === 'high' ? q : base.vfxQuality,
     sfxVolume: num(r.sfxVolume, base.sfxVolume),
+    musicVolume: num(r.musicVolume, base.musicVolume),
     muted: bool(r.muted, base.muted),
   };
 }

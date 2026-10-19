@@ -21,6 +21,7 @@ import { ProjectileRenderer } from '../rendering/ProjectileRenderer';
 import { Stage } from '../rendering/stage';
 import { TEX_SCALE } from '../rendering/textures';
 import { AudioSystem } from '../systems/AudioSystem';
+import { musicModeFor } from '../data/music';
 import { Feedback } from '../systems/Feedback';
 import { FloatingText } from '../systems/FloatingText';
 import { InputSystem } from '../systems/InputSystem';
@@ -80,6 +81,7 @@ export class ArenaScene extends Phaser.Scene {
   private readonly liveViews = new Map<number, EnemyVisual>();
   private trailTimer = 0;
   private heartbeatTimer = 0;
+  private musicMuffled = false;
   private lastMilestone = 0;
   private offerId = 0;
   private readonly simInput: SimInput = { ...EMPTY_INPUT };
@@ -309,8 +311,28 @@ export class ArenaScene extends Phaser.Scene {
 
   private startRun(): void {
     this.audio.unlock();
+    this.audio.music?.restart();
     this.resetRun();
     this.setPhase('PLAYING');
+  }
+
+  /** Trilha: chefe em campo e último coração aceleram; pausa e cartas abafam. */
+  private updateMusic(phase: RunPhase, dt: number): void {
+    const music = this.audio.music;
+    if (!music) return;
+    if (phase === 'MENU' && !music.isPlaying) music.restart();
+    const muffled = phase === 'MENU' || phase === 'PAUSED' || phase === 'UPGRADE_SELECT';
+    if (muffled !== this.musicMuffled) {
+      this.musicMuffled = muffled;
+      music.setMuffled(muffled);
+    }
+    const w = this.world;
+    const mode = musicModeFor({
+      inRun: phase !== 'MENU' && phase !== 'GAME_OVER',
+      bossActive: w.enemies.some((e) => e.def.boss && e.state !== 'incoming'),
+      lowHp: w.player.alive && w.player.hp === 1,
+    });
+    music.update(mode, dt);
   }
 
   private acquireView(uid: number, kind: EnemyKind): EnemyVisual {
@@ -351,6 +373,7 @@ export class ArenaScene extends Phaser.Scene {
       }
       view.update(e, alpha, running ? dt : 0, this.reducedMotion);
     }
+    this.updateMusic(phase, dt);
     // Vida no fim: coração batendo (o HUD pulsa em vermelho junto).
     if (phase === 'PLAYING' && w.player.alive && w.player.hp === 1) {
       this.heartbeatTimer -= dt;
@@ -437,6 +460,7 @@ export class ArenaScene extends Phaser.Scene {
         bus.emit('game:callout', { id: Date.now(), title: 'ONDA LIMPA!', subtitle: `+${ev.bonus} de bônus da produção` });
       } else if (ev.type === 'playerDied') {
         this.deathTimer = DEATH_SEQUENCE;
+        this.audio.music?.sadTrombone();
       } else if (ev.type === 'enemyKilled') {
         this.announceCombo(ev.combo);
         if (ev.kind === 'don_pombone') {

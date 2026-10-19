@@ -35,6 +35,18 @@ export function SettingsPanel() {
         />
         <output>{Math.round(s.sfxVolume * 100)}%</output>
       </label>
+      <label className="setting">
+        <span>Volume da música</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={s.musicVolume}
+          onChange={(e) => updateSettings({ musicVolume: Number(e.target.value) })}
+        />
+        <output>{Math.round(s.musicVolume * 100)}%</output>
+      </label>
       <div className="setting">
         <span>Partículas</span>
         <div className="seg">

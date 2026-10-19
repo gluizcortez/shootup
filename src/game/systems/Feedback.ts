@@ -104,7 +104,7 @@ export class Feedback {
     this.flashOn = s.flashes;
     this.numbersOn = s.damageNumbers;
     this.shake.intensity = s.screenShake;
-    this.audio.setVolume(s.sfxVolume, s.muted);
+    this.audio.setVolume(s.sfxVolume, s.muted, s.musicVolume);
   }
 
   private count(n: number): number {
