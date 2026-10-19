@@ -82,12 +82,13 @@ describe('World — atiradores ficam no alto (Seraph-like)', () => {
     };
   };
 
-  for (const kind of ['pato_pistoleiro', 'galinha_rambo'] as const) {
+  for (const kind of ['pato_pistoleiro', 'galinha_rambo', 'pombo_mafioso', 'porco_executivo', 'don_pombone'] as const) {
     it(`${kind} nunca desce até o jogador nem encosta nele`, () => {
       const w = new World(WORLD_CONFIG, 99);
       w.wavesEnabled = false;
       invulnerable(w);
-      const def = kind === 'pato_pistoleiro' ? PATO_PISTOLEIRO : GALINHA_RAMBO;
+      const def = WORLD_CONFIG.enemies[kind];
+      if (def.role !== 'ranged') throw new Error('esperado atirador');
       const enemies = [w.spawnEnemy(kind, 0.2), w.spawnEnemy(kind, 0.5), w.spawnEnemy(kind, 0.8)];
       const playerTop = WORLD_CONFIG.bounds.floorY - WORLD_CONFIG.player.hh * 2;
       let maxY = -Infinity;

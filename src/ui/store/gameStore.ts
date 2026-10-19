@@ -18,7 +18,7 @@ export interface UiState {
 
 let state: UiState = {
   phase: 'MENU',
-  hud: { wave: 0, waveRemaining: 0, waveTotal: 0, score: 0, combo: 0, multiplier: 1, hp: 5, maxHp: 5, weaponName: 'Pistola' },
+  hud: { wave: 0, waveRemaining: 0, waveTotal: 0, score: 0, combo: 0, multiplier: 1, hp: 5, maxHp: 5, weaponName: 'Pistola', boss: null },
   summary: null,
   callout: null,
   perf: null,

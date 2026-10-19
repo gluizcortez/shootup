@@ -53,7 +53,14 @@ export class ArenaScene extends Phaser.Scene {
   private hitmarker!: Phaser.GameObjects.Image;
   private crossKick = 0;
   private hitmarkerT = 0;
-  private readonly viewPool: Record<EnemyKind, EnemyVisual[]> = { pato_pistoleiro: [], galinha_rambo: [], vaca_loca: [] };
+  private readonly viewPool: Record<EnemyKind, EnemyVisual[]> = {
+    pato_pistoleiro: [],
+    galinha_rambo: [],
+    vaca_loca: [],
+    pombo_mafioso: [],
+    porco_executivo: [],
+    don_pombone: [],
+  };
   private readonly liveViews = new Map<number, EnemyVisual>();
   private trailTimer = 0;
   private offerId = 0;
@@ -171,6 +178,15 @@ export class ArenaScene extends Phaser.Scene {
           this.world.spawnEnemy('pato_pistoleiro', 0.25 + i * 0.25);
         }
         this.world.spawnEnemy('vaca_loca', 0.2);
+        this.world.spawnEnemy('pombo_mafioso', 0.7);
+        this.world.spawnEnemy('porco_executivo', 0.4);
+      });
+      // F6: chama o Don Pombone na hora.
+      kb.on('keydown-F6', (e: KeyboardEvent) => {
+        e.preventDefault();
+        if (this.phase.phase !== 'PLAYING') return;
+        this.world.debugTainted = true;
+        this.world.spawnEnemy('don_pombone', 0.5);
       });
       // F5: abre uma oferta de cartas na hora (testar cartas sem limpar ondas).
       kb.on('keydown-F5', (e: KeyboardEvent) => {
@@ -382,6 +398,10 @@ export class ArenaScene extends Phaser.Scene {
         bus.emit('game:callout', { id: Date.now(), title: 'ONDA LIMPA!', subtitle: `+${ev.bonus} de bônus da produção` });
       } else if (ev.type === 'playerDied') {
         this.deathTimer = DEATH_SEQUENCE;
+      } else if (ev.type === 'bossEnraged') {
+        bus.emit('game:callout', { id: Date.now(), title: 'O DON FICOU BRAVO!', subtitle: 'agora é pessoal' });
+      } else if (ev.type === 'enemyKilled' && ev.kind === 'don_pombone') {
+        bus.emit('game:callout', { id: Date.now(), title: 'DON POMBONE DERRUBADO!', subtitle: 'a família está de luto' });
       } else if (ev.type === 'upgradeOffer') {
         this.openCards(ev.wave);
       }
@@ -439,6 +459,8 @@ export class ArenaScene extends Phaser.Scene {
 
   private emitHud(force: boolean): void {
     const w = this.world;
+    const b = w.enemies.find((e) => e.def.boss && e.state !== 'incoming');
+    const boss = b ? { name: b.def.name, hp: Math.max(0, Math.ceil(b.hp)), maxHp: b.def.maxHp, enraged: b.enraged } : null;
     const hud: HudSnapshot = {
       wave: w.waves.wave,
       waveRemaining: w.remainingInWave(),
@@ -449,9 +471,10 @@ export class ArenaScene extends Phaser.Scene {
       hp: w.player.hp,
       maxHp: w.player.maxHp,
       weaponName: WORLD_CONFIG.weapon.name,
+      boss,
     };
     // Chave barata: o HUD React só recebe algo quando um número muda.
-    const key = `${hud.wave}|${hud.waveRemaining}|${hud.waveTotal}|${hud.score}|${hud.combo}|${hud.hp}|${hud.maxHp}`;
+    const key = `${hud.wave}|${hud.waveRemaining}|${hud.waveTotal}|${hud.score}|${hud.combo}|${hud.hp}|${hud.maxHp}|${boss ? `${boss.hp}${boss.enraged}` : ''}`;
     if (!force && key === this.lastHud) return;
     this.lastHud = key;
     bus.emit('game:hud', hud);

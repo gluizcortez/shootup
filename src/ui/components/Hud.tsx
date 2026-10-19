@@ -19,7 +19,8 @@ function WaveBlock() {
   const wave = useGame((s) => s.hud.wave);
   const remaining = useGame((s) => s.hud.waveRemaining);
   const total = useGame((s) => s.hud.waveTotal);
-  const progress = total > 0 ? 1 - remaining / total : 0;
+  // Esquadrilhas contam como uma entrada mas viram vários animais: limita a barra.
+  const progress = total > 0 ? Math.min(1, Math.max(0, 1 - remaining / total)) : 0;
   return (
     <div className="hud-wave">
       <div className="hud-label">ONDA</div>
@@ -70,6 +71,19 @@ function Callout() {
   );
 }
 
+function BossBar() {
+  const boss = useGame((s) => s.hud.boss);
+  if (!boss) return null;
+  return (
+    <div className={`boss ${boss.enraged ? 'boss--enraged' : ''}`} data-testid="boss-bar">
+      <div className="boss-name">{boss.name.toUpperCase()}</div>
+      <div className="boss-bar">
+        <div className="boss-bar-fill" style={{ transform: `scaleX(${boss.hp / boss.maxHp})` }} />
+      </div>
+    </div>
+  );
+}
+
 /** Cartas na mão, canto inferior direito. */
 function Hand() {
   const hand = useGame((s) => s.hand);
@@ -110,6 +124,7 @@ export function Hud() {
         <Hearts hp={hp} max={maxHp} />
         <div className="hud-weapon">{weapon.toUpperCase()}</div>
       </div>
+      <BossBar />
       <Hand />
       <Callout />
       <Perf />

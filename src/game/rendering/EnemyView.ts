@@ -40,6 +40,11 @@ export class EnemyView implements EnemyVisual {
   private readonly shadow: Phaser.GameObjects.Image;
   /** Seta de aviso no topo da tela enquanto o animal está para entrar. */
   private readonly marker: Phaser.GameObjects.Image;
+  /** Bolha do escudo do Porco Executivo. */
+  private readonly shield: Phaser.GameObjects.Image;
+  private readonly shieldScale: number;
+  /** Escala do visual (o chefe é desenhado na base e ampliado). */
+  private readonly size: number;
   private readonly squash = new Spring(380, 12);
   private flash = 0;
   private time = Math.random() * 10;
@@ -55,15 +60,79 @@ export class EnemyView implements EnemyVisual {
     readonly kind: EnemyKind,
     private readonly groundAt: (x: number) => number,
   ) {
-    this.rig = kind === 'pato_pistoleiro' ? this.buildPato(scene) : this.buildGalinha(scene);
+    this.rig = this.build(scene, kind);
     this.shadow = scene.add.image(0, 0, 'shadow').setScale(0.9 * INV).setDepth(9);
+    const big = kind === 'don_pombone';
+    this.shieldScale = big ? 1.15 / 1.3 : 1;
+    this.size = big ? 1.3 : 1;
     this.marker = scene.add.image(0, 14, 'fx_drop').setScale(INV).setDepth(95).setVisible(false);
     const r = this.rig;
     const parts: Phaser.GameObjects.Image[] = [r.lift];
     if (r.flame) parts.push(r.flame);
     parts.push(r.body, r.prop, r.gun, r.glow, r.excl);
-    this.root = scene.add.container(0, 0, parts).setDepth(25);
+    this.shield = scene.add.image(0, 0, 'fx_shield').setVisible(false);
+    parts.push(this.shield);
+    this.root = scene.add.container(0, 0, parts).setDepth(big ? 23 : 25);
     this.release();
+  }
+
+  private build(scene: Phaser.Scene, kind: EnemyKind): Rig {
+    switch (kind) {
+      case 'pato_pistoleiro':
+        return this.buildPato(scene);
+      case 'galinha_rambo':
+        return this.buildGalinha(scene);
+      case 'pombo_mafioso':
+        return this.buildPombo(scene);
+      case 'porco_executivo':
+        return this.buildPorco(scene);
+      case 'don_pombone':
+        return this.buildPombone(scene);
+      default:
+        throw new Error(`sem visual de atirador para ${kind}`);
+    }
+  }
+
+  private buildPombo(scene: Phaser.Scene): Rig {
+    const t = TEX.pomboBody;
+    const lift = scene.add.image(-1, -17, 'pombo_wing').setOrigin(3 / TEX.pomboWing.w, 0.5).setScale(INV);
+    const body = scene.add.image(0, 0, 'pombo_body').setOrigin(17 / t.w, 28 / t.h).setScale(INV);
+    const prop = scene.add.image(5, -24.5, 'pombo_hat').setScale(INV).setRotation(-0.1);
+    const gun = scene.add
+      .image(4, -10, 'pombo_gun')
+      .setOrigin(TEX.pomboGun.pivotX / TEX.pomboGun.w, 0.5)
+      .setScale(INV);
+    const glow = scene.add.image(20, -10, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const excl = scene.add.image(-8, -36, 'fx_excl').setScale(INV).setVisible(false);
+    return { lift, flame: null, body, prop, gun, gunX: 4, gunY: -10, glow, excl, exclY: -36 };
+  }
+
+  private buildPorco(scene: Phaser.Scene): Rig {
+    const t = TEX.porcoBody;
+    const lift = scene.add.image(3, -50, 'porco_heli').setScale(INV);
+    const body = scene.add.image(0, 0, 'porco_body').setOrigin(23 / t.w, 45 / t.h).setScale(INV);
+    const prop = scene.add.image(3, -42, 'porco_hat').setScale(INV).setRotation(0.08);
+    const gun = scene.add
+      .image(8, -18, 'porco_case')
+      .setOrigin(TEX.porcoCase.pivotX / TEX.porcoCase.w, 0.5)
+      .setScale(INV);
+    const glow = scene.add.image(24, -18, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const excl = scene.add.image(-14, -56, 'fx_excl').setScale(INV).setVisible(false);
+    return { lift, flame: null, body, prop, gun, gunX: 8, gunY: -18, glow, excl, exclY: -56 };
+  }
+
+  private buildPombone(scene: Phaser.Scene): Rig {
+    const t = TEX.pomboneBody;
+    const lift = scene.add.image(-8, -60, 'pombone_wing').setOrigin(6 / TEX.pomboneWing.w, 0.5).setScale(INV);
+    const body = scene.add.image(0, 0, 'pombone_body').setOrigin(48 / t.w, 90 / t.h).setScale(INV);
+    const prop = scene.add.image(12, -84, 'pombone_hat').setScale(INV).setRotation(-0.12);
+    const gun = scene.add
+      .image(14, -32, 'pombone_gun')
+      .setOrigin(TEX.pomboneGun.pivotX / TEX.pomboneGun.w, 0.5)
+      .setScale(INV);
+    const glow = scene.add.image(50, -32, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const excl = scene.add.image(-20, -104, 'fx_excl').setScale(INV * 1.6).setVisible(false);
+    return { lift, flame: null, body, prop, gun, gunX: 14, gunY: -32, glow, excl, exclY: -104 };
   }
 
   private buildPato(scene: Phaser.Scene): Rig {
@@ -181,14 +250,23 @@ export class EnemyView implements EnemyVisual {
     }
 
     const d = this.squash.update(dt);
-    this.root.setPosition(x, y).setScale(e.facing * (1 - d * 0.05), 1 + d * 0.065);
+    this.root.setPosition(x, y).setScale(this.size * e.facing * (1 - d * 0.05), this.size * (1 + d * 0.065));
     // Inclina na direção do voo; pose dramática do pato ao mirar.
     const tilt = e.state === 'aim' ? -0.14 : Math.max(-0.25, Math.min(0.25, e.vx * e.facing * 0.0018));
     this.root.rotation += (tilt * e.facing - this.root.rotation) * Math.min(1, dt * 10);
 
-    // Balões balançam; chama do jetpack tremula (mais forte na descida).
+    // Balões balançam; asas batem; hélice gira; chama do jetpack tremula.
     if (this.kind === 'pato_pistoleiro') {
       r.lift.rotation = reducedMotion ? 0 : Math.sin(this.time * 2.2) * 0.08 - e.vx * e.facing * 0.001;
+    } else if (this.kind === 'pombo_mafioso' || this.kind === 'don_pombone') {
+      // Don Pombone anuncia o ataque batendo as asas com força.
+      const boss = this.kind === 'don_pombone';
+      const angry = e.state === 'aim';
+      const speed = boss ? (angry ? 26 : 9) : 30;
+      const amp = boss ? (angry ? 0.75 : 0.35) : 0.6;
+      r.lift.rotation = Math.sin(this.time * speed) * amp - 0.2;
+    } else if (this.kind === 'porco_executivo') {
+      r.lift.scaleX = INV * Math.cos(this.time * 45);
     } else if (r.flame) {
       const boost = e.state === 'descend' ? 1.4 : 1;
       r.flame.setScale(INV * (0.8 + Math.random() * 0.4) * boost, INV * (0.7 + Math.random() * 0.6) * boost);
@@ -208,13 +286,13 @@ export class EnemyView implements EnemyVisual {
     r.gun.y = r.gunY - Math.sin(local) * this.shotKick * 4;
 
     // Telegraph: "!" com pop, brilho crescendo na boca da arma.
-    if (this.telegraphDur > 0 && (e.state === 'aim' || e.state === 'spinup')) {
+    if (this.telegraphDur > 0 && (e.state === 'aim' || e.state === 'spinup' || e.state === 'buff')) {
       this.telegraphT += dt;
       const t = Math.min(1, this.telegraphT / this.telegraphDur);
       const pop = t < 0.15 ? (t / 0.15) * 1.3 : 1.3 - Math.min(0.3, (t - 0.15) * 2);
       r.excl.setScale(pop * INV).setVisible(true);
       r.excl.y = r.exclY - Math.sin(this.time * 20) * 1.5;
-      const len = this.kind === 'pato_pistoleiro' ? 16 : 44;
+      const len = (e.def.role === 'ranged' ? e.def.barrelLength : 16) / this.size;
       r.glow
         .setPosition(r.gun.x + Math.cos(gunRot) * len, r.gun.y + Math.sin(gunRot) * len)
         .setScale(0.4 + t * 1.1)
@@ -224,11 +302,23 @@ export class EnemyView implements EnemyVisual {
       r.glow.setScale(Math.max(0, r.glow.scale - dt * 8));
     }
 
+    // Escudo: bolha dourada pulsando enquanto durar.
+    if (e.shield > 0) {
+      const pulse = 1 + Math.sin(this.time * 6) * 0.04;
+      this.shield
+        .setVisible(true)
+        .setPosition(0, -e.def.hh / this.size)
+        .setScale((this.shieldScale * pulse * (e.def.hw + e.def.hh) * 1.6) / 128)
+        .setAlpha(0.55 + 0.35 * Math.min(1, e.shield / 30));
+    } else if (this.shield.visible) {
+      this.shield.setVisible(false);
+    }
+
     // Sombra no chão: mostra a coluna onde o atirador está.
     const gy = this.groundAt(x);
     const height = Math.max(0, gy - y);
     const sh = Math.max(0.3, 1 - height / 500);
-    this.shadow.setPosition(x, gy + 1).setScale(0.9 * sh * INV).setAlpha(0.4 + sh * 0.4);
+    this.shadow.setPosition(x, gy + 1).setScale(0.9 * this.size * sh * INV).setAlpha(0.4 + sh * 0.4);
   }
 
   private updateMinigun(e: Enemy, dt: number): void {

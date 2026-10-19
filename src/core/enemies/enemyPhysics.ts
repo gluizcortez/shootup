@@ -33,6 +33,12 @@ export function createEnemy(uid: number, def: EnemyDef, xNorm: number, bounds: A
     aimAngle: Math.PI / 2,
     grounded: false,
     chargeDir: 1,
+    squadId: 0,
+    squadSlot: 0,
+    shield: 0,
+    attack: 0,
+    enraged: false,
+    altTimer: 0,
     alive: true,
   };
 }

@@ -12,6 +12,8 @@ export interface HudSnapshot {
   hp: number;
   maxHp: number;
   weaponName: string;
+  /** Chefe em campo (barra de vida no topo) ou null. */
+  boss: { name: string; hp: number; maxHp: number; enraged: boolean } | null;
 }
 
 export interface RunSummary {

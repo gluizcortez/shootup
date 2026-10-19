@@ -24,6 +24,17 @@ export const PAL = {
   cowPink: 0xf4a6b8,
   horn: 0xf3e3b3,
   hoof: 0x4a3b3b,
+  pigeon: 0x9aa3b5,
+  pigeonDark: 0x6b7385,
+  pigeonNeck: 0x7a5cc4,
+  pigeonNeck2: 0x3fbf8f,
+  trench: 0xc8a46a,
+  pig: 0xf7a6b8,
+  pigDark: 0xe07f98,
+  suit: 0x2b3a67,
+  suitLight: 0x3d5091,
+  gold: 0xffd23f,
+  donCoat: 0xf2efe6,
   shadow: 0x000000,
 } as const;
 

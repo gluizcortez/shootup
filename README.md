@@ -1,7 +1,7 @@
 # ShootUp!
 
 Arena 2D lateral, shoot 'em up roguelite em ondas, com animais cômicos armados.
-Este repositório está na **Fase 0** do [GDD](docs/SHOOTUP_GDD.md), com os primeiros itens da Fase 1: um protótipo jogável focado em movimento e tiro, com o **Pato Pistoleiro**, a **Galinha Rambo**, a **Vaca Loca** (primeiro inimigo corpo a corpo) e **cartas entre ondas**. O plano técnico está em [docs/PLANO_FASE0.md](docs/PLANO_FASE0.md).
+Este repositório está na **Fase 0** do [GDD](docs/SHOOTUP_GDD.md), com os primeiros itens da Fase 1: um protótipo jogável focado em movimento e tiro, com os 5 animais do MVP (**Pato Pistoleiro**, **Galinha Rambo**, **Vaca Loca**, **Pombo Mafioso** e **Porco Executivo**), o chefe **Don Pombone** na onda 10 e **cartas entre ondas**. O plano técnico está em [docs/PLANO_FASE0.md](docs/PLANO_FASE0.md).
 
 ## Como rodar
 
@@ -38,7 +38,8 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 | Reiniciar | `R` (na pausa ou no game over), `Enter` no menu |
 | Overlay de desempenho | `F3` (FPS, média e P95 do quadro, contagem de entidades) |
 | Escolher carta | Clique, ou `1` / `2` / `3` |
-| Teste de estresse | `F4` spawna 3 galinhas + 3 patos + 1 vaca (só em `npm run dev` ou com `?debug` na URL; a run fica marcada como debug) |
+| Teste de estresse | `F4` spawna 3 galinhas, 3 patos, 1 vaca, 1 esquadrilha de pombos e 1 porco (só em `npm run dev` ou com `?debug` na URL; a run fica marcada como debug) |
+| Chamar o chefe | `F6` chama o Don Pombone na hora (mesmas condições do `F4`) |
 | Testar cartas | `F5` abre uma oferta de cartas na hora (mesmas condições do `F4`) |
 
 ## Como testar a sensação do jogo
@@ -49,6 +50,9 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 - **Pato Pistoleiro:** voa pendurado num cachinho de balões de festa. Antes de cada tiro faz pose dramática com "!" e brilho na pistolinha e acompanha você com a mira; depois dá UM tiro mirado. Ao morrer, os balões sobem sozinhos.
 - **Galinha Rambo:** paira mais alto, de jetpack improvisado. O cano começa a girar com zumbido subindo e acompanha você; perto do fim do aviso a mira TRAVA (janela para sair da linha) e sai a rajada naquela direção, empurrando a galinha para trás no ar.
 - **Vaca Loca (corpo a corpo):** agora é bípede: cai do topo e corre em duas patas, de braços bombeando. Pisa forte três vezes de punhos erguidos com "!" (aviso), solta um "muuu" e investe em linha reta, mais rápido do que você corre, levantando poeira. Ela não muda de direção no meio da investida: pule por cima ou suba a rampa. Se passar de você, freia e tenta de novo; se bater na parede, fica tonta com estrelinhas e leva 50% a mais de dano. É o único inimigo que causa dano por contato. Estreia na onda 2.
+- **Pombo Mafioso:** de sobretudo, chapéu e óculos escuros, com uma metralhadora dentro do estojo de violino. Entra sempre em esquadrilha de 3 em formação V; o bando muda de direção junto e, depois de um assobio (aviso), solta salvas curtas ao mesmo tempo. Se o líder cai, outro assume. Estreia na onda 4.
+- **Porco Executivo:** terno apertado com botões estourando, cartola com hélice e maleta. Joga leques de 3 moedas girando e, com o celular tocando, convoca uma "REUNIÃO URGENTE!": dá um escudo dourado (seguro corporativo) aos colegas mais próximos, que absorve dano antes da vida. Mate o porco primeiro. Morre em chuva de dinheiro de mentirinha. Estreia na onda 7.
+- **Don Pombone (chefe da onda 10):** pombo gigante de sobretudo branco, correntão de ouro, cravo na lapela, palito no bico e metralhadora dourada. Tem barra de vida no topo da tela e anuncia cada ataque batendo as asas: convoca esquadrilhas de pombos, dispara uma rajada em V (flecha de balas apontada para você, com as pontas mais lentas) ou varre a arena com balas vindo do lado oposto ao seu. Abaixo da metade da vida "fica bravo": avisa mais rápido, ataca com menos pausa e solta o V duas vezes.
 - **Cartas entre ondas:** ao limpar uma onda o jogo pausa e oferece 3 cartas (sorteadas com a seed da run, pesadas por raridade). Passe o mouse para ver a carta subir, inclinar e brilhar; escolha com clique ou `1`/`2`/`3`. As cartas pegas aparecem no canto inferior direito.
 
   | Carta | Efeito | Máx. |
@@ -65,7 +69,7 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 - **Relevo:** o chão tem platôs altos colados às paredes, rampas e morrinhos nos cantos (centro plano). Dá para subir andando, esquivar descendo a ladeira e pular mais alto lá de cima. A forma está em `TERRAIN` (`src/game/data/arena.ts`).
 - **Balas:** pistola a 880 px/s, Pato a 290 px/s e Galinha a 330 px/s, para dar tempo de ler e desviar.
 - **Cenário:** estúdio visto da plateia, com a metade de cima livre (treliça de luzes no topo, de onde os animais caem) e o logo apagado no fundo para não competir com os inimigos.
-- **Ondas:** a 1 só tem patos, a vaca estreia na 2 e a galinha na 3; depois o jogo escala sozinho. Combo multiplica pontos e anima a plateia.
+- **Ondas:** a 1 só tem patos, a vaca estreia na 2, a galinha na 3, os pombos na 4 e o porco na 7; a onda 10 é do Don Pombone. Depois dela o jogo continua escalando sozinho. Combo multiplica pontos e anima a plateia.
 - **Opções (Esc):** tremor de tela, flashes, números de dano, quantidade de partículas e volume. `prefers-reduced-motion` liga um padrão mais calmo.
 
 ## Arquitetura
@@ -90,9 +94,9 @@ Decisões principais:
 
 ## Estado
 
-Feito: arena 16:9 adaptável, personagem provisório, movimento/pulo/mira/tiro manual, pistola, colisões (com teste varrido para projéteis rápidos), vida com i-frames, morte em câmera lenta, resumo da run e reinício em um clique, HUD mínimo, pausa e configurações salvas localmente, Pato Pistoleiro, Galinha Rambo, Vaca Loca, ondas simples, 7 cartas entre ondas (com perfuração e ricochete).
+Feito: arena 16:9 adaptável, personagem provisório, movimento/pulo/mira/tiro manual, pistola, colisões (com teste varrido para projéteis rápidos), vida com i-frames, morte em câmera lenta, resumo da run e reinício em um clique, HUD mínimo, pausa e configurações salvas localmente, Pato Pistoleiro, Galinha Rambo, Vaca Loca, Pombo Mafioso, Porco Executivo, chefe Don Pombone, ondas até a 10 e além, 7 cartas entre ondas (com perfuração e ricochete).
 
-Ainda não feito (só quando pedido): árvore de sinergias, shotgun, outros animais e chefes, menu completo, música, Supabase/ranking.
+Ainda não feito (só quando pedido): árvore de sinergias, shotgun, outros chefes, menu completo, música, Supabase/ranking.
 
 Problemas conhecidos:
 - Arte e sons são **placeholders procedurais temporários**, desenhados em código.

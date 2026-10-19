@@ -1,7 +1,13 @@
 import type { Rng } from '../math/rng';
 import type { ArenaBounds } from '../physics/playerMotor';
 
-export type EnemyKind = 'pato_pistoleiro' | 'galinha_rambo' | 'vaca_loca';
+export type EnemyKind =
+  | 'pato_pistoleiro'
+  | 'galinha_rambo'
+  | 'vaca_loca'
+  | 'pombo_mafioso'
+  | 'porco_executivo'
+  | 'don_pombone';
 
 /**
  * Papel tático (estrutura do Seraph's Last Stand):
@@ -27,6 +33,8 @@ interface EnemyBaseDef {
   warnTime: number;
   /** Velocidade da descida do topo (atiradores) ou de queda máxima (melee). */
   descendSpeed: number;
+  /** Chefe: barra de vida própria no HUD. */
+  boss?: boolean;
 }
 
 /** Atirador que paira no alto. */
@@ -96,8 +104,76 @@ export interface VacaDef extends EnemyBaseDef {
   overshoot: number;
 }
 
-export type EnemyDef = PatoDef | GalinhaDef | VacaDef;
-export type RangedEnemyDef = PatoDef | GalinhaDef;
+/**
+ * Pombo Mafioso: entra em esquadrilha (bando de `squadSize`) em formação V.
+ * O líder patrulha e decide; o bando muda de direção junto e solta salvas
+ * sincronizadas depois de um assobio (telegraph).
+ */
+export interface PomboDef extends RangedDef {
+  behaviour: 'pombo';
+  squadSize: number;
+  /** Deslocamento de cada posição da formação em relação ao líder. */
+  formation: ReadonlyArray<{ x: number; y: number }>;
+  aimTime: number;
+  volleyCount: number;
+  volleyInterval: number;
+  volleyCooldown: number;
+  recoverTime: number;
+}
+
+/**
+ * Porco Executivo (suporte): voa de hélice de ventilador no chapéu, joga um
+ * leque de moedas e, de tempos em tempos, convoca uma "REUNIÃO URGENTE" que
+ * dá escudo (seguro corporativo) aos animais próximos.
+ */
+export interface PorcoDef extends RangedDef {
+  behaviour: 'porco';
+  aimTime: number;
+  coinCount: number;
+  coinSpreadDeg: number;
+  recoverTime: number;
+  shotCooldown: number;
+  buffEvery: number;
+  /** Duração do aviso da reunião. */
+  buffTime: number;
+  buffRadius: number;
+  buffTargets: number;
+  shieldAmount: number;
+  shieldMax: number;
+}
+
+/**
+ * Don Pombone (chefe da onda 10): pombo gigante de sobretudo branco. Anuncia
+ * cada ataque batendo as asas. Ataques: convocar esquadrilha, rajada em V e
+ * varredura. Abaixo de `phase2At` da vida fica mais rápido e dobra o V.
+ */
+export interface PomboneDef extends RangedDef {
+  behaviour: 'pombone';
+  boss: true;
+  telegraphTime: number;
+  telegraphTimePhase2: number;
+  cooldown: number;
+  cooldownPhase2: number;
+  phase2At: number;
+  vCount: number;
+  vSpreadDeg: number;
+  /** Quanto cada bala mais aberta do V é mais lenta (forma a ponta da flecha). */
+  vSpeedFalloff: number;
+  sweepCount: number;
+  sweepTime: number;
+  /** Ângulos (graus) de início e fim da varredura, medidos no mundo. */
+  sweepFromDeg: number;
+  sweepToDeg: number;
+  /** Não convoca mais pombos se já houver este tanto vivo. */
+  summonMaxPombos: number;
+}
+
+export type EnemyDef = PatoDef | GalinhaDef | VacaDef | PomboDef | PorcoDef | PomboneDef;
+export type RangedEnemyDef = PatoDef | GalinhaDef | PomboDef | PorcoDef | PomboneDef;
+
+/** Ataques do chefe (índice em `Enemy.attack`). */
+export const POMBONE_ATTACKS = ['summon', 'vshot', 'sweep'] as const;
+export type PomboneAttack = (typeof POMBONE_ATTACKS)[number];
 
 export type EnemyStateName =
   | 'incoming'
@@ -111,7 +187,8 @@ export type EnemyStateName =
   | 'stomp'
   | 'charge'
   | 'dizzy'
-  | 'rest';
+  | 'rest'
+  | 'buff';
 
 export interface Enemy {
   uid: number;
@@ -141,6 +218,17 @@ export interface Enemy {
   grounded: boolean;
   /** Direção travada da investida (-1/1). */
   chargeDir: -1 | 1;
+  /** Esquadrilha (0 = sozinho) e posição na formação. */
+  squadId: number;
+  squadSlot: number;
+  /** Escudo que absorve dano antes da vida (dado pelo Porco Executivo). */
+  shield: number;
+  /** Ataque escolhido (chefe) ou contador genérico. */
+  attack: number;
+  /** Chefe: já entrou na segunda fase? */
+  enraged: boolean;
+  /** Timer secundário (ex.: próxima reunião do porco). */
+  altTimer: number;
   alive: boolean;
 }
 
@@ -150,7 +238,16 @@ export interface EnemyContext {
   readonly playerY: number;
   readonly bounds: ArenaBounds;
   readonly rng: Rng;
+  /** Todos os inimigos vivos (esquadrilhas, buffs). Não mutar a lista. */
+  readonly enemies: readonly Enemy[];
   groundAt(x: number): number;
-  fire(e: Enemy, angle: number): void;
+  /** Dispara uma bala da boca da arma; `speedScale` multiplica a velocidade. */
+  fire(e: Enemy, angle: number, speedScale?: number): void;
   telegraph(e: Enemy, duration: number): void;
+  /** Anuncia um novo animal no topo (chefe convocando reforços). */
+  summon(kind: EnemyKind, xNorm: number): void;
+  /** Escudo aplicado em `targets` por `source` (só para efeitos visuais/sonoros). */
+  buffed(source: Enemy, targets: readonly Enemy[]): void;
+  /** Chefe entrou na segunda fase. */
+  enraged(e: Enemy): void;
 }

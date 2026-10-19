@@ -28,7 +28,17 @@ export type SfxId =
   | 'ricochet'
   | 'cardOffer'
   | 'cardHover'
-  | 'cardPick';
+  | 'cardPick'
+  | 'killPombo'
+  | 'killPorco'
+  | 'killBoss'
+  | 'whistle'
+  | 'wingFlap'
+  | 'phone'
+  | 'kaching'
+  | 'shieldHit'
+  | 'shieldBreak'
+  | 'bossRage';
 
 /** Intervalo mínimo entre repetições do mesmo som (evita empilhar ruído). */
 const MIN_GAP: Partial<Record<SfxId, number>> = {
@@ -38,6 +48,9 @@ const MIN_GAP: Partial<Record<SfxId, number>> = {
   land: 0.08,
   ricochet: 0.04,
   cardHover: 0.05,
+  whistle: 0.08,
+  shieldHit: 0.05,
+  killPombo: 0.05,
 };
 
 const MAX_VOICES = 24;
@@ -230,6 +243,61 @@ export class AudioSystem {
       case 'cardHover':
         this.sweep(ctx, out, t, 'triangle', 1500 * vary, 1700, 0.03, 0.05);
         return t + 0.04;
+      case 'killPombo':
+        // "Rru-rru!" indignado.
+        this.sweep(ctx, out, t, 'sine', 420 * vary, 300, 0.09, 0.25, false, undefined, 30);
+        this.sweep(ctx, out, t + 0.1, 'sine', 380 * vary, 260, 0.12, 0.22, false, undefined, 30);
+        this.noiseBurst(ctx, out, t, 0.08, 1500, 0.7, 0.3, 'lowpass');
+        return t + 0.25;
+      case 'killPorco':
+        // "Óinc!" + caixa registradora.
+        this.sweep(ctx, out, t, 'sawtooth', 600 * vary, 900, 0.08, 0.2, false, 1800);
+        this.sweep(ctx, out, t + 0.08, 'sawtooth', 900 * vary, 400, 0.12, 0.2, false, 1800);
+        [2093, 2637].forEach((n, i) => this.sweep(ctx, out, t + 0.2 + i * 0.06, 'triangle', n, n, 0.15, 0.12));
+        return t + 0.4;
+      case 'killBoss':
+        // Sinfonia do fracasso mafioso: queda grave + fanfarra + aplausos.
+        this.sweep(ctx, out, t, 'sawtooth', 300, 40, 1.1, 0.3, false, 900, 5);
+        this.noiseBurst(ctx, out, t, 0.5, 400, 0.8, 0.6, 'lowpass');
+        [523, 659, 784, 1046, 1318].forEach((n, i) => this.sweep(ctx, out, t + 0.5 + i * 0.09, 'square', n, n, 0.16, 0.14));
+        this.applause(ctx, out, t + 0.6, 2.2);
+        return t + 2.8;
+      case 'whistle':
+        // Assobio de mafioso antes da salva.
+        this.sweep(ctx, out, t, 'sine', 1400 * vary, 2300, 0.12, 0.08);
+        this.sweep(ctx, out, t + 0.15, 'sine', 1500 * vary, 1100, 0.18, 0.08);
+        return t + 0.35;
+      case 'wingFlap': {
+        // Asas batendo forte durante o aviso do chefe.
+        const dur = Math.max(0.4, param);
+        const flaps = Math.max(3, Math.round(dur / 0.12));
+        for (let i = 0; i < flaps; i++) this.noiseBurst(ctx, out, t + (i * dur) / flaps, 0.07, 700, 0.9, 0.45, 'lowpass');
+        this.sweep(ctx, out, t, 'sawtooth', 90, 180, dur, 0.06, true, 600);
+        return t + dur;
+      }
+      case 'phone': {
+        // Celular do porco tocando: "REUNIÃO URGENTE!".
+        const dur = Math.max(0.4, param);
+        for (let i = 0; i < Math.floor(dur / 0.15); i++) {
+          this.sweep(ctx, out, t + i * 0.15, 'square', i % 2 ? 1320 : 1760, i % 2 ? 1320 : 1760, 0.1, 0.06);
+        }
+        return t + dur;
+      }
+      case 'kaching':
+        this.noiseBurst(ctx, out, t, 0.05, 3000, 1, 0.3, 'highpass');
+        [2349, 3136].forEach((n, i) => this.sweep(ctx, out, t + 0.04 + i * 0.07, 'triangle', n, n, 0.2, 0.14));
+        return t + 0.3;
+      case 'shieldHit':
+        this.sweep(ctx, out, t, 'sine', 2200 * vary, 1800, 0.06, 0.12);
+        return t + 0.07;
+      case 'shieldBreak':
+        this.noiseBurst(ctx, out, t, 0.2, 5000, 0.7, 0.35, 'highpass');
+        this.sweep(ctx, out, t, 'triangle', 2600, 500, 0.25, 0.18);
+        return t + 0.27;
+      case 'bossRage':
+        this.sweep(ctx, out, t, 'sawtooth', 120, 260, 0.6, 0.3, false, 1200, 8);
+        this.noiseBurst(ctx, out, t, 0.4, 600, 0.8, 0.5, 'lowpass');
+        return t + 0.65;
       case 'cardPick':
         [659, 880, 1318].forEach((n, i) => this.sweep(ctx, out, t + i * 0.05, 'triangle', n, n, 0.1, 0.16));
         this.noiseBurst(ctx, out, t, 0.06, 2500, 0.8, 0.2, 'bandpass');

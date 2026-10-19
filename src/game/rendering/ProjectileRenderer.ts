@@ -40,7 +40,8 @@ export class ProjectileRenderer {
       if (this.lastUid[i] !== p.uid) {
         this.lastUid[i] = p.uid;
         const enemy = p.team === 'enemy';
-        s.setTexture(enemy ? 'b_enemy' : 'b_player').setDepth(enemy ? 45 : 40);
+        const coin = p.sourceId === 'porco_executivo';
+        s.setTexture(enemy ? (coin ? 'b_coin' : 'b_enemy') : 'b_player').setDepth(enemy ? 45 : 40);
         if (!enemy) s.setRotation(Math.atan2(p.vy, p.vx));
         if (p.crit) s.setTint(0xfff3c4);
         else s.clearTint();
@@ -48,7 +49,11 @@ export class ProjectileRenderer {
       }
       s.x = lerp(p.px, p.x, alpha);
       s.y = lerp(p.py, p.y, alpha);
-      if (p.team === 'enemy') {
+      if (p.sourceId === 'porco_executivo') {
+        // Moeda girando de lado.
+        const k = p.radius / 5.5;
+        s.setScale(INV * k * Math.max(0.15, Math.abs(Math.cos(this.time * 14 + p.uid))), INV * k);
+      } else if (p.team === 'enemy') {
         const pulse = 1 + Math.sin(this.time * 18 + p.uid) * 0.08;
         s.setScale(pulse * INV * (p.radius / 6.5));
         s.rotation += dt * 6;

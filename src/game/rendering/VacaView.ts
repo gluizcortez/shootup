@@ -33,6 +33,7 @@ export class VacaView implements EnemyVisual {
   private readonly excl: Img;
   private readonly shadow: Img;
   private readonly marker: Img;
+  private readonly shieldImg: Img;
   private readonly squash = new Spring(320, 11);
   private flash = 0;
   private time = Math.random() * 10;
@@ -64,9 +65,10 @@ export class VacaView implements EnemyVisual {
       .setScale(INV);
     this.bell = scene.add.image(8, BELL_Y, 'vaca_bell').setOrigin(0.5, 0).setScale(INV);
     this.excl = scene.add.image(6, -72, 'fx_excl').setScale(INV).setVisible(false);
+    this.shieldImg = scene.add.image(0, -29, 'fx_shield').setScale(0.5).setVisible(false);
     this.stars = [0, 1, 2].map(() => scene.add.image(0, 0, 'px_star').setTint(PAL.amber).setScale(1.1).setVisible(false));
     this.root = scene.add
-      .container(0, 0, [this.armBack, this.legBack, this.body, this.legFront, this.bell, this.armFront, this.excl, ...this.stars])
+      .container(0, 0, [this.armBack, this.legBack, this.body, this.legFront, this.bell, this.armFront, this.excl, this.shieldImg, ...this.stars])
       .setDepth(24);
     this.shadow = scene.add.image(0, 0, 'shadow').setScale(1.1 * INV).setDepth(9);
     this.marker = scene.add.image(0, 14, 'fx_drop').setScale(INV).setDepth(95).setVisible(false);
@@ -230,6 +232,9 @@ export class VacaView implements EnemyVisual {
       const a = this.time * 6 + (i * Math.PI * 2) / 3;
       s.setPosition(6 + Math.cos(a) * 13, -64 + Math.sin(a) * 4).setRotation(this.time * 5);
     }
+
+    this.shieldImg.setVisible(e.shield > 0);
+    if (e.shield > 0) this.shieldImg.setAlpha(0.55 + 0.3 * Math.sin(this.time * 6));
 
     const gy = this.groundAt(x);
     const height = Math.max(0, gy - y);

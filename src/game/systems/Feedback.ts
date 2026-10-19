@@ -3,7 +3,7 @@ import type { GameEvent } from '@/core/run/events';
 import type { EnemyKind } from '@/core/enemies/types';
 import type { Settings, VfxQuality } from '@/shared/settings';
 import { CSS, PAL } from '../rendering/palette';
-import type { AudioSystem } from './AudioSystem';
+import type { AudioSystem, SfxId } from './AudioSystem';
 import type { FloatingText } from './FloatingText';
 import type { Particles, ParticleSpec } from './Particles';
 import type { ScreenShake } from './ScreenShake';
@@ -14,10 +14,36 @@ const FEATHER_TINT: Record<EnemyKind, number[]> = {
   pato_pistoleiro: [PAL.duckYellow, 0xfff3b0, 0xf2b705],
   galinha_rambo: [PAL.chickenWhite, 0xe7e1d6, PAL.comb],
   vaca_loca: [PAL.cowWhite, PAL.cowSpot, PAL.cowWhite],
+  pombo_mafioso: [PAL.pigeon, PAL.pigeonDark, PAL.pigeonNeck],
+  // Porco "morre" em papelada e dinheiro de mentirinha.
+  porco_executivo: [0xffffff, 0x7bd389, PAL.gold, PAL.pig],
+  don_pombone: [PAL.donCoat, PAL.pigeon, PAL.gold, PAL.pigeonNeck],
 };
 
-const KILL_SFX = { pato_pistoleiro: 'killPato', galinha_rambo: 'killGalinha', vaca_loca: 'killVaca' } as const;
-const KILL_PROP = { pato_pistoleiro: 'pato_hat', galinha_rambo: 'galinha_glasses', vaca_loca: 'vaca_bell' } as const;
+const KILL_SFX: Record<EnemyKind, SfxId> = {
+  pato_pistoleiro: 'killPato',
+  galinha_rambo: 'killGalinha',
+  vaca_loca: 'killVaca',
+  pombo_mafioso: 'killPombo',
+  porco_executivo: 'killPorco',
+  don_pombone: 'killBoss',
+};
+const KILL_PROP: Record<EnemyKind, string> = {
+  pato_pistoleiro: 'pato_hat',
+  galinha_rambo: 'galinha_glasses',
+  vaca_loca: 'vaca_bell',
+  pombo_mafioso: 'pombo_hat',
+  porco_executivo: 'porco_case',
+  don_pombone: 'pombone_hat',
+};
+const TELEGRAPH_SFX: Record<EnemyKind, SfxId> = {
+  pato_pistoleiro: 'telegraphPato',
+  galinha_rambo: 'telegraphGalinha',
+  vaca_loca: 'stomp',
+  pombo_mafioso: 'whistle',
+  porco_executivo: 'telegraphPato',
+  don_pombone: 'wingFlap',
+};
 
 export interface FeedbackHooks {
   hitstop(seconds: number): void;
@@ -97,10 +123,23 @@ export class Feedback {
         return this.enemyKilled(ev);
       case 'enemyTelegraph':
         this.hooks.onEnemyTelegraph(ev.uid, ev.duration);
-        this.audio.play(
-          ev.kind === 'galinha_rambo' ? 'telegraphGalinha' : ev.kind === 'vaca_loca' ? 'stomp' : 'telegraphPato',
-          ev.duration,
-        );
+        this.audio.play(ev.state === 'buff' ? 'phone' : TELEGRAPH_SFX[ev.kind], ev.duration);
+        return;
+      case 'enemyBuffed':
+        this.audio.play('kaching');
+        if (this.numbersOn) this.texts.spawn(ev.x, ev.y - 40, 'REUNIÃO URGENTE!', CSS.amber, 14, 1.1);
+        for (let i = 0, n = this.count(14); i < n; i++) this.money(ev.x, ev.y);
+        return;
+      case 'shieldBroken':
+        this.audio.play('shieldBreak');
+        this.ring(ev.x, ev.y, PAL.gold);
+        for (let i = 0, n = this.count(8); i < n; i++) this.spark(ev.x, ev.y, Math.random() * Math.PI * 2, 1, PAL.gold, 260);
+        return;
+      case 'bossEnraged':
+        this.audio.play('bossRage');
+        this.shake.add(0.6);
+        if (this.flashOn) this.flashAlpha = 0.22;
+        for (let i = 0, n = this.count(20); i < n; i++) this.feather(ev.x, ev.y, ev.kind, Math.random() * Math.PI * 2, 2);
         return;
       case 'enemyLanded': {
         this.hooks.onEnemyLanded(ev.uid, ev.speed);
@@ -251,7 +290,7 @@ export class Feedback {
   private enemyHit(ev: Extract<GameEvent, { type: 'enemyHit' }>): void {
     this.hooks.onEnemyHit(ev.uid);
     this.hooks.onCrosshairHit(ev.crit);
-    this.audio.play(ev.crit ? 'crit' : 'hit');
+    this.audio.play(ev.shielded ? 'shieldHit' : ev.crit ? 'crit' : 'hit');
     const back = Math.atan2(-ev.dirY, -ev.dirX);
     const fwd = Math.atan2(ev.dirY, ev.dirX);
     for (let i = 0, n = this.count(ev.crit ? 7 : 4); i < n; i++) {
@@ -270,7 +309,9 @@ export class Feedback {
   private enemyKilled(ev: Extract<GameEvent, { type: 'enemyKilled' }>): void {
     this.hooks.onEnemyKilled(ev.uid);
     this.hooks.onCombo(ev.multiplier);
-    const heavy = ev.kind !== 'pato_pistoleiro';
+    const boss = ev.kind === 'don_pombone';
+    if (boss) return this.bossKilled(ev);
+    const heavy = ev.kind !== 'pato_pistoleiro' && ev.kind !== 'pombo_mafioso';
     this.audio.play(KILL_SFX[ev.kind]);
     this.hooks.hitstop(heavy ? 0.07 : 0.045);
     this.shake.add(heavy ? 0.4 : 0.25);
@@ -279,10 +320,13 @@ export class Feedback {
     for (let i = 0, m = this.count(6); i < m; i++) this.star(ev.x, ev.y, i % 2 ? PAL.amber : PAL.warmWhite);
     for (let i = 0, m = this.count(4); i < m; i++) this.puff(ev.x + (Math.random() - 0.5) * 20, ev.y, 1.4, 0.6);
     this.ring(ev.x, ev.y, PAL.warmWhite);
+    if (ev.kind === 'porco_executivo') {
+      for (let i = 0, m = this.count(16); i < m; i++) this.money(ev.x, ev.y);
+    }
     if (ev.kind === 'pato_pistoleiro') {
       // Os balões se soltam e sobem: piada visual.
       this.emit({ texture: 'pato_balloons', x: ev.x, y: ev.y - 40, vx: (Math.random() - 0.5) * 40, vy: -90, life: 1.6, gravity: -60, spin: (Math.random() - 0.5) * 1.5, depth: 24 });
-    } else {
+    } else if (heavy) {
       this.audio.play('slam');
     }
     // O acessório voa longe: piada visual.
@@ -302,6 +346,47 @@ export class Feedback {
       const label = ev.multiplier > 1 ? `+${ev.score} ×${ev.multiplier}` : `+${ev.score}`;
       this.texts.spawn(ev.x, ev.y - 34, label, CSS.turquoise, 18, 0.9);
     }
+  }
+
+  /** Chefe derrotado: chuva de penas, confete, flash e câmera tremendo. */
+  private bossKilled(ev: Extract<GameEvent, { type: 'enemyKilled' }>): void {
+    this.hooks.onEnemyKilled(ev.uid);
+    this.hooks.onCombo(ev.multiplier);
+    this.audio.play('killBoss');
+    this.hooks.hitstop(0.25);
+    this.shake.add(1);
+    if (this.flashOn) this.flashAlpha = 0.4;
+    for (let i = 0, n = this.count(60); i < n; i++) this.feather(ev.x, ev.y, ev.kind, Math.random() * Math.PI * 2, 2.4);
+    for (let i = 0, n = this.count(20); i < n; i++) this.star(ev.x, ev.y, i % 2 ? PAL.gold : PAL.warmWhite);
+    for (let i = 0, n = this.count(90); i < n; i++) this.confetti();
+    this.ring(ev.x, ev.y, PAL.gold);
+    this.ring(ev.x, ev.y - 20, PAL.warmWhite);
+    this.emit({ texture: 'pombone_hat', x: ev.x, y: ev.y - 60, vx: 120, vy: -520, life: 2.4, gravity: 900, spin: 6, bounceY: 0.4, depth: 26 });
+    this.emit({ texture: 'pombone_gun', x: ev.x, y: ev.y, vx: -160, vy: -380, life: 2.4, gravity: 1100, spin: -8, bounceY: 0.3, depth: 26 });
+    if (this.numbersOn) this.texts.spawn(ev.x, ev.y - 60, `+${ev.score}`, CSS.amber, 30, 1.6);
+  }
+
+  /** Notas e moedas de mentirinha voando (Porco Executivo). */
+  private money(x: number, y: number): void {
+    const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.4;
+    const v = 120 + Math.random() * 200;
+    const coin = Math.random() < 0.4;
+    this.emit({
+      texture: coin ? 'b_coin' : 'px_feather',
+      x,
+      y,
+      vx: Math.cos(a) * v,
+      vy: Math.sin(a) * v,
+      life: 1.2 + Math.random() * 0.6,
+      tint: coin ? undefined : 0x7bd389,
+      gravity: coin ? 900 : 200,
+      drag: coin ? 0.5 : 2.5,
+      spin: (Math.random() - 0.5) * 12,
+      sway: coin ? 0 : 50,
+      bounceY: coin ? 0.4 : undefined,
+      scaleFrom: coin ? 0.5 : 1.3,
+      depth: 27,
+    });
   }
 
   /** Poeira levantada por quem corre no chão (chamado pela cena durante a investida). */

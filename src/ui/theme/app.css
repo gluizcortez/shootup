@@ -882,3 +882,45 @@ kbd {
 .chip b {
   color: var(--rar);
 }
+
+/* Barra do chefe */
+.boss {
+  position: absolute;
+  top: 5cqh;
+  left: 50%;
+  width: 40cqw;
+  transform: translateX(-50%);
+  text-align: center;
+  animation: cards-head 500ms var(--ease-spring) both;
+}
+
+.boss-name {
+  font-family: var(--font-display);
+  font-size: 1em;
+  letter-spacing: 0.2em;
+  color: var(--c-white);
+  -webkit-text-stroke: 0.08em var(--c-outline);
+  paint-order: stroke fill;
+}
+
+.boss-bar {
+  margin-top: 0.3em;
+  height: 0.9em;
+  border-radius: 0.5em;
+  border: 3px solid var(--c-outline);
+  background: var(--c-plum-2);
+  overflow: hidden;
+  box-shadow: 0 3px 0 var(--c-outline);
+}
+
+.boss-bar-fill {
+  height: 100%;
+  transform-origin: left;
+  background: linear-gradient(180deg, #ff8a92, var(--c-coral));
+  transition: transform var(--t-mid) var(--ease-out);
+}
+
+.boss--enraged .boss-bar-fill {
+  background: linear-gradient(180deg, var(--c-amber), #ff7a1a);
+  animation: pop 0.5s ease-in-out infinite alternate;
+}

@@ -6,6 +6,9 @@ import { createEnemy, integrateEnemy, muzzlePosition, rangedDef } from '../enemi
 import { updateGalinha } from '../enemies/galinhaRambo';
 import { updatePato } from '../enemies/patoPistoleiro';
 import { updateVaca } from '../enemies/vacaLoca';
+import { updatePombo } from '../enemies/pomboMafioso';
+import { updatePorco } from '../enemies/porcoExecutivo';
+import { updatePombone } from '../enemies/donPombone';
 import type { Enemy, EnemyContext, EnemyDef, EnemyKind } from '../enemies/types';
 import { Rng } from '../math/rng';
 import { boxesOverlap, sweptCircleHitsBox } from '../physics/collision';
@@ -127,6 +130,7 @@ export class World {
   effective: Stats;
 
   private nextUid = 1;
+  private nextSquad = 1;
   private readonly angleScratch: number[] = [];
   private readonly enemyBox: Box = { x: 0, y: 0, hw: 0, hh: 0 };
   private readonly playerBox: Box = { x: 0, y: 0, hw: 0, hh: 0 };
@@ -173,8 +177,15 @@ export class World {
       },
       bounds: b,
       rng: this.rng,
+      enemies: this.enemies,
       groundAt: (x) => this.terrain.groundAt(x),
-      fire: (e, angle) => this.enemyFire(e, angle),
+      fire: (e, angle, speedScale) => this.enemyFire(e, angle, speedScale ?? 1),
+      summon: (kind, xNorm) => {
+        this.spawnEnemy(kind, xNorm);
+      },
+      buffed: (src, targets) =>
+        this.emit({ type: 'enemyBuffed', uid: src.uid, x: src.x, y: src.y, targets: targets.map((t) => t.uid) }),
+      enraged: (e) => this.emit({ type: 'bossEnraged', uid: e.uid, kind: e.def.id, x: e.x, y: e.y }),
       telegraph: (e, duration) =>
         this.emit({ type: 'enemyTelegraph', uid: e.uid, kind: e.def.id, state: e.state, duration }),
     };
@@ -199,11 +210,31 @@ export class World {
     return { x: m.x + s.x * facing, y: m.y + s.y };
   }
 
-  /** Anuncia um animal no topo, na coluna `xNorm` (0 = esquerda, 1 = direita). */
+  /**
+   * Anuncia um animal no topo, na coluna `xNorm` (0 = esquerda, 1 = direita).
+   * Pombos entram em esquadrilha: devolve o líder.
+   */
   spawnEnemy(kind: EnemyKind, xNorm: number): Enemy {
     const def = this.config.enemies[kind];
-    const hoverY = def.role === 'ranged' ? this.rng.range(def.hoverMinY, def.hoverMaxY) : 0;
-    const e = createEnemy(this.nextUid++, def, xNorm, this.config.bounds, hoverY);
+    if (def.behaviour !== 'pombo') return this.spawnOne(kind, xNorm, 0);
+    const squad = this.nextSquad++;
+    const width = this.config.bounds.right - this.config.bounds.left;
+    const base = this.rng.range(def.hoverMinY + 20, def.hoverMaxY);
+    let leader: Enemy | null = null;
+    for (let i = 0; i < def.squadSize; i++) {
+      const off = def.formation[i % def.formation.length] ?? { x: 0, y: 0 };
+      const e = this.spawnOne(kind, xNorm + off.x / width, base + off.y);
+      e.squadId = squad;
+      e.squadSlot = i;
+      leader ??= e;
+    }
+    return leader as Enemy;
+  }
+
+  private spawnOne(kind: EnemyKind, xNorm: number, hoverY: number): Enemy {
+    const def = this.config.enemies[kind];
+    const y = hoverY || (def.role === 'ranged' ? this.rng.range(def.hoverMinY, def.hoverMaxY) : 0);
+    const e = createEnemy(this.nextUid++, def, xNorm, this.config.bounds, y);
     this.enemies.push(e);
     this.emit({ type: 'enemyIncoming', uid: e.uid, kind, x: e.x, warn: e.def.warnTime });
     return e;
@@ -272,7 +303,9 @@ export class World {
 
   private stepEnemies(dt: number): void {
     const b = this.config.bounds;
-    for (const e of this.enemies) {
+    // Índice: o chefe pode convocar reforços durante o laço (entram no fim da lista).
+    for (let i = 0; i < this.enemies.length; i++) {
+      const e = this.enemies[i] as Enemy;
       e.px = e.x;
       e.py = e.y;
       const def = e.def;
@@ -280,7 +313,10 @@ export class World {
       if (this.player.alive) {
         if (def.behaviour === 'pato') updatePato(e, def, this.ctx, dt);
         else if (def.behaviour === 'galinha') updateGalinha(e, def, this.ctx, dt);
-        else updateVaca(e, def, this.ctx, dt);
+        else if (def.behaviour === 'vaca') updateVaca(e, def, this.ctx, dt);
+        else if (def.behaviour === 'pombo') updatePombo(e, def, this.ctx, dt);
+        else if (def.behaviour === 'porco') updatePorco(e, def, this.ctx, dt);
+        else updatePombone(e, def, this.ctx, dt);
       } else {
         e.vx *= 0.9;
         if (def.role === 'ranged') e.vy *= 0.9;
@@ -294,15 +330,16 @@ export class World {
     }
   }
 
-  private enemyFire(e: Enemy, angle: number): void {
+  private enemyFire(e: Enemy, angle: number, speedScale: number): void {
     const d = rangedDef(e);
     const m = muzzlePosition(e);
+    const speed = d.bulletSpeed * speedScale;
     this.projectiles.spawn(
       'enemy',
       m.x,
       m.y,
-      Math.cos(angle) * d.bulletSpeed,
-      Math.sin(angle) * d.bulletSpeed,
+      Math.cos(angle) * speed,
+      Math.sin(angle) * speed,
       d.bulletRadius,
       d.bulletDamage,
       false,
@@ -364,13 +401,18 @@ export class World {
       const dirY = p.vy / speed;
       const d = e.def;
       const damage = d.behaviour === 'vaca' && e.state === 'dizzy' ? p.damage * d.dizzyDamageMult : p.damage;
-      e.hp -= damage;
+      // Escudo do Porco Executivo absorve primeiro.
+      const shielded = e.shield > 0;
+      const absorbed = Math.min(e.shield, damage);
+      e.shield -= absorbed;
+      e.hp -= damage - absorbed;
+      if (shielded && e.shield <= 0) this.emit({ type: 'shieldBroken', uid: e.uid, x: e.x, y: e.y });
       e.vx += dirX * p.knockback * d.knockbackScale;
       // Tranco no ar só para quem voa; quem anda no chão continua no chão.
       if (d.role === 'ranged') e.vy += dirY * p.knockback * 0.6 * d.knockbackScale;
       this.stats.shotsHit++;
       if (p.crit) this.stats.crits++;
-      this.emit({ type: 'enemyHit', uid: e.uid, kind: d.id, x: p.x, y: p.y, damage, crit: p.crit, dirX, dirY });
+      this.emit({ type: 'enemyHit', uid: e.uid, kind: d.id, x: p.x, y: p.y, damage, crit: p.crit, dirX, dirY, shielded });
       if (e.hp <= 0) this.killEnemy(e, p.crit);
 
       p.lastHitUid = e.uid;

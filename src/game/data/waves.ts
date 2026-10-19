@@ -1,6 +1,10 @@
 import type { WaveConfig } from '@/core/run/waves';
 
-/** Ondas do protótipo: os animais descem do topo. Primeiro só patos; a Vaca Loca estreia na 2 e a Galinha Rambo na 3. */
+/**
+ * Ondas do protótipo: os animais descem do topo. Primeiro só patos; a Vaca
+ * Loca estreia na 2, a Galinha Rambo na 3, os Pombos Mafiosos na 4 e o Porco
+ * Executivo na 7. Onda 10: Don Pombone.
+ */
 export const WAVES: WaveConfig = {
   firstWaveDelay: 1.2,
   intermission: 2.2,
@@ -42,7 +46,18 @@ export const WAVES: WaveConfig = {
         { kind: 'galinha_rambo', delay: 6, x: 'random' },
         { kind: 'pato_pistoleiro', delay: 6.5, x: 'random' },
         { kind: 'vaca_loca', delay: 3, x: 0.3 },
+        { kind: 'pombo_mafioso', delay: 4.5, x: 0.6 },
       ],
     },
   ],
+  bossWaves: {
+    10: {
+      callout: 'O PODEROSO POMBO CHEGOU!',
+      spawns: [
+        { kind: 'don_pombone', delay: 0, x: 0.5 },
+        { kind: 'pato_pistoleiro', delay: 6, x: 0.15 },
+        { kind: 'pato_pistoleiro', delay: 12, x: 0.85 },
+      ],
+    },
+  },
 };

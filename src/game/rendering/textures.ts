@@ -95,6 +95,14 @@ export const TEX = {
   vacaBody: { w: 44, h: 47 },
   vacaLeg: { w: 9, h: 18 },
   vacaArm: { w: 17, h: 8, pivotX: 3 },
+  pomboBody: { w: 34, h: 30 },
+  pomboWing: { w: 24, h: 12 },
+  pomboGun: { w: 24, h: 9, pivotX: 3 },
+  porcoBody: { w: 46, h: 46 },
+  porcoCase: { w: 26, h: 15, pivotX: 3 },
+  pomboneBody: { w: 96, h: 92 },
+  pomboneWing: { w: 60, h: 28 },
+  pomboneGun: { w: 64, h: 22, pivotX: 8 },
   vacaBell: { w: 12, h: 13 },
 } as const;
 
@@ -271,6 +279,150 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.fill(PAL.brass).poly([[3, 11], [4, 4], [8, 4], [9, 11]]);
     p.fill(0xfff1c1).rect(4.5, 5, 1.3, 5);
     p.oCircle(6, 12, 1.4, PAL.gunMetal, 0.8);
+  });
+
+  // ── Pombo Mafioso: sobretudo, óculos escuros e metralhadora no estojo de violino ──
+  make(scene, 'pombo_body', TEX.pomboBody.w, TEX.pomboBody.h, (p) => {
+    p.oRound(12, 25, 3, 4, 1, PAL.beak, 0.8); // perninhas
+    p.oRound(18, 25, 3, 4, 1, PAL.beak, 0.8);
+    p.fill(O).poly([[3, 15], [8, 13], [8, 22]]); // rabo
+    p.fill(PAL.pigeonDark).poly([[4.5, 15.5], [7.5, 14.5], [7.5, 20]]);
+    p.oEllipse(16, 18, 20, 16, PAL.trench); // sobretudo
+    p.fill(0xa8864e).rect(7, 18, 18, 2.2); // cinto
+    p.fill(PAL.brass).rect(15, 17.6, 3, 3);
+    p.fill(0xa8864e).tri(14, 10, 21, 10, 17, 18); // lapela
+    p.oCircle(21, 8, 6.5, PAL.pigeon); // cabeça
+    p.fill(PAL.pigeonNeck).ellipse(19, 13.5, 11, 3.5); // pescoço furta-cor
+    p.fill(PAL.pigeonNeck2).ellipse(19, 14.6, 9, 1.6);
+    p.fill(O).round(18, 5.2, 11, 3.6, 1.4); // óculos escuros
+    p.fill(0x5b6b8c).rect(19.5, 5.8, 3, 1);
+    p.fill(O).tri(26, 9, 32.5, 10.8, 26, 12.5); // bico
+    p.fill(0xd9c9b0).tri(26.8, 9.8, 31, 10.8, 26.8, 11.7);
+    p.fill(PAL.warmWhite).circle(29.2, 10.2, 0.6);
+  });
+  make(scene, 'pombo_wing', TEX.pomboWing.w, TEX.pomboWing.h, (p) => {
+    p.fill(O).poly([[1, 6], [8, 1], [23, 2], [20, 6], [23, 9], [8, 11]]);
+    p.fill(PAL.pigeon).poly([[3, 6], [9, 2.5], [20, 3.4], [17.5, 6], [20, 8], [9, 9.5]]);
+    p.fill(PAL.pigeonDark).rect(12, 5.4, 7, 1.2);
+  });
+  make(scene, 'pombo_hat', 18, 9, (p) => {
+    p.oRound(1, 6, 16, 2.5, 1.2, 0x23202b, 1);
+    p.oRound(4, 1, 10, 6, 2.5, 0x23202b, 1);
+    p.fill(PAL.coral).rect(4, 4.5, 10, 1.4);
+  });
+  make(scene, 'pombo_gun', TEX.pomboGun.w, TEX.pomboGun.h, (p) => {
+    p.oCircle(3, 4.5, 2.6, PAL.pigeon, 0.8); // ponta da asa
+    p.fill(O).poly([[5, 1], [14, 0.5], [17, 2], [17, 7], [14, 8.5], [5, 8]]); // estojo de violino
+    p.fill(0x8a5a2b).poly([[6, 2], [13.5, 1.6], [16, 3], [16, 6], [13.5, 7.4], [6, 7]]);
+    p.fill(PAL.brass).rect(9, 4, 2, 1.4);
+    p.oRound(16, 3, 7, 2.6, 0.8, PAL.gunMetal, 0.8); // cano saindo do estojo
+  });
+
+  // ── Porco Executivo: terno apertado, gravata, maleta e hélice no chapéu ──
+  make(scene, 'porco_body', TEX.porcoBody.w, TEX.porcoBody.h, (p) => {
+    p.oRound(15, 40, 6, 5, 1.5, PAL.hoof, 1); // pés
+    p.oRound(25, 40, 6, 5, 1.5, PAL.hoof, 1);
+    p.stroke(1.6, O).line(5, 27, 1, 24); // rabinho enrolado
+    p.fill(O).circle(2, 22, 2.2);
+    p.fill(PAL.pig).circle(2, 22, 1.2);
+    p.oEllipse(23, 30, 34, 24, PAL.suit); // terno apertadíssimo
+    p.fill(PAL.suitLight).ellipse(19, 26, 14, 8);
+    p.fill(PAL.warmWhite).tri(20, 19, 30, 19, 25, 32); // camisa
+    p.fill(PAL.coral).poly([[24, 20], [26, 20], [27, 30], [25, 33], [23, 30]]); // gravata
+    p.fill(O).circle(18, 33, 1.2).circle(31, 33, 1.2); // botões estourando
+    p.fill(PAL.gold).circle(34, 25, 1.4); // broche de "funcionário do mês"
+    p.oCircle(25, 13, 11, PAL.pig); // cabeção
+    p.fill(O).tri(14, 5, 18, 0, 21, 5); // orelhas
+    p.fill(PAL.pigDark).tri(15.5, 5, 18, 2, 19.5, 5);
+    p.fill(O).tri(29, 4, 33, 0, 35, 6);
+    p.fill(PAL.pigDark).tri(30.5, 4.5, 33, 2, 33.8, 5.5);
+    p.oRound(31, 11, 11, 9, 4.5, PAL.pigDark, 1.2); // focinho
+    p.fill(O).ellipse(34.5, 15.5, 2, 3).ellipse(38.5, 15.5, 2, 3);
+    p.fill(O).round(23, 9, 6, 2, 1); // olhinho presunçoso semicerrado
+    p.fill(PAL.warmWhite).rect(24, 9, 4, 0.8);
+    p.fill(O).rect(22, 6.5, 8, 1.2); // sobrancelha arqueada
+    p.fill(O).round(28, 21, 7, 1.4, 0.7); // sorrisinho
+  });
+  make(scene, 'porco_hat', 20, 16, (p) => {
+    p.oRound(2, 12, 16, 3, 1.4, 0x1b1d26, 1); // cartola
+    p.oRound(5, 3, 10, 10, 1.5, 0x1b1d26, 1);
+    p.fill(PAL.gold).rect(5, 9.5, 10, 1.6);
+    p.fill(PAL.gunLight).rect(9, 0, 2, 3.5); // mastro da hélice
+  });
+  make(scene, 'porco_heli', 40, 6, (p) => {
+    p.oRound(1, 1.5, 38, 3, 1.5, PAL.gunLight, 1);
+    p.fill(PAL.coral).rect(1.5, 2, 4, 2).rect(34.5, 2, 4, 2);
+    p.oCircle(20, 3, 2, PAL.gold, 0.8);
+  });
+  make(scene, 'porco_case', TEX.porcoCase.w, TEX.porcoCase.h, (p) => {
+    p.oRound(1, 4, 9, 6, 3, PAL.suit, 1); // manga
+    p.oCircle(10, 7, 2.6, PAL.pig, 0.8); // mão (casco)
+    p.oRound(12, 2, 13, 11, 2, 0x7a4a24, 1.2); // maleta
+    p.fill(0x5e3519).rect(12.5, 7, 12, 1.2);
+    p.fill(PAL.gold).rect(17, 5.5, 3, 3);
+    p.stroke(1.4, O).line(15.5, 2, 15.5, 0.5).line(15.5, 0.5, 21.5, 0.5).line(21.5, 0.5, 21.5, 2);
+  });
+  make(scene, 'b_coin', 14, 14, (p) => {
+    p.fill(O).circle(7, 7, 6.6);
+    p.fill(PAL.gold).circle(7, 7, 5.4);
+    p.fill(0xfff1a8).circle(5.5, 5.5, 1.8);
+    p.stroke(1.4, 0xb8860b).line(7, 3.5, 7, 10.5);
+    p.stroke(1.2, 0xb8860b).line(5, 5, 9, 5).line(5, 7, 9, 7).line(5, 9, 9, 9);
+  });
+
+  // ── Don Pombone: pombo gigante de sobretudo branco, chapéu e corrente de ouro ──
+  make(scene, 'pombone_body', TEX.pomboneBody.w, TEX.pomboneBody.h, (p) => {
+    p.oRound(36, 80, 8, 11, 3, PAL.beak, 1.5); // pernas finas e ridículas
+    p.oRound(52, 80, 8, 11, 3, PAL.beak, 1.5);
+    p.fill(O).poly([[4, 50], [20, 42], [22, 66]]); // cauda
+    p.fill(PAL.pigeonDark).poly([[8, 50], [18, 46], [19.5, 62]]);
+    p.oEllipse(46, 58, 64, 50, PAL.donCoat, 2); // sobretudo branco
+    p.fill(0xdcd6c8).ellipse(42, 66, 50, 26);
+    p.fill(0xdcd6c8).tri(46, 34, 66, 34, 56, 64); // lapelas
+    p.fill(0x1b1d26).tri(51, 36, 61, 36, 56, 58); // camisa preta
+    p.fill(PAL.donCoat).rect(54.5, 38, 3, 16); // gravata branca
+    p.stroke(2.2, PAL.gold).line(44, 40, 52, 56).line(52, 56, 64, 40); // correntão de ouro
+    p.oCircle(52, 57, 3.4, PAL.gold, 1.2);
+    p.oCircle(40, 44, 4.2, PAL.coral, 1.2); // cravo vermelho na lapela
+    p.fill(0xff8a92).circle(39, 43, 1.6);
+    p.fill(0xbfb9ad).rect(16, 70, 60, 2.5); // cinto
+    p.oCircle(58, 22, 19, PAL.pigeon, 2); // cabeçona
+    p.fill(PAL.pigeonNeck).ellipse(54, 37, 32, 9); // pescoço furta-cor
+    p.fill(PAL.pigeonNeck2).ellipse(54, 39.5, 26, 4);
+    p.fill(O).tri(72, 20, 94, 25, 72, 30); // bico enorme
+    p.fill(0xd9c9b0).tri(74, 21.5, 90, 25, 74, 28.5);
+    p.stroke(1.6, 0xc8a46a).line(80, 28, 92, 33); // palito de dente
+    p.fill(PAL.warmWhite).circle(64, 17, 6); // olho semicerrado de chefão
+    p.fill(O).circle(65.5, 18.5, 3);
+    p.fill(PAL.pigeon).rect(57, 10, 14, 6.5); // pálpebra pesada
+    p.fill(O).poly([[55, 9], [73, 12], [73, 15], [55, 12.5]]); // sobrancelha grossa
+    p.fill(O).circle(60, 30, 1.3).circle(66, 31, 1.3).circle(63, 33, 1.3); // barba por fazer
+  });
+  make(scene, 'pombone_wing', TEX.pomboneWing.w, TEX.pomboneWing.h, (p) => {
+    p.fill(O).poly([[2, 14], [16, 2], [58, 4], [50, 11], [58, 16], [48, 22], [56, 26], [16, 26]]);
+    p.fill(PAL.pigeon).poly([[5, 14], [17, 5], [52, 6.5], [45, 11], [52, 15], [43, 21], [49, 23.5], [17, 23]]);
+    p.fill(PAL.pigeonDark).rect(24, 10, 18, 2).rect(24, 16, 16, 2);
+  });
+  make(scene, 'pombone_hat', 52, 24, (p) => {
+    p.oRound(2, 17, 48, 6, 3, PAL.donCoat, 1.5); // aba
+    p.oRound(10, 3, 32, 16, 6, PAL.donCoat, 1.5); // copa
+    p.fill(0x1b1d26).rect(10, 12, 32, 4.5); // faixa
+    p.fill(PAL.coral).poly([[36, 12], [46, 0], [44, 8], [40, 14]]); // pena
+  });
+  make(scene, 'pombone_gun', TEX.pomboneGun.w, TEX.pomboneGun.h, (p) => {
+    p.oCircle(7, 11, 6, PAL.pigeon, 1.2); // ponta da asa
+    p.oRound(12, 6, 32, 9, 2, PAL.gold, 1.4); // metralhadora de ouro
+    p.oCircle(26, 17, 6, 0xd4a017, 1.2); // tambor
+    p.fill(0xfff1a8).rect(14, 7.5, 28, 1.6);
+    p.oRound(43, 8, 19, 5, 1.5, 0xd4a017, 1.2); // cano
+    p.fill(O).rect(46, 9.5, 14, 1);
+  });
+  make(scene, 'fx_shield', 64, 64, (p) => {
+    // Bolha do "seguro corporativo" dado pelo Porco Executivo.
+    p.fill(PAL.gold, 0.12).circle(32, 32, 30);
+    p.stroke(2.5, PAL.gold, 0.9).strokeCircle(32, 32, 29);
+    p.stroke(1.2, 0xffffff, 0.6).strokeCircle(32, 32, 25);
+    p.fill(0xffffff, 0.5).ellipse(22, 18, 12, 6);
   });
 
   make(scene, 'fx_flame', 10, 20, (p) => {

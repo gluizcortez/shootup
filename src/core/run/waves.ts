@@ -22,6 +22,8 @@ export interface WaveConfig {
   firstWaveDelay: number;
   clearBonusPerWave: number;
   maxAlive: number;
+  /** Ondas de chefe fixas (ex.: 10 → Don Pombone), têm prioridade sobre as outras. */
+  bossWaves?: Readonly<Record<number, WaveDef>>;
 }
 
 export interface ScheduledSpawn {
@@ -43,11 +45,21 @@ export interface WaveState {
   callout: string;
 }
 
-const GENERATED_CALLOUTS = ['AUDIÊNCIA EM ALTA!', 'MAIS PENAS NO PALCO!', 'O PRODUTOR PEDIU MAIS!', 'PATOS NA ÁREA!'];
+const GENERATED_CALLOUTS = [
+  'AUDIÊNCIA EM ALTA!',
+  'MAIS PENAS NO PALCO!',
+  'O PRODUTOR PEDIU MAIS!',
+  'PATOS NA ÁREA!',
+  'A FAMÍLIA CHEGOU!',
+  'O RH MANDOU MAIS PORCOS!',
+];
 
-/** Ondas além das roteirizadas: escalada simples, só para o protótipo. */
+/**
+ * Ondas além das roteirizadas: escalada simples, só para o protótipo.
+ * Elenco por faixa (GDD §4): pombos a partir da 4, porcos a partir da 7.
+ */
 export function generateWave(n: number, rng: Rng): WaveDef {
-  const patos = 2 + Math.floor(n * 0.9);
+  const patos = 2 + Math.floor(n * 0.6);
   const galinhas = Math.floor((n - 1) / 2);
   const spawns: WaveSpawn[] = [];
   let t = 0;
@@ -59,6 +71,17 @@ export function generateWave(n: number, rng: Rng): WaveDef {
   for (let i = 0; i < galinhas; i++) {
     spawns.push({ kind: 'galinha_rambo', delay: g, x: 'random' });
     g += rng.range(2.0, 3.5);
+  }
+  // Cada entrada de pombo é uma esquadrilha inteira.
+  let s = 2;
+  for (let i = 0; i < (n >= 4 ? Math.floor((n - 2) / 2) : 0); i++) {
+    spawns.push({ kind: 'pombo_mafioso', delay: s, x: 'random' });
+    s += rng.range(4.0, 6.0);
+  }
+  let pc = 2.5;
+  for (let i = 0; i < (n >= 7 ? Math.floor((n - 5) / 2) : 0); i++) {
+    spawns.push({ kind: 'porco_executivo', delay: pc, x: 'random' });
+    pc += rng.range(3.5, 5.0);
   }
   let v = 3;
   for (let i = 0; i < Math.floor(n / 3); i++) {
@@ -83,7 +106,9 @@ export function createWaveState(cfg: WaveConfig): WaveState {
 
 export function beginWave(s: WaveState, cfg: WaveConfig, rng: Rng): void {
   s.wave++;
-  const def = s.wave <= cfg.scripted.length ? (cfg.scripted[s.wave - 1] as WaveDef) : generateWave(s.wave, rng);
+  const def =
+    cfg.bossWaves?.[s.wave] ??
+    (s.wave <= cfg.scripted.length ? (cfg.scripted[s.wave - 1] as WaveDef) : generateWave(s.wave, rng));
   s.queue = def.spawns
     .map((sp) => ({
       kind: sp.kind,

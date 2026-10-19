@@ -7,7 +7,7 @@ import type { Team } from '../combat/projectiles';
  */
 export type GameEvent =
   | { type: 'shot'; x: number; y: number; angle: number; weaponId: string }
-  | { type: 'enemyHit'; uid: number; kind: EnemyKind; x: number; y: number; damage: number; crit: boolean; dirX: number; dirY: number }
+  | { type: 'enemyHit'; uid: number; kind: EnemyKind; x: number; y: number; damage: number; crit: boolean; dirX: number; dirY: number; shielded: boolean }
   | { type: 'enemyKilled'; uid: number; kind: EnemyKind; x: number; y: number; score: number; combo: number; multiplier: number; crit: boolean }
   | { type: 'enemyIncoming'; uid: number; kind: EnemyKind; x: number; warn: number }
   | { type: 'enemyTelegraph'; uid: number; kind: EnemyKind; state: EnemyStateName; duration: number }
@@ -24,6 +24,9 @@ export type GameEvent =
   | { type: 'enemyCharge'; uid: number; kind: EnemyKind; x: number; y: number; dir: number }
   | { type: 'enemyStunned'; uid: number; kind: EnemyKind; x: number; y: number }
   | { type: 'ricochet'; x: number; y: number; angle: number }
+  | { type: 'enemyBuffed'; uid: number; x: number; y: number; targets: readonly number[] }
+  | { type: 'shieldBroken'; uid: number; x: number; y: number }
+  | { type: 'bossEnraged'; uid: number; kind: EnemyKind; x: number; y: number }
   | { type: 'upgradeOffer'; wave: number; cards: readonly string[] }
   | { type: 'upgradePicked'; id: string; stacks: number };
 
