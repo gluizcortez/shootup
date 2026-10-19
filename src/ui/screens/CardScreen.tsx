@@ -71,11 +71,9 @@ function Card({
         <span className="card-desc">{card.description}</span>
         <span className="card-foot">
           <span className="card-branch">{BRANCH_LABEL[card.branch]}</span>
-          {card.maxStacks > 1 && card.maxStacks <= 10 && (
-            <span className="card-stacks" aria-label={`Nível ${next} de ${card.maxStacks}`}>
-              {Array.from({ length: card.maxStacks }, (_, i) => (
-                <i key={i} className={i < card.stacks ? 'own' : i === card.stacks ? 'new' : ''} />
-              ))}
+          {card.stacks > 0 && (
+            <span className="card-stacks" aria-label={`Nível ${card.stacks} para ${next}`}>
+              NV {card.stacks} → <b>{next}</b>
             </span>
           )}
         </span>

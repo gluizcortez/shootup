@@ -6,7 +6,7 @@ import type { UpgradeDef } from '@/core/upgrades/types';
  * muitas ao longo da run. Raridade define força e frequência:
  * comum (ajuste mínimo), incomum (moderado), rara (muda o jeito de jogar) e
  * épica (habilidade especial; quase nunca aparece, exceto depois de um chefe).
- * Épicas ficam douradas ao acumular 5 stacks.
+ * Épicas ficam douradas ao acumular 5 stacks. Nenhuma carta tem limite de acúmulo.
  * Ordem de cálculo: base → + somas → × produtos → limites (veja computeStats).
  */
 export const UPGRADE_POOL: readonly UpgradeDef[] = [
@@ -18,7 +18,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'comum',
     branch: 'balistica',
     tags: ['cadencia'],
-    maxStacks: 10,
     prerequisites: [],
     exclusions: [],
     modifiers: [{ stat: 'fireInterval', op: 'mul', value: 0.99 }],
@@ -30,7 +29,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'comum',
     branch: 'balistica',
     tags: ['dano'],
-    maxStacks: 3,
     prerequisites: [],
     exclusions: [],
     modifiers: [{ stat: 'damage', op: 'add', value: 1 }],
@@ -42,7 +40,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'comum',
     branch: 'balistica',
     tags: ['critico'],
-    maxStacks: 10,
     prerequisites: [],
     exclusions: [],
     modifiers: [{ stat: 'critChance', op: 'add', value: 0.01 }],
@@ -54,7 +51,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'comum',
     branch: 'sobrevivencia',
     tags: ['movimento'],
-    maxStacks: 5,
     prerequisites: [],
     exclusions: [],
     modifiers: [
@@ -70,7 +66,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'incomum',
     branch: 'balistica',
     tags: ['critico'],
-    maxStacks: 5,
     prerequisites: [],
     exclusions: [],
     modifiers: [{ stat: 'critChance', op: 'add', value: 0.02 }],
@@ -82,7 +77,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'incomum',
     branch: 'balistica',
     tags: ['critico'],
-    maxStacks: 5,
     prerequisites: [],
     exclusions: [],
     modifiers: [{ stat: 'critMultiplier', op: 'mul', value: 1.05 }],
@@ -94,7 +88,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'incomum',
     branch: 'balistica',
     tags: ['perfuracao'],
-    maxStacks: 2,
     prerequisites: [],
     exclusions: [],
     modifiers: [
@@ -109,7 +102,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'incomum',
     branch: 'sobrevivencia',
     tags: ['vida'],
-    maxStacks: 6,
     prerequisites: [],
     exclusions: [],
     modifiers: [{ stat: 'maxHp', op: 'add', value: 0.5 }],
@@ -122,7 +114,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'raro',
     branch: 'caos',
     tags: ['ricochete'],
-    maxStacks: 2,
     prerequisites: [],
     exclusions: [],
     modifiers: [{ stat: 'ricochet', op: 'add', value: 1 }],
@@ -134,7 +125,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'raro',
     branch: 'sobrevivencia',
     tags: ['vida'],
-    maxStacks: 99,
     prerequisites: [],
     exclusions: [],
     modifiers: [],
@@ -148,7 +138,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'epico',
     branch: 'caos',
     tags: ['explosao'],
-    maxStacks: 5,
     prerequisites: [],
     exclusions: [],
     modifiers: [],
@@ -170,7 +159,6 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     rarity: 'epico',
     branch: 'caos',
     tags: ['sangramento'],
-    maxStacks: 5,
     prerequisites: [],
     exclusions: [],
     modifiers: [],
@@ -194,10 +182,10 @@ export const UPGRADES: UpgradeConfig = {
     fireInterval: { min: 0.045, max: 2 },
     pellets: { min: 1, max: 8 },
     spreadDeg: { min: 0, max: 25 },
-    critChance: { min: 0, max: 0.75 },
-    pierce: { min: 0, max: 4 },
-    ricochet: { min: 0, max: 4 },
-    maxHp: { min: 1, max: 10 },
+    critChance: { min: 0, max: 1 },
+    pierce: { min: 0, max: Infinity },
+    ricochet: { min: 0, max: Infinity },
+    maxHp: { min: 1, max: Infinity },
   },
   offerSize: 3,
 };

@@ -37,7 +37,8 @@ export interface UpgradeDef {
   rarity: Rarity;
   branch: Branch;
   tags: readonly string[];
-  maxStacks: number;
+  /** Limite de stacks; sem valor = acumula infinitamente. */
+  maxStacks?: number;
   /** Todas precisam estar na mão para a carta aparecer. */
   prerequisites: readonly string[];
   /** Nenhuma pode estar na mão para a carta aparecer. */

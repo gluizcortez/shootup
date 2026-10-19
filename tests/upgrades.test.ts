@@ -151,6 +151,13 @@ describe('upgrades — no World', () => {
     expect(WORLD_CONFIG.weapon.fireInterval).toBe(0.6); // a base nunca é alterada
   });
 
+  it('nenhuma carta do jogo tem limite de acúmulo', () => {
+    for (const c of UPGRADE_POOL) {
+      expect(c.maxStacks).toBeUndefined();
+      expect(isOfferable(c, new Map([[c.id, 500]]))).toBe(true);
+    }
+  });
+
   it('Tiro Duplo saiu do jogo', () => {
     expect(UPGRADE_POOL.some((c) => c.id === 'tiro_duplo')).toBe(false);
   });

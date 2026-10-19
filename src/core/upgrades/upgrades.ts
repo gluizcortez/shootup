@@ -45,7 +45,7 @@ export function computeStats(
 
 /** A carta pode aparecer numa oferta agora? */
 export function isOfferable(def: UpgradeDef, owned: Owned): boolean {
-  if ((owned.get(def.id) ?? 0) >= def.maxStacks) return false;
+  if (def.maxStacks !== undefined && (owned.get(def.id) ?? 0) >= def.maxStacks) return false;
   for (const p of def.prerequisites) if ((owned.get(p) ?? 0) <= 0) return false;
   for (const x of def.exclusions) if ((owned.get(x) ?? 0) > 0) return false;
   return true;

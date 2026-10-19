@@ -499,7 +499,6 @@ export class ArenaScene extends Phaser.Scene {
       rarity: def.rarity,
       branch: def.branch,
       stacks: this.world.owned.get(def.id) ?? 0,
-      maxStacks: def.maxStacks,
       golden: isGolden(def, this.world.owned.get(def.id) ?? 0),
       goldenAt: def.effect?.goldenAt ?? 0,
     };

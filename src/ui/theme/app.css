@@ -1166,25 +1166,13 @@ kbd {
 }
 
 .card-stacks {
-  display: flex;
-  gap: 0.25em;
+  font-family: var(--font-display);
+  font-size: 0.6em;
+  color: var(--rar);
 }
 
-.card-stacks i {
-  width: 0.7em;
-  height: 0.7em;
-  border-radius: 50%;
-  border: 2px solid var(--c-outline);
-  background: var(--c-plum-2);
-}
-
-.card-stacks i.own {
-  background: var(--rar);
-}
-
-.card-stacks i.new {
-  background: var(--c-white);
-  animation: pop 0.8s ease-in-out infinite alternate;
+.card-stacks b {
+  color: var(--c-white);
 }
 
 .card--picked {
