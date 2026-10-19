@@ -5,6 +5,8 @@ import { FixedStepper } from '@/core/run/fixedStep';
 import { RunPhaseMachine } from '@/core/run/runPhase';
 import { breakCombo, createCombo, registerKill, tickCombo } from '@/core/scoring/combo';
 import { ProjectilePool } from '@/core/combat/projectiles';
+import { scaleForWave } from '@/core/run/waves';
+import { PATO_PISTOLEIRO, VACA_LOCA } from '@/game/data/enemies';
 
 describe('Rng', () => {
   it('é determinístico pela seed', () => {
@@ -191,5 +193,28 @@ describe('Terrain', () => {
   });
   it('relevo contínuo (sem degraus)', () => {
     for (let x = 0; x < 800; x += 0.5) expect(Math.abs(t.groundAt(x + 0.5) - t.groundAt(x))).toBeLessThan(1.5);
+  });
+});
+
+describe('scaleForWave', () => {
+  const g = { hpPerWave: 0.08, speedPerWave: 0.02, maxSpeedMult: 1.35 };
+
+  it('onda 1 usa os valores base', () => {
+    expect(scaleForWave(PATO_PISTOLEIRO, 1, g)).toBe(PATO_PISTOLEIRO);
+  });
+
+  it('vida e velocidade sobem em linha reta, devagar, com vida inteira', () => {
+    const p = scaleForWave(PATO_PISTOLEIRO, 6, g) as typeof PATO_PISTOLEIRO;
+    expect(p.maxHp).toBe(Math.round(PATO_PISTOLEIRO.maxHp * 1.4));
+    expect(Number.isInteger(p.maxHp)).toBe(true);
+    expect(p.bulletSpeed).toBeCloseTo(PATO_PISTOLEIRO.bulletSpeed * 1.1);
+    const v = scaleForWave(VACA_LOCA, 6, g) as typeof VACA_LOCA;
+    expect(v.chargeSpeed).toBeCloseTo(VACA_LOCA.chargeSpeed * 1.1);
+    expect(PATO_PISTOLEIRO.maxHp).toBe(12); // a base nunca é alterada
+  });
+
+  it('velocidade tem teto', () => {
+    const p = scaleForWave(PATO_PISTOLEIRO, 60, g) as typeof PATO_PISTOLEIRO;
+    expect(p.bulletSpeed).toBeCloseTo(PATO_PISTOLEIRO.bulletSpeed * 1.35);
   });
 });

@@ -20,7 +20,7 @@ import type { TerrainDef } from '../physics/terrain';
 import { breakCombo, createCombo, registerKill, tickCombo } from '../scoring/combo';
 import type { ComboState, ComboTuning } from '../scoring/combo';
 import type { GameEvent } from './events';
-import { createWaveState, tickWaves } from './waves';
+import { createWaveState, scaleForWave, tickWaves } from './waves';
 import type { WaveConfig, WaveState } from './waves';
 import { computeStats, rollOffer } from '../upgrades/upgrades';
 import type { Rarity, StatClamp, StatKey, Stats, UpgradeDef } from '../upgrades/types';
@@ -232,7 +232,7 @@ export class World {
   }
 
   private spawnOne(kind: EnemyKind, xNorm: number, hoverY: number): Enemy {
-    const def = this.config.enemies[kind];
+    const def = scaleForWave(this.config.enemies[kind], this.waves.wave, this.config.waves.growth);
     const y = hoverY || (def.role === 'ranged' ? this.rng.range(def.hoverMinY, def.hoverMaxY) : 0);
     const e = createEnemy(this.nextUid++, def, xNorm, this.config.bounds, y);
     this.enemies.push(e);

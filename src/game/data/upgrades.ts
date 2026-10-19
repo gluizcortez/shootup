@@ -25,14 +25,14 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'gatilho_nervoso',
     name: 'Gatilho Nervoso',
-    description: 'Atira 25% mais rápido.',
+    description: 'Atira 15% mais rápido.',
     rarity: 'comum',
     branch: 'balistica',
     tags: ['cadencia'],
     maxStacks: 4,
     prerequisites: [],
     exclusions: [],
-    modifiers: [{ stat: 'fireInterval', op: 'mul', value: 0.8 }],
+    modifiers: [{ stat: 'fireInterval', op: 'mul', value: 0.85 }],
   },
   {
     id: 'bala_viajante',
@@ -64,7 +64,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'mira_cirurgica',
     name: 'Mira Cirúrgica',
-    description: '+12% de chance de crítico e críticos +50% mais fortes.',
+    description: '+8% de chance de crítico e críticos +25% mais fortes.',
     rarity: 'incomum',
     branch: 'balistica',
     tags: ['critico'],
@@ -72,8 +72,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
     prerequisites: [],
     exclusions: [],
     modifiers: [
-      { stat: 'critChance', op: 'add', value: 0.12 },
-      { stat: 'critMultiplier', op: 'add', value: 0.5 },
+      { stat: 'critChance', op: 'add', value: 0.08 },
+      { stat: 'critMultiplier', op: 'add', value: 0.25 },
     ],
   },
   {

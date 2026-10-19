@@ -10,7 +10,7 @@ export const PISTOL: WeaponDef = {
   projectileSpeed: 880,
   projectileRadius: 5,
   projectileLifetime: 1.3,
-  damage: 10,
+  damage: 4,
   critChance: 0.12,
   critMultiplier: 2,
   knockback: 120,

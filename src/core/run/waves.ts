@@ -1,5 +1,5 @@
 import type { Rng } from '../math/rng';
-import type { EnemyKind } from '../enemies/types';
+import type { EnemyDef, EnemyKind } from '../enemies/types';
 
 export interface WaveSpawn {
   kind: EnemyKind;
@@ -24,6 +24,32 @@ export interface WaveConfig {
   maxAlive: number;
   /** Ondas de chefe fixas (ex.: 10 → Don Pombone), têm prioridade sobre as outras. */
   bossWaves?: Readonly<Record<number, WaveDef>>;
+  /** Crescimento linear e suave dos inimigos a cada onda (onda 1 = valores base). */
+  growth?: WaveGrowth;
+}
+
+export interface WaveGrowth {
+  /** Fração de vida extra por onda (0.08 → onda 10 tem 1,72× a vida base). */
+  hpPerWave: number;
+  /** Fração de velocidade extra por onda (balas e investidas). */
+  speedPerWave: number;
+  /** Teto do multiplicador de velocidade. */
+  maxSpeedMult: number;
+}
+
+/**
+ * Cópia do inimigo ajustada para a onda: vida e velocidade sobem em linha reta,
+ * devagar. Sem crescimento (ou na onda 1) devolve o próprio def.
+ */
+export function scaleForWave(def: EnemyDef, wave: number, g: WaveGrowth | undefined): EnemyDef {
+  const steps = Math.max(0, wave - 1);
+  if (!g || steps === 0) return def;
+  const hpMult = 1 + g.hpPerWave * steps;
+  const speedMult = Math.min(g.maxSpeedMult, 1 + g.speedPerWave * steps);
+  const scaled: EnemyDef & { bulletSpeed?: number; chargeSpeed?: number } = { ...def, maxHp: Math.round(def.maxHp * hpMult) };
+  if ('bulletSpeed' in def) scaled.bulletSpeed = def.bulletSpeed * speedMult;
+  if (def.behaviour === 'vaca') scaled.chargeSpeed = def.chargeSpeed * speedMult;
+  return scaled;
 }
 
 export interface ScheduledSpawn {
@@ -55,39 +81,24 @@ const GENERATED_CALLOUTS = [
 ];
 
 /**
- * Ondas além das roteirizadas: escalada simples, só para o protótipo.
- * Elenco por faixa (GDD §4): pombos a partir da 4, porcos a partir da 7.
+ * Ondas além das roteirizadas: escalada lenta, um bicho a mais a cada poucas ondas.
+ * Elenco por faixa (GDD §4): pombos já vêm das roteirizadas, porcos a partir da 9.
  */
 export function generateWave(n: number, rng: Rng): WaveDef {
-  const patos = 2 + Math.floor(n * 0.6);
-  const galinhas = Math.floor((n - 1) / 2);
   const spawns: WaveSpawn[] = [];
-  let t = 0;
-  for (let i = 0; i < patos; i++) {
-    spawns.push({ kind: 'pato_pistoleiro', delay: t, x: 'random' });
-    t += rng.range(0.6, 1.4);
-  }
-  let g = 1.5;
-  for (let i = 0; i < galinhas; i++) {
-    spawns.push({ kind: 'galinha_rambo', delay: g, x: 'random' });
-    g += rng.range(2.0, 3.5);
-  }
+  const add = (kind: EnemyKind, count: number, start: number, gapMin: number, gapMax: number) => {
+    let t = start;
+    for (let i = 0; i < count; i++) {
+      spawns.push({ kind, delay: t, x: 'random' });
+      t += rng.range(gapMin, gapMax);
+    }
+  };
+  add('pato_pistoleiro', 2 + Math.floor(n / 4), 0, 1.4, 2.4);
+  add('galinha_rambo', Math.floor((n - 2) / 4), 2.5, 4.0, 6.0);
   // Cada entrada de pombo é uma esquadrilha inteira.
-  let s = 2;
-  for (let i = 0; i < (n >= 4 ? Math.floor((n - 2) / 2) : 0); i++) {
-    spawns.push({ kind: 'pombo_mafioso', delay: s, x: 'random' });
-    s += rng.range(4.0, 6.0);
-  }
-  let pc = 2.5;
-  for (let i = 0; i < (n >= 7 ? Math.floor((n - 5) / 2) : 0); i++) {
-    spawns.push({ kind: 'porco_executivo', delay: pc, x: 'random' });
-    pc += rng.range(3.5, 5.0);
-  }
-  let v = 3;
-  for (let i = 0; i < Math.floor(n / 3); i++) {
-    spawns.push({ kind: 'vaca_loca', delay: v, x: 'random' });
-    v += rng.range(3.0, 5.0);
-  }
+  add('pombo_mafioso', n >= 6 ? Math.floor((n - 3) / 4) : 0, 4, 6.0, 8.0);
+  add('porco_executivo', n >= 9 ? Math.floor((n - 5) / 4) : 0, 5, 5.0, 7.0);
+  add('vaca_loca', Math.floor((n - 1) / 4), 6, 5.0, 7.0);
   return { spawns, callout: rng.pick(GENERATED_CALLOUTS) };
 }
 
