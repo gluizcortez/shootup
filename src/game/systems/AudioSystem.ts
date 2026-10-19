@@ -1,0 +1,293 @@
+/**
+ * SFX 100% sintetizados com WebAudio: originais, sem arquivos e sem licença
+ * de terceiros. Placeholders até a mixagem definitiva (GDD §9).
+ */
+export type SfxId =
+  | 'shot'
+  | 'hit'
+  | 'crit'
+  | 'killPato'
+  | 'killGalinha'
+  | 'enemyShotPato'
+  | 'enemyShotGalinha'
+  | 'telegraphPato'
+  | 'telegraphGalinha'
+  | 'jump'
+  | 'land'
+  | 'hurt'
+  | 'waveStart'
+  | 'waveClear'
+  | 'gameOver'
+  | 'ui';
+
+/** Intervalo mínimo entre repetições do mesmo som (evita empilhar ruído). */
+const MIN_GAP: Partial<Record<SfxId, number>> = {
+  hit: 0.03,
+  crit: 0.04,
+  enemyShotGalinha: 0.05,
+  land: 0.08,
+};
+
+const MAX_VOICES = 24;
+
+export class AudioSystem {
+  private ctx: AudioContext | null = null;
+  private master: GainNode | null = null;
+  private noise: AudioBuffer | null = null;
+  private readonly last = new Map<SfxId, number>();
+  private voiceEnds: number[] = [];
+  private volume = 0.7;
+  private muted = false;
+
+  /** Navegadores só liberam áudio após um gesto do usuário. */
+  unlock(): void {
+    try {
+      if (!this.ctx) {
+        const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!Ctor) return;
+        this.ctx = new Ctor({ latencyHint: 'interactive' });
+        this.master = this.ctx.createGain();
+        const comp = this.ctx.createDynamicsCompressor();
+        comp.threshold.value = -14;
+        comp.ratio.value = 4;
+        this.master.connect(comp).connect(this.ctx.destination);
+        this.noise = this.makeNoise(this.ctx);
+        this.applyVolume();
+      }
+      if (this.ctx.state === 'suspended') void this.ctx.resume();
+    } catch (err) {
+      console.warn('[audio] WebAudio indisponível; seguindo sem som.', err);
+      this.ctx = null;
+    }
+  }
+
+  setVolume(volume: number, muted: boolean): void {
+    this.volume = volume;
+    this.muted = muted;
+    this.applyVolume();
+  }
+
+  private applyVolume(): void {
+    if (this.master && this.ctx) this.master.gain.setValueAtTime(this.muted ? 0 : this.volume * 0.6, this.ctx.currentTime);
+  }
+
+  play(id: SfxId, param = 1): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.master || this.muted || ctx.state !== 'running') return;
+    const now = ctx.currentTime;
+    const gap = MIN_GAP[id];
+    if (gap !== undefined && now - (this.last.get(id) ?? -1) < gap) return;
+    this.voiceEnds = this.voiceEnds.filter((t) => t > now);
+    if (this.voiceEnds.length >= MAX_VOICES && id !== 'hurt' && id !== 'gameOver') return;
+    this.last.set(id, now);
+    const end = this.render(ctx, this.master, id, now, param);
+    this.voiceEnds.push(end);
+  }
+
+  private render(ctx: AudioContext, out: AudioNode, id: SfxId, t: number, param: number): number {
+    const vary = 1 + (Math.random() - 0.5) * 0.12; // pitch variation discreta
+    switch (id) {
+      case 'shot':
+        this.noiseBurst(ctx, out, t, 0.07, 2200 * vary, 0.9, 0.55, 'bandpass');
+        this.sweep(ctx, out, t, 'triangle', 210 * vary, 55, 0.09, 0.55);
+        this.sweep(ctx, out, t, 'square', 1400 * vary, 400, 0.03, 0.08);
+        return t + 0.1;
+      case 'hit':
+        this.sweep(ctx, out, t, 'triangle', 950 * vary, 520, 0.05, 0.25);
+        this.noiseBurst(ctx, out, t, 0.025, 4000, 1, 0.15, 'highpass');
+        return t + 0.06;
+      case 'crit':
+        this.sweep(ctx, out, t, 'sine', 1320 * vary, 1300, 0.12, 0.22);
+        this.sweep(ctx, out, t + 0.02, 'sine', 1980 * vary, 1960, 0.12, 0.16);
+        this.noiseBurst(ctx, out, t, 0.03, 5000, 1, 0.2, 'highpass');
+        return t + 0.15;
+      case 'killPato': {
+        // "Quá!" — dente de serra com filtro formante descendo.
+        const o = ctx.createOscillator();
+        const f = ctx.createBiquadFilter();
+        const g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(560 * vary, t);
+        o.frequency.exponentialRampToValueAtTime(300, t + 0.2);
+        f.type = 'bandpass';
+        f.Q.value = 5;
+        f.frequency.setValueAtTime(1500, t);
+        f.frequency.exponentialRampToValueAtTime(700, t + 0.2);
+        this.env(g, t, 0.005, 0.22, 0.5);
+        o.connect(f).connect(g).connect(out);
+        o.start(t);
+        o.stop(t + 0.25);
+        this.noiseBurst(ctx, out, t, 0.08, 1200, 0.7, 0.35, 'lowpass');
+        return t + 0.25;
+      }
+      case 'killGalinha': {
+        // "Cócóricó" encurtado e indignado.
+        const notes = [700, 1050, 520];
+        notes.forEach((n, i) => this.sweep(ctx, out, t + i * 0.07, 'square', n * vary, n * 0.85, 0.08, 0.16));
+        this.noiseBurst(ctx, out, t, 0.12, 900, 0.7, 0.45, 'lowpass');
+        return t + 0.3;
+      }
+      case 'enemyShotPato':
+        this.sweep(ctx, out, t, 'sine', 980 * vary, 260, 0.14, 0.22);
+        this.noiseBurst(ctx, out, t, 0.04, 1800, 1, 0.12, 'bandpass');
+        return t + 0.15;
+      case 'enemyShotGalinha':
+        this.noiseBurst(ctx, out, t, 0.045, 900 * vary, 1.2, 0.22, 'bandpass');
+        this.sweep(ctx, out, t, 'square', 160, 70, 0.05, 0.12);
+        return t + 0.06;
+      case 'telegraphPato':
+        this.noiseBurst(ctx, out, t, 0.02, 3500, 2, 0.25, 'highpass');
+        this.noiseBurst(ctx, out, t + 0.09, 0.03, 2500, 2, 0.3, 'highpass');
+        this.sweep(ctx, out, t + 0.12, 'sine', 1600, 2400, 0.08, 0.06);
+        return t + 0.22;
+      case 'telegraphGalinha': {
+        // Cano girando: zumbido que sobe durante todo o aviso.
+        const dur = Math.max(0.2, param);
+        this.sweep(ctx, out, t, 'sawtooth', 120, 950, dur, 0.09, true);
+        this.sweep(ctx, out, t, 'square', 60, 240, dur, 0.05, true);
+        return t + dur;
+      }
+      case 'jump':
+        this.sweep(ctx, out, t, 'sine', 300 * vary, 560, 0.09, 0.14);
+        return t + 0.1;
+      case 'land':
+        this.noiseBurst(ctx, out, t, 0.06, 500, 0.8, Math.min(0.35, 0.1 + param * 0.25), 'lowpass');
+        return t + 0.07;
+      case 'hurt':
+        this.sweep(ctx, out, t, 'square', 320, 110, 0.28, 0.3);
+        this.noiseBurst(ctx, out, t, 0.15, 800, 0.8, 0.4, 'lowpass');
+        return t + 0.3;
+      case 'waveStart':
+        [523, 659, 784, 1046].forEach((n, i) => this.sweep(ctx, out, t + i * 0.07, 'square', n, n, 0.09, 0.12));
+        return t + 0.4;
+      case 'waveClear':
+        [784, 988, 1175, 1568].forEach((n, i) => this.sweep(ctx, out, t + i * 0.06, 'triangle', n, n, 0.12, 0.2));
+        this.applause(ctx, out, t + 0.1, 1.1);
+        return t + 1.2;
+      case 'gameOver':
+        // Trombone triste: "uá uá uá uááá".
+        [392, 370, 349].forEach((n, i) => this.sweep(ctx, out, t + i * 0.32, 'sawtooth', n, n * 0.97, 0.28, 0.16, false, 900));
+        this.sweep(ctx, out, t + 0.96, 'sawtooth', 330, 300, 0.9, 0.16, false, 900, 6);
+        return t + 1.9;
+      case 'ui':
+        this.sweep(ctx, out, t, 'triangle', 1200, 900, 0.04, 0.12);
+        return t + 0.05;
+    }
+  }
+
+  private env(g: GainNode, t: number, attack: number, dur: number, peak: number, sustain = false): void {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    if (sustain) {
+      g.gain.setValueAtTime(peak, t + dur * 0.9);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    } else {
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    }
+  }
+
+  private sweep(
+    ctx: AudioContext,
+    out: AudioNode,
+    t: number,
+    type: OscillatorType,
+    from: number,
+    to: number,
+    dur: number,
+    peak: number,
+    sustain = false,
+    lowpass?: number,
+    vibratoHz?: number,
+  ): void {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(from, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + dur);
+    this.env(g, t, Math.min(0.01, dur * 0.2), dur, peak, sustain);
+    let node: AudioNode = o;
+    if (lowpass) {
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = lowpass;
+      node = node.connect(f);
+    }
+    if (vibratoHz) {
+      const lfo = ctx.createOscillator();
+      const depth = ctx.createGain();
+      lfo.frequency.value = vibratoHz;
+      depth.gain.value = from * 0.03;
+      lfo.connect(depth).connect(o.frequency);
+      lfo.start(t);
+      lfo.stop(t + dur);
+    }
+    node.connect(g).connect(out);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  }
+
+  private noiseBurst(
+    ctx: AudioContext,
+    out: AudioNode,
+    t: number,
+    dur: number,
+    freq: number,
+    q: number,
+    peak: number,
+    type: BiquadFilterType,
+  ): void {
+    if (!this.noise) return;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.playbackRate.value = 0.8 + Math.random() * 0.4;
+    const f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    f.Q.value = q;
+    const g = ctx.createGain();
+    this.env(g, t, 0.002, dur, peak);
+    src.connect(f).connect(g).connect(out);
+    src.start(t, Math.random() * 0.5);
+    src.stop(t + dur + 0.02);
+  }
+
+  private applause(ctx: AudioContext, out: AudioNode, t: number, dur: number): void {
+    if (!this.noise) return;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 2500;
+    f.Q.value = 0.6;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.18, t + 0.15);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    // Modulação rápida imita palmas individuais.
+    const lfo = ctx.createOscillator();
+    const depth = ctx.createGain();
+    lfo.type = 'square';
+    lfo.frequency.value = 13;
+    depth.gain.value = 0.06;
+    lfo.connect(depth).connect(g.gain);
+    src.connect(f).connect(g).connect(out);
+    src.start(t);
+    src.stop(t + dur);
+    lfo.start(t);
+    lfo.stop(t + dur);
+  }
+
+  private makeNoise(ctx: AudioContext): AudioBuffer {
+    const len = ctx.sampleRate;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+
+  destroy(): void {
+    void this.ctx?.close().catch(() => undefined);
+    this.ctx = null;
+  }
+}

@@ -1,0 +1,32 @@
+/** Paleta inicial do GDD §7 + tons auxiliares para os placeholders. */
+export const PAL = {
+  charcoal: 0x151922,
+  plum: 0x272035,
+  plumLight: 0x3a2f4f,
+  turquoise: 0x42dec4,
+  amber: 0xffc857,
+  coral: 0xff5964,
+  violet: 0xb37cff,
+  warmWhite: 0xf7f1e8,
+  outline: 0x0d0f15,
+  skin: 0xf2c49b,
+  gunMetal: 0x3b4252,
+  gunLight: 0x6b7385,
+  brass: 0xe8b04a,
+  duckYellow: 0xffd23f,
+  beak: 0xff9f1c,
+  hatBrown: 0x8a5a2b,
+  hatBand: 0x4a2c14,
+  chickenWhite: 0xfaf7f0,
+  comb: 0xe63946,
+  shadow: 0x000000,
+} as const;
+
+export const CSS = {
+  amber: '#FFC857',
+  coral: '#FF5964',
+  turquoise: '#42DEC4',
+  warmWhite: '#F7F1E8',
+  outline: '#0D0F15',
+  violet: '#B37CFF',
+} as const;
