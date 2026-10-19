@@ -1,10 +1,10 @@
 import type { WeaponDef } from '@/core/combat/weapon';
 
-/** Pistola: precisa e versátil, cadência intermediária (GDD §5). */
+/** Pistola: precisa e versátil. Começa lenta (1 tiro a cada 0,6 s, 75% menos que antes); as cartas aceleram. */
 export const PISTOL: WeaponDef = {
   id: 'pistol',
   name: 'Pistola',
-  fireInterval: 0.15,
+  fireInterval: 0.6,
   pelletsPerShot: 1,
   spreadDeg: 1.8,
   projectileSpeed: 880,

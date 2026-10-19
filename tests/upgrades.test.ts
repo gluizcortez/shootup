@@ -148,7 +148,7 @@ describe('upgrades — no World', () => {
   it('Gatilho Nervoso deixa a arma mais rápida', () => {
     const w = withCard('gatilho_nervoso');
     expect(w.weapon.fireInterval).toBeCloseTo(WORLD_CONFIG.weapon.fireInterval * 0.8);
-    expect(WORLD_CONFIG.weapon.fireInterval).toBe(0.15); // a base nunca é alterada
+    expect(WORLD_CONFIG.weapon.fireInterval).toBe(0.6); // a base nunca é alterada
   });
 
   it('Tiro Duplo dispara 2 balas por tiro', () => {
