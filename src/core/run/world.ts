@@ -400,7 +400,9 @@ export class World {
       const dirX = p.vx / speed;
       const dirY = p.vy / speed;
       const d = e.def;
-      const damage = d.behaviour === 'vaca' && e.state === 'dizzy' ? p.damage * d.dizzyDamageMult : p.damage;
+      const raw = d.behaviour === 'vaca' && e.state === 'dizzy' ? p.damage * d.dizzyDamageMult : p.damage;
+      // Dano sempre inteiro: multiplicadores de cartas geram dízimas (ex.: 6.4000000001).
+      const damage = Math.max(1, Math.round(raw));
       // Escudo do Porco Executivo absorve primeiro.
       const shielded = e.shield > 0;
       const absorbed = Math.min(e.shield, damage);
