@@ -1,10 +1,12 @@
-import { approach, DEG_TO_RAD } from '../math/scalar';
-import { applyFriction, facePlayer, updateIncoming } from './enemyPhysics';
+import { DEG_TO_RAD } from '../math/scalar';
+import { angleToPlayer, facePlayer, pickHoverTarget, steerHover, updateDescend, updateIncoming } from './enemyPhysics';
 import type { Enemy, EnemyContext, GalinhaDef } from './types';
 
 /**
- * Galinha Rambo: despenca do topo e aterrissa com estrondo. No chão, mantém distância, gira o cano (telegraph) e solta uma rajada
- * horizontal. Cada tiro a empurra para trás. Dá para pular por cima da rajada.
+ * Galinha Rambo (atiradora pesada): desce de jetpack e paira no alto, devagar.
+ * O cano gira (telegraph) acompanhando o jogador; no fim do aviso a mira TRAVA
+ * e sai uma rajada naquela direção. Cada tiro a empurra para trás no ar.
+ * Nunca vem até o jogador.
  */
 export function updateGalinha(e: Enemy, def: GalinhaDef, ctx: EnemyContext, dt: number): void {
   e.stateTimer -= dt;
@@ -13,36 +15,38 @@ export function updateGalinha(e: Enemy, def: GalinhaDef, ctx: EnemyContext, dt: 
     case 'incoming':
       if (updateIncoming(e)) {
         e.state = 'descend';
-        e.vy = 120;
+        e.shotCooldown = ctx.rng.range(0.8, 1.4);
       }
       return;
 
     case 'descend':
       facePlayer(e, ctx);
-      if (e.grounded) {
-        e.state = 'position';
-        e.shotCooldown = ctx.rng.range(0.5, 1.0);
+      e.aimAngle = e.facing > 0 ? 0.4 : Math.PI - 0.4;
+      if (updateDescend(e, dt)) {
+        e.state = 'hover';
+        pickHoverTarget(e, ctx);
       }
       return;
 
-    case 'position': {
+    case 'hover':
       e.shotCooldown = Math.max(0, e.shotCooldown - dt);
       facePlayer(e, ctx);
-      const dist = Math.abs(ctx.playerX - e.x);
-      let dir = 0;
-      if (dist > def.preferredRange + def.rangeTolerance) dir = e.facing;
-      else if (dist < def.preferredRange - def.rangeTolerance) dir = -e.facing;
-      if (e.grounded) e.vx = approach(e.vx, dir * def.walkSpeed, def.groundFriction * dt);
-      if (e.shotCooldown <= 0 && dist < def.preferredRange + def.rangeTolerance * 3) {
+      steerHover(e, ctx, dt);
+      e.aimAngle = e.facing > 0 ? 0.4 : Math.PI - 0.4;
+      if (e.shotCooldown <= 0) {
         e.state = 'spinup';
         e.stateTimer = def.spinUpTime;
         ctx.telegraph(e, def.spinUpTime);
       }
       return;
-    }
 
     case 'spinup':
-      applyFriction(e, dt);
+      steerHover(e, ctx, dt, 0.2);
+      // Rastreia o jogador até a trava; depois da trava, a mira congela.
+      if (e.stateTimer > def.spinUpTime * def.aimLockFraction) {
+        facePlayer(e, ctx);
+        e.aimAngle = angleToPlayer(e, ctx);
+      }
       if (e.stateTimer <= 0) {
         e.state = 'burst';
         e.burstLeft = def.burstCount;
@@ -50,30 +54,31 @@ export function updateGalinha(e: Enemy, def: GalinhaDef, ctx: EnemyContext, dt: 
       }
       return;
 
-    case 'burst':
-      applyFriction(e, dt);
+    case 'burst': {
+      steerHover(e, ctx, dt, 0);
       e.burstTimer -= dt;
+      const spread = def.burstSpreadDeg * DEG_TO_RAD;
       while (e.burstTimer <= 0 && e.burstLeft > 0) {
-        const spread = def.burstSpreadDeg * DEG_TO_RAD;
-        const base = e.facing > 0 ? 0 : Math.PI;
-        ctx.fire(e, base + ctx.rng.range(-spread, spread));
-        e.vx -= e.facing * def.recoilImpulse;
+        ctx.fire(e, e.aimAngle + ctx.rng.range(-spread, spread));
+        e.vx -= Math.cos(e.aimAngle) * def.recoilImpulse;
+        e.vy -= Math.sin(e.aimAngle) * def.recoilImpulse * 0.5;
         e.burstLeft--;
         e.burstTimer += def.burstInterval;
       }
       if (e.burstLeft <= 0) {
         e.state = 'cooldown';
-        e.stateTimer = def.cooldown * 0.5;
+        e.stateTimer = def.cooldown * 0.4;
         e.shotCooldown = def.cooldown;
       }
       return;
+    }
 
     case 'cooldown':
-      applyFriction(e, dt);
-      if (e.stateTimer <= 0) e.state = 'position';
+      steerHover(e, ctx, dt, 0.6);
+      if (e.stateTimer <= 0) e.state = 'hover';
       return;
 
     default:
-      e.state = 'position';
+      e.state = 'hover';
   }
 }

@@ -163,7 +163,9 @@ export class World {
 
   /** Anuncia um animal no topo, na coluna `xNorm` (0 = esquerda, 1 = direita). */
   spawnEnemy(kind: EnemyKind, xNorm: number): Enemy {
-    const e = createEnemy(this.nextUid++, this.config.enemies[kind], xNorm, this.config.bounds);
+    const def = this.config.enemies[kind];
+    const hoverY = this.rng.range(def.hoverMinY, def.hoverMaxY);
+    const e = createEnemy(this.nextUid++, def, xNorm, this.config.bounds, hoverY);
     this.enemies.push(e);
     this.emit({ type: 'enemyIncoming', uid: e.uid, kind, x: e.x, warn: e.def.warnTime });
     return e;
@@ -238,11 +240,9 @@ export class World {
         else updateGalinha(e, def, this.ctx, dt);
       } else {
         e.vx *= 0.9;
+        e.vy *= 0.9;
       }
-      const impact = integrateEnemy(e, b, dt);
-      if (impact > 0) {
-        this.emit({ type: 'enemyLanded', uid: e.uid, kind: e.def.id, x: e.x, y: e.y + e.def.hh, impact });
-      }
+      integrateEnemy(e, b, dt);
     }
   }
 
@@ -310,10 +310,7 @@ export class World {
       const dirY = p.vy / speed;
       e.hp -= p.damage;
       e.vx += dirX * p.knockback * e.def.knockbackScale;
-      if (e.grounded && dirY < 0.2) {
-        e.vy = -90 * e.def.knockbackScale; // pulinho de susto
-        e.grounded = false;
-      }
+      e.vy += dirY * p.knockback * 0.6 * e.def.knockbackScale; // tranco no ar
       this.stats.shotsHit++;
       if (p.crit) this.stats.crits++;
       this.emit({ type: 'enemyHit', uid: e.uid, kind: e.def.id, x: p.x, y: p.y, damage: p.damage, crit: p.crit, dirX, dirY });
@@ -372,7 +369,8 @@ export class World {
     pb.hh = m.hh;
     const eb = this.enemyBox;
     for (const e of this.enemies) {
-      if (e.state === 'incoming') continue;
+      // Só inimigos corpo a corpo encostam no jogador; atiradores ficam no alto.
+      if (e.state === 'incoming' || e.def.role !== 'melee') continue;
       eb.x = e.x;
       eb.y = e.y;
       eb.hw = e.def.hw * 0.8;

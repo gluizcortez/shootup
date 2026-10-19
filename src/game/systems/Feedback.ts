@@ -167,8 +167,7 @@ export class Feedback {
       case 'enemyIncoming':
         this.audio.play('incoming', ev.warn);
         return;
-      case 'enemyLanded':
-        return this.enemyLanded(ev);
+
     }
   }
 
@@ -227,34 +226,6 @@ export class Feedback {
     }
   }
 
-  private enemyLanded(ev: Extract<GameEvent, { type: 'enemyLanded' }>): void {
-    if (ev.kind === 'galinha_rambo') {
-      // Aterrissagem pesada: estrondo, poeira e anel de choque.
-      this.audio.play('slam');
-      this.shake.add(0.45);
-      for (let i = 0, n = this.count(12); i < n; i++) this.dust(ev.x, ev.y, (i % 2 ? 1 : -1) * (80 + Math.random() * 220));
-      this.emit({ texture: 'fx_ring', x: ev.x, y: ev.y, vx: 0, vy: 0, life: 0.25, tint: PAL.warmWhite, scaleFrom: 0.3, scaleTo: 2.4, additive: true, alphaFrom: 0.7, depth: 22 });
-      for (let i = 0, n = this.count(4); i < n; i++) this.feather(ev.x, ev.y - 20, ev.kind, -Math.PI / 2 + (Math.random() - 0.5) * 2);
-    } else {
-      this.audio.play('land', 0.3);
-      for (let i = 0, n = this.count(4); i < n; i++) this.dust(ev.x, ev.y, (i % 2 ? 1 : -1) * (40 + Math.random() * 60));
-      // O paraquedas se solta e sobe flutuando.
-      this.emit({
-        texture: 'pato_chute',
-        x: ev.x + 4,
-        y: ev.y - 44,
-        vx: (Math.random() - 0.5) * 60,
-        vy: -70,
-        life: 1.1,
-        gravity: -20,
-        drag: 1.5,
-        spin: (Math.random() - 0.5) * 2,
-        alphaFrom: 0.9,
-        depth: 24,
-      });
-    }
-  }
-
   private enemyKilled(ev: Extract<GameEvent, { type: 'enemyKilled' }>): void {
     this.hooks.onEnemyKilled(ev.uid);
     this.hooks.onCombo(ev.multiplier);
@@ -266,6 +237,12 @@ export class Feedback {
     for (let i = 0, m = this.count(6); i < m; i++) this.star(ev.x, ev.y, i % 2 ? PAL.amber : PAL.warmWhite);
     for (let i = 0, m = this.count(4); i < m; i++) this.puff(ev.x + (Math.random() - 0.5) * 20, ev.y, 1.4, 0.6);
     this.ring(ev.x, ev.y, PAL.warmWhite);
+    if (ev.kind === 'pato_pistoleiro') {
+      // Os balões se soltam e sobem: piada visual.
+      this.emit({ texture: 'pato_balloons', x: ev.x, y: ev.y - 40, vx: (Math.random() - 0.5) * 40, vy: -90, life: 1.6, gravity: -60, spin: (Math.random() - 0.5) * 1.5, depth: 24 });
+    } else {
+      this.audio.play('slam');
+    }
     // O acessório voa longe: piada visual.
     this.emit({
       texture: ev.kind === 'galinha_rambo' ? 'galinha_glasses' : 'pato_hat',

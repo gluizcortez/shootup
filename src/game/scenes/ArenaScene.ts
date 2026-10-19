@@ -274,7 +274,7 @@ export class ArenaScene extends Phaser.Scene {
         view = this.acquireView(e.uid, e.def.id);
         view.bind(e);
       }
-      view.update(e, alpha, running ? dt : 0, w.player.motor.x, w.player.motor.y, this.reducedMotion);
+      view.update(e, alpha, running ? dt : 0, this.reducedMotion);
     }
     this.playerView.update(w, alpha, running ? dt : 0);
     this.projectileRenderer.update(w.projectiles, alpha, running ? dt : 0);

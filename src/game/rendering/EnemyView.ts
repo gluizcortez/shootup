@@ -7,7 +7,9 @@ import { normalizeAngle, Spring } from './spring';
 const INV = 1 / TEX_SCALE;
 
 interface Rig {
-  chute: Phaser.GameObjects.Image | null;
+  /** Atrás do corpo: balões do pato ou jetpack da galinha. */
+  lift: Phaser.GameObjects.Image;
+  flame: Phaser.GameObjects.Image | null;
   body: Phaser.GameObjects.Image;
   prop: Phaser.GameObjects.Image;
   gun: Phaser.GameObjects.Image;
@@ -18,7 +20,7 @@ interface Rig {
   exclY: number;
 }
 
-/** Visual de um animal. Reaproveitado via pool por espécie. */
+/** Visual de um animal atirador que paira no alto. Reaproveitado via pool por espécie. */
 export class EnemyView {
   readonly root: Phaser.GameObjects.Container;
   private readonly rig: Rig;
@@ -27,7 +29,6 @@ export class EnemyView {
   private readonly marker: Phaser.GameObjects.Image;
   private readonly squash = new Spring(380, 12);
   private flash = 0;
-  private wasGrounded = true;
   private time = Math.random() * 10;
   private gunFrame = 0;
   private gunFrameTimer = 0;
@@ -45,52 +46,57 @@ export class EnemyView {
     this.shadow = scene.add.image(0, floorY + 1, 'shadow').setScale(0.9 * INV).setDepth(9);
     this.marker = scene.add.image(0, 14, 'fx_drop').setScale(INV).setDepth(95).setVisible(false);
     const r = this.rig;
-    const parts = [r.body, r.prop, r.gun, r.glow, r.excl];
-    if (r.chute) parts.unshift(r.chute);
+    const parts: Phaser.GameObjects.Image[] = [r.lift];
+    if (r.flame) parts.push(r.flame);
+    parts.push(r.body, r.prop, r.gun, r.glow, r.excl);
     this.root = scene.add.container(0, 0, parts).setDepth(25);
     this.release();
   }
 
   private buildPato(scene: Phaser.Scene): Rig {
     const t = TEX.patoBody;
+    const lift = scene.add
+      .image(5, -26, 'pato_balloons')
+      .setOrigin(0.5, 46 / TEX.patoBalloons.h)
+      .setScale(INV);
     const body = scene.add.image(0, 0, 'pato_body').setOrigin(20 / t.w, 36 / t.h).setScale(INV);
     const prop = scene.add.image(7, -31, 'pato_hat').setOrigin(0.5, 0.85).setScale(INV).setRotation(-0.12);
     const gun = scene.add
       .image(-2, -14, 'pato_gun')
       .setOrigin(TEX.patoGun.pivotX / TEX.patoGun.w, 0.5)
       .setScale(INV);
-    const glow = scene.add.image(16, -16, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
-    const excl = scene.add.image(4, -58, 'fx_excl').setScale(INV).setVisible(false);
-    const chute = scene.add
-      .image(4, -22, 'pato_chute')
-      .setOrigin(0.5, 40 / TEX.patoChute.h)
-      .setScale(INV);
-    return { chute, body, prop, gun, gunX: -2, gunY: -14, glow, excl, exclY: -80 };
+    const glow = scene.add.image(14, -14, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const excl = scene.add.image(-14, -40, 'fx_excl').setScale(INV).setVisible(false);
+    return { lift, flame: null, body, prop, gun, gunX: -2, gunY: -14, glow, excl, exclY: -40 };
   }
 
   private buildGalinha(scene: Phaser.Scene): Rig {
     const t = TEX.galinhaBody;
+    const lift = scene.add.image(-14, -30, 'galinha_jetpack').setScale(INV);
+    const flame = scene.add
+      .image(-14, -15, 'fx_flame')
+      .setOrigin(0.5, 0)
+      .setScale(INV)
+      .setBlendMode(Phaser.BlendModes.ADD);
     const body = scene.add.image(0, 0, 'galinha_body').setOrigin(23 / t.w, 55 / t.h).setScale(INV);
     const prop = scene.add.image(7, -38, 'galinha_glasses').setScale(INV);
     const gun = scene.add
       .image(-11, -21, 'galinha_gun_a')
       .setOrigin(TEX.galinhaGun.pivotX / TEX.galinhaGun.w, 0.5)
       .setScale(INV);
-    const glow = scene.add.image(36, -21, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const glow = scene.add.image(34, -21, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
     const excl = scene.add.image(4, -72, 'fx_excl').setScale(INV).setVisible(false);
-    return { chute: null, body, prop, gun, gunX: -11, gunY: -21, glow, excl, exclY: -72 };
+    return { lift, flame, body, prop, gun, gunX: -11, gunY: -21, glow, excl, exclY: -72 };
   }
 
   bind(e: Enemy): void {
     this.uid = e.uid;
     this.root.setVisible(true).setActive(true).setAlpha(1).setRotation(0);
     this.shadow.setVisible(true);
-    this.rig.chute?.setVisible(true).setRotation(0);
     this.flash = 0;
     this.telegraphT = 0;
     this.telegraphDur = 0;
     this.shotKick = 0;
-    this.wasGrounded = e.grounded;
     this.rig.excl.setVisible(false);
     this.rig.glow.setScale(0);
     this.clearFlash();
@@ -131,7 +137,7 @@ export class EnemyView {
     for (const o of this.parts()) o.clearTint();
   }
 
-  update(e: Enemy, alpha: number, dt: number, playerX: number, playerY: number, reducedMotion: boolean): void {
+  update(e: Enemy, alpha: number, dt: number, reducedMotion: boolean): void {
     this.time += dt;
     const x = lerp(e.px, e.x, alpha);
     const y = lerp(e.py, e.y, alpha) + e.def.hh;
@@ -153,50 +159,38 @@ export class EnemyView {
       this.root.setVisible(true);
       this.shadow.setVisible(true);
     }
-    if (r.chute) {
-      r.chute.setVisible(e.airborneEntry);
-      if (e.airborneEntry) r.chute.rotation = -e.vx * e.facing * 0.004;
-    }
 
     if (this.flash > 0) {
       this.flash -= dt;
       if (this.flash <= 0) this.clearFlash();
     }
-    if (e.grounded && !this.wasGrounded) this.squash.kick(-4);
-    if (!e.grounded && this.wasGrounded) this.squash.kick(3.5);
-    this.wasGrounded = e.grounded;
 
     const d = this.squash.update(dt);
     this.root.setPosition(x, y).setScale(e.facing * (1 - d * 0.05), 1 + d * 0.065);
+    // Inclina na direção do voo; pose dramática do pato ao mirar.
+    const tilt = e.state === 'aim' ? -0.14 : Math.max(-0.25, Math.min(0.25, e.vx * e.facing * 0.0018));
+    this.root.rotation += (tilt * e.facing - this.root.rotation) * Math.min(1, dt * 10);
 
-    // Rotação do corpo: gingado ao andar, pose dramática ao mirar.
-    let lean = 0;
-    if (e.state === 'aim') lean = -0.16;
-    else if (e.state === 'descend' && this.kind === 'galinha_rambo' && !reducedMotion) lean = Math.sin(this.time * 30) * 0.18; // esperneando na queda
-    else if (e.grounded && Math.abs(e.vx) > 15 && !reducedMotion) lean = Math.sin(this.time * 14) * 0.07;
-    r.body.rotation += (lean - r.body.rotation) * Math.min(1, dt * 18);
-    r.prop.rotation = (this.kind === 'pato_pistoleiro' ? -0.12 : 0) + r.body.rotation * 0.8;
-
-    // Arma: aponta ao jogador no aviso do pato; rajada horizontal na galinha.
-    this.shotKick = Math.max(0, this.shotKick - dt * 10);
-    let gunRot = 0;
+    // Balões balançam; chama do jetpack tremula (mais forte na descida).
     if (this.kind === 'pato_pistoleiro') {
-      if (e.state === 'aim' || e.state === 'recover') {
-        const mx = x + e.def.muzzle.x * e.facing;
-        const my = y - e.def.hh + e.def.muzzle.y;
-        const world = Math.atan2(playerY - my, playerX - mx);
-        gunRot = normalizeAngle(e.facing > 0 ? world : Math.PI - world);
-      } else {
-        gunRot = 0.5; // pistolinha baixa, relaxada
-      }
-      gunRot -= this.shotKick * 0.8;
-    } else {
-      gunRot = e.state === 'burst' ? (Math.random() - 0.5) * 0.06 : 0.05;
+      r.lift.rotation = reducedMotion ? 0 : Math.sin(this.time * 2.2) * 0.08 - e.vx * e.facing * 0.001;
+    } else if (r.flame) {
+      const boost = e.state === 'descend' ? 1.4 : 1;
+      r.flame.setScale(INV * (0.8 + Math.random() * 0.4) * boost, INV * (0.7 + Math.random() * 0.6) * boost);
+      r.body.rotation = e.state === 'descend' && !reducedMotion ? Math.sin(this.time * 30) * 0.12 : 0; // esperneando
+    }
+
+    // Arma: aponta para onde a IA mira (ângulo do mundo convertido para o espaço local).
+    this.shotKick = Math.max(0, this.shotKick - dt * 10);
+    const local = normalizeAngle(e.facing > 0 ? e.aimAngle : Math.PI - e.aimAngle) - this.root.rotation * e.facing;
+    let gunRot = local - this.shotKick * 0.5;
+    if (this.kind === 'galinha_rambo') {
+      if (e.state === 'burst') gunRot += (Math.random() - 0.5) * 0.06;
       this.updateMinigun(e, dt);
     }
     r.gun.rotation = gunRot;
-    r.gun.x = r.gunX - this.shotKick * 4;
-    r.gun.y = r.gunY;
+    r.gun.x = r.gunX - Math.cos(local) * this.shotKick * 4;
+    r.gun.y = r.gunY - Math.sin(local) * this.shotKick * 4;
 
     // Telegraph: "!" com pop, brilho crescendo na boca da arma.
     if (this.telegraphDur > 0 && (e.state === 'aim' || e.state === 'spinup')) {
@@ -205,25 +199,20 @@ export class EnemyView {
       const pop = t < 0.15 ? (t / 0.15) * 1.3 : 1.3 - Math.min(0.3, (t - 0.15) * 2);
       r.excl.setScale(pop * INV).setVisible(true);
       r.excl.y = r.exclY - Math.sin(this.time * 20) * 1.5;
-      r.glow.setScale(0.4 + t * 1.1).setAlpha(0.5 + 0.5 * Math.sin(this.time * 40));
-      if (this.kind === 'pato_pistoleiro') {
-        // O brilho segue a ponta da pistolinha.
-        r.glow.x = r.gun.x + Math.cos(gunRot) * 16;
-        r.glow.y = r.gun.y + Math.sin(gunRot) * 16;
-      }
-      if (this.kind === 'galinha_rambo' && !reducedMotion) {
-        r.body.x = (Math.random() - 0.5) * 1.5 * t; // tremendo de raiva
-      }
+      const len = this.kind === 'pato_pistoleiro' ? 16 : 44;
+      r.glow
+        .setPosition(r.gun.x + Math.cos(gunRot) * len, r.gun.y + Math.sin(gunRot) * len)
+        .setScale(0.4 + t * 1.1)
+        .setAlpha(0.5 + 0.5 * Math.sin(this.time * 40));
     } else {
       r.excl.setVisible(false);
       r.glow.setScale(Math.max(0, r.glow.scale - dt * 8));
-      r.body.x = 0;
     }
 
-    this.shadow.setPosition(x, this.floorY + 1);
+    // Sombra no chão: mostra a coluna onde o atirador está.
     const height = Math.max(0, this.floorY - y);
-    const sh = Math.max(0.4, 1 - height / 160);
-    this.shadow.setScale(0.9 * sh * INV);
+    const sh = Math.max(0.3, 1 - height / 500);
+    this.shadow.setPosition(x, this.floorY + 1).setScale(0.9 * sh * INV).setAlpha(0.4 + sh * 0.4);
   }
 
   private updateMinigun(e: Enemy, dt: number): void {

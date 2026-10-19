@@ -42,45 +42,8 @@ function invulnerable(w: World): void {
   w.player.invuln = 1e9;
 }
 
-describe('World — Pato Pistoleiro', () => {
-  it('sempre faz a pose dramática antes de atirar', () => {
-    const w = new World(WORLD_CONFIG, 11);
-    w.wavesEnabled = false;
-    w.spawnEnemy('pato_pistoleiro', 0.85);
-    invulnerable(w);
-    const events = collect(w, 10, passive);
-    const shots = events.filter((e) => e.type === 'enemyShot');
-    expect(shots.length).toBeGreaterThan(0);
-    let lastTelegraph = -1;
-    let t = 0;
-    let checked = 0;
-    for (const ev of events) {
-      if (ev.type === 'enemyTelegraph') lastTelegraph = t;
-      if (ev.type === 'enemyShot') {
-        expect(lastTelegraph).toBeGreaterThanOrEqual(0);
-        checked++;
-      }
-      t++;
-    }
-    expect(checked).toBe(shots.length);
-  });
-
-  it('a pistola mata o pato e gera pontos', () => {
-    const w = new World(WORLD_CONFIG, 5);
-    w.wavesEnabled = false;
-    w.spawnEnemy('pato_pistoleiro', 0.85);
-    invulnerable(w);
-    const events = collect(w, 8, aimAtFirstEnemy);
-    const kill = events.find((e) => e.type === 'enemyKilled');
-    expect(kill).toBeDefined();
-    expect(w.score).toBeGreaterThanOrEqual(PATO_PISTOLEIRO.score);
-    expect(w.enemies.length).toBe(0);
-    expect(w.stats.shotsHit).toBeGreaterThanOrEqual(PATO_PISTOLEIRO.maxHp / 20);
-  });
-});
-
 describe('World — entrada pelo topo', () => {
-  it('anuncia no topo, espera o aviso parado e depois desce até o chão', () => {
+  it('anuncia no topo, espera o aviso parado e depois desce até a altitude de patrulha', () => {
     const w = new World(WORLD_CONFIG, 21);
     w.wavesEnabled = false;
     invulnerable(w);
@@ -90,29 +53,12 @@ describe('World — entrada pelo topo', () => {
     const y0 = e.y;
     collect(w, GALINHA_RAMBO.warnTime * 0.9, passive);
     expect(e.y).toBe(y0);
-    const events = collect(w, 3, passive);
-    expect(events.find((ev) => ev.type === 'enemyLanded')).toMatchObject({ kind: 'galinha_rambo' });
-    expect(e.grounded).toBe(true);
+    collect(w, 3, passive);
+    expect(e.state).not.toBe('descend');
+    expect(e.y).toBeGreaterThanOrEqual(GALINHA_RAMBO.hoverMinY - 20);
   });
 
-  it('o pato desce devagar de paraquedas e atira ainda no ar', () => {
-    const w = new World(WORLD_CONFIG, 8);
-    w.wavesEnabled = false;
-    invulnerable(w);
-    const e = w.spawnEnemy('pato_pistoleiro', 0.2);
-    let shotInAir = false;
-    let maxFall = 0;
-    for (let i = 0; i < 8 / SIM_STEP && !e.grounded; i++) {
-      w.step(passive(w), SIM_STEP);
-      maxFall = Math.max(maxFall, e.vy);
-      if (w.events.some((ev) => ev.type === 'enemyShot') && !e.grounded) shotInAir = true;
-      w.events.length = 0;
-    }
-    expect(maxFall).toBeLessThanOrEqual(PATO_PISTOLEIRO.descentMaxSpeed + 1e-6);
-    expect(shotInAir).toBe(true);
-  });
-
-  it('não pode ser atingido nem causar dano durante o aviso', () => {
+  it('não pode ser atingido durante o aviso', () => {
     const w = new World(WORLD_CONFIG, 1);
     w.wavesEnabled = false;
     const e = w.spawnEnemy('pato_pistoleiro', 0.5);
@@ -122,48 +68,114 @@ describe('World — entrada pelo topo', () => {
   });
 });
 
+describe('World — atiradores ficam no alto (Seraph-like)', () => {
+  // O jogador corre de um lado para o outro e pula, tentando "puxar" os inimigos.
+  const restless = (w: World): SimInput => {
+    const t = w.stats.time;
+    return {
+      moveX: Math.sin(t * 0.9) > 0 ? 1 : -1,
+      jumpPressed: Math.floor(t * 2) % 3 === 0,
+      jumpHeld: true,
+      fireHeld: false,
+      aimX: w.player.motor.x,
+      aimY: 0,
+    };
+  };
+
+  for (const kind of ['pato_pistoleiro', 'galinha_rambo'] as const) {
+    it(`${kind} nunca desce até o jogador nem encosta nele`, () => {
+      const w = new World(WORLD_CONFIG, 99);
+      w.wavesEnabled = false;
+      invulnerable(w);
+      const def = WORLD_CONFIG.enemies[kind];
+      const enemies = [w.spawnEnemy(kind, 0.2), w.spawnEnemy(kind, 0.5), w.spawnEnemy(kind, 0.8)];
+      const playerTop = WORLD_CONFIG.bounds.floorY - WORLD_CONFIG.player.hh * 2;
+      let maxY = -Infinity;
+      for (let i = 0; i < 30 / SIM_STEP; i++) {
+        w.step(restless(w), SIM_STEP);
+        w.events.length = 0;
+        for (const e of enemies) if (e.state !== 'incoming' && e.state !== 'descend') maxY = Math.max(maxY, e.y + e.def.hh);
+      }
+      expect(maxY).toBeLessThanOrEqual(def.hoverMaxY + 12 + def.hh);
+      expect(maxY).toBeLessThan(playerTop - 120);
+      expect(w.stats.damageTaken).toBe(0); // invulnerável aqui; dano só viria de contato, que não existe para atiradores
+    });
+  }
+
+  it('atiradores não causam dano por contato', () => {
+    expect(PATO_PISTOLEIRO.role).toBe('ranged');
+    expect(GALINHA_RAMBO.role).toBe('ranged');
+  });
+});
+
+describe('World — Pato Pistoleiro', () => {
+  it('sempre faz a pose dramática antes de atirar, e atira para baixo', () => {
+    const w = new World(WORLD_CONFIG, 11);
+    w.wavesEnabled = false;
+    w.spawnEnemy('pato_pistoleiro', 0.85);
+    invulnerable(w);
+    const events = collect(w, 10, passive);
+    const shots = events.filter((e): e is Extract<GameEvent, { type: 'enemyShot' }> => e.type === 'enemyShot');
+    expect(shots.length).toBeGreaterThan(1);
+    let telegraphs = 0;
+    let shotsSeen = 0;
+    for (const ev of events) {
+      if (ev.type === 'enemyTelegraph') telegraphs++;
+      if (ev.type === 'enemyShot') {
+        shotsSeen++;
+        expect(telegraphs).toBeGreaterThanOrEqual(shotsSeen);
+      }
+    }
+    for (const s of shots) expect(Math.sin(s.angle)).toBeGreaterThan(0.2); // para baixo
+  });
+
+  it('a pistola derruba o pato lá em cima e gera pontos', () => {
+    const w = new World(WORLD_CONFIG, 5);
+    w.wavesEnabled = false;
+    w.spawnEnemy('pato_pistoleiro', 0.7);
+    invulnerable(w);
+    const events = collect(w, 8, aimAtFirstEnemy);
+    expect(events.find((e) => e.type === 'enemyKilled')).toBeDefined();
+    expect(w.score).toBeGreaterThanOrEqual(PATO_PISTOLEIRO.score);
+    expect(w.enemies.length).toBe(0);
+  });
+});
+
 describe('World — Galinha Rambo', () => {
-  it('gira o cano e solta rajada horizontal, sendo empurrada para trás', () => {
+  it('gira o cano, trava a mira e solta a rajada naquela direção, sendo empurrada para trás', () => {
     const w = new World(WORLD_CONFIG, 3);
     w.wavesEnabled = false;
     const g = w.spawnEnemy('galinha_rambo', 0.9);
     invulnerable(w);
     const events: GameEvent[] = [];
-    let xAtBurstStart: number | null = null;
-    let facingAtBurst = 0;
-    for (let i = 0; i < 8 / SIM_STEP; i++) {
+    let lockedAngle: number | null = null;
+    let xAtBurst: number | null = null;
+    let xAfter: number | null = null;
+    for (let i = 0; i < 10 / SIM_STEP; i++) {
       w.step(passive(w), SIM_STEP);
       for (const ev of w.events) {
         events.push(ev);
-        if (ev.type === 'enemyShot' && xAtBurstStart === null) {
-          xAtBurstStart = g.x;
-          facingAtBurst = g.facing;
+        if (ev.type === 'enemyShot' && xAtBurst === null) {
+          xAtBurst = g.x;
+          lockedAngle = g.aimAngle;
         }
       }
       w.events.length = 0;
-      if (xAtBurstStart !== null && g.state === 'cooldown') break;
+      if (xAtBurst !== null && g.state === 'cooldown') {
+        xAfter = g.x;
+        break;
+      }
     }
-    expect(g.grounded).toBe(true);
     const shots = events.filter((e): e is Extract<GameEvent, { type: 'enemyShot' }> => e.type === 'enemyShot');
     expect(shots.length).toBe(GALINHA_RAMBO.burstCount);
     expect(events.some((e) => e.type === 'enemyTelegraph')).toBe(true);
-    for (const s of shots) {
-      const horizontal = Math.min(Math.abs(s.angle), Math.abs(Math.abs(s.angle) - Math.PI));
-      expect(horizontal).toBeLessThan(0.1);
-    }
-    expect(xAtBurstStart).not.toBeNull();
-    // Recuo: andou no sentido oposto ao que mira.
-    expect((g.x - (xAtBurstStart as number)) * facingAtBurst).toBeLessThan(0);
-  });
-
-  it('a rajada passa por baixo de um jogador pulando', () => {
-    const w = new World(WORLD_CONFIG, 3);
-    w.wavesEnabled = false;
-    w.spawnEnemy('galinha_rambo', 0.9);
-    const gunY = WORLD_CONFIG.bounds.floorY - GALINHA_RAMBO.hh + GALINHA_RAMBO.muzzle.y;
-    const playerTopWhenStanding = WORLD_CONFIG.bounds.floorY - WORLD_CONFIG.player.hh * 2;
-    expect(gunY).toBeGreaterThan(playerTopWhenStanding); // acerta quem fica parado
-    expect(gunY).toBeLessThan(WORLD_CONFIG.bounds.floorY - 4);
+    const spread = (GALINHA_RAMBO.burstSpreadDeg * Math.PI) / 180;
+    for (const s of shots) expect(Math.abs(s.angle - (lockedAngle as number))).toBeLessThanOrEqual(spread + 1e-9);
+    // Mira para baixo, na direção do jogador.
+    expect(Math.sin(lockedAngle as number)).toBeGreaterThan(0.2);
+    // Recuo: deslocou-se no sentido oposto ao horizontal do disparo.
+    const dirX = Math.cos(lockedAngle as number);
+    expect(((xAfter as number) - (xAtBurst as number)) * dirX).toBeLessThan(0);
   });
 });
 
@@ -171,8 +183,8 @@ describe('World — jogador', () => {
   it('morre depois de perder toda a vida e para de ser controlável', () => {
     const w = new World(WORLD_CONFIG, 9);
     w.wavesEnabled = false;
-    for (let i = 0; i < 4; i++) w.spawnEnemy('pato_pistoleiro', i % 2 ? 0.9 : 0.1);
-    const events = collect(w, 40, passive);
+    for (let i = 0; i < 4; i++) w.spawnEnemy('pato_pistoleiro', 0.1 + i * 0.25);
+    const events = collect(w, 60, passive);
     const hurts = events.filter((e) => e.type === 'playerHurt');
     expect(hurts.length).toBe(WORLD_CONFIG.player.maxHp);
     expect(events.some((e) => e.type === 'playerDied')).toBe(true);

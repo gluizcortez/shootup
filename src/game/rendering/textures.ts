@@ -87,7 +87,8 @@ export const TEX = {
   patoBody: { w: 44, h: 40 },
   patoHat: { w: 36, h: 18 },
   patoGun: { w: 22, h: 10, pivotX: 4 },
-  patoChute: { w: 48, h: 42 },
+  patoBalloons: { w: 44, h: 48 },
+  galinhaJetpack: { w: 22, h: 30 },
   galinhaBody: { w: 48, h: 56 },
   galinhaGlasses: { w: 22, h: 8 },
   galinhaGun: { w: 56, h: 18, pivotX: 10 },
@@ -162,25 +163,17 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.oRound(8, 4.5, 3, 4, 1, PAL.hatBrown, 1);
   });
 
-  make(scene, 'pato_chute', TEX.patoChute.w, TEX.patoChute.h, (p) => {
-    // Cordinhas até as patas do pato.
-    p.stroke(1, O);
-    p.line(4, 14, 24, 40).line(16, 15, 24, 40).line(32, 15, 24, 40).line(44, 14, 24, 40);
-    // Cúpula listrada coral/branco (meia elipse).
-    const dome = (rx: number, ry: number, from = 0, to = 1): Array<[number, number]> => {
-      const pts: Array<[number, number]> = [];
-      for (let i = 0; i <= 16; i++) {
-        const a = Math.PI + Math.PI * (from + (to - from) * (i / 16));
-        pts.push([24 + Math.cos(a) * rx, 15 + Math.sin(a) * ry]);
-      }
-      if (from > 0 || to < 1) pts.push([24, 15]);
-      return pts;
+  make(scene, 'pato_balloons', TEX.patoBalloons.w, TEX.patoBalloons.h, (p) => {
+    // Cachinho de balões de festa do programa: o pato voa pendurado neles.
+    p.stroke(1, O).line(10, 20, 22, 46).line(22, 16, 22, 46).line(34, 20, 22, 46);
+    const balloon = (x: number, y: number, color: number) => {
+      p.fill(O).ellipse(x, y, 17, 20).tri(x - 2.5, y + 9, x + 2.5, y + 9, x, y + 12.5);
+      p.fill(color).ellipse(x, y, 14, 17).tri(x - 1.5, y + 8, x + 1.5, y + 8, x, y + 11);
+      p.fill(0xffffff, 0.5).ellipse(x - 3, y - 4, 4, 6);
     };
-    p.fill(O).poly([...dome(25, 14), [49, 16], [-1, 16]]);
-    p.fill(PAL.coral).poly(dome(23, 12));
-    p.fill(PAL.warmWhite).poly(dome(23, 12, 0.2, 0.4));
-    p.fill(PAL.warmWhite).poly(dome(23, 12, 0.6, 0.8));
-    p.fill(0xffffff, 0.35).ellipse(16, 8, 10, 4);
+    balloon(10, 12, PAL.coral);
+    balloon(34, 12, PAL.turquoise);
+    balloon(22, 9, PAL.amber);
   });
 
   // ── Galinha Rambo ────────────────────────────────────────────────────
@@ -225,6 +218,21 @@ export function generateTextures(scene: Phaser.Scene): void {
       p.oRound(14, 13, 8, 5, 1.5, PAL.brass, 1); // caixa de munição
     });
   }
+
+  make(scene, 'galinha_jetpack', TEX.galinhaJetpack.w, TEX.galinhaJetpack.h, (p) => {
+    // Jetpack improvisado: dois botijões com fita adesiva.
+    p.oRound(1, 2, 9, 22, 4, PAL.gunLight, 1.2);
+    p.oRound(11, 2, 9, 22, 4, PAL.gunLight, 1.2);
+    p.fill(PAL.coral).rect(1.5, 10, 18, 3);
+    p.fill(0xffffff, 0.4).rect(3, 4, 2, 14).rect(13, 4, 2, 14);
+    p.oRound(2.5, 23, 6, 5, 1, PAL.gunMetal, 1);
+    p.oRound(12.5, 23, 6, 5, 1, PAL.gunMetal, 1);
+  });
+  make(scene, 'fx_flame', 10, 20, (p) => {
+    p.fill(PAL.coral).poly([[0, 0], [10, 0], [5, 20]]);
+    p.fill(PAL.amber).poly([[1.8, 0], [8.2, 0], [5, 14]]);
+    p.fill(0xfffbe8).poly([[3.5, 0], [6.5, 0], [5, 7]]);
+  });
 
   // ── Projéteis ───────────────────────────────────────────────────────
   make(scene, 'b_player', 22, 8, (p) => {
