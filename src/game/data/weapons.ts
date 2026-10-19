@@ -8,7 +8,7 @@ export const PISTOL: WeaponDef = {
   pelletsPerShot: 1,
   spreadDeg: 1.8,
   projectileSpeed: 880,
-  projectileRadius: 4,
+  projectileRadius: 5,
   projectileLifetime: 1.3,
   damage: 10,
   critChance: 0.12,

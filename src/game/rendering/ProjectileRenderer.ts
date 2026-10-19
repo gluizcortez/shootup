@@ -7,7 +7,7 @@ const INV = 1 / TEX_SCALE;
 
 /**
  * Um sprite por slot do pool de projéteis (mapeamento 1:1, sem alocação).
- * Tiros do jogador: traço âmbar fino. Inimigos: bola coral grande com contorno.
+ * Tiros do jogador: bolinha amarela. Inimigos: bola coral grande com contorno.
  */
 export class ProjectileRenderer {
   private readonly sprites: Phaser.GameObjects.Image[] = [];
@@ -42,7 +42,7 @@ export class ProjectileRenderer {
         const enemy = p.team === 'enemy';
         const coin = p.sourceId === 'porco_executivo';
         s.setTexture(enemy ? (coin ? 'b_coin' : 'b_enemy') : 'b_player').setDepth(enemy ? 45 : 40);
-        if (!enemy) s.setRotation(Math.atan2(p.vy, p.vx));
+        if (!enemy) s.setRotation(0);
         if (p.crit) s.setTint(0xfff3c4);
         else s.clearTint();
         s.setVisible(true);
@@ -58,8 +58,9 @@ export class ProjectileRenderer {
         s.setScale(pulse * INV * (p.radius / 6.5));
         s.rotation += dt * 6;
       } else {
+        // Bolinha: diâmetro um pouco maior que a colisão para ler bem.
         const crit = p.crit ? 1.35 : 1;
-        s.setScale(1.25 * INV * crit, INV * crit);
+        s.setScale(INV * crit * ((p.radius * 2 + 3) / 14));
       }
     }
   }

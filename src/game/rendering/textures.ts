@@ -432,10 +432,12 @@ export function generateTextures(scene: Phaser.Scene): void {
   });
 
   // ── Projéteis ───────────────────────────────────────────────────────
-  make(scene, 'b_player', 22, 8, (p) => {
-    p.fill(PAL.amber, 0.35).round(0, 1, 22, 6, 3);
-    p.fill(PAL.amber).round(5, 2, 17, 4, 2);
-    p.fill(0xfffbe8).round(11, 2.7, 10, 2.6, 1.3);
+  make(scene, 'b_player', 14, 14, (p) => {
+    // Bolinha amarela com contorno e brilho (o tiro do jogador).
+    p.fill(O).circle(7, 7, 6.5);
+    p.fill(0xffe14d).circle(7, 7, 5.2);
+    p.fill(0xfff6b0).circle(6, 6, 2.6);
+    p.fill(0xffffff).circle(5.2, 5.2, 1.2);
   });
   make(scene, 'b_enemy', 18, 18, (p) => {
     p.fill(O).circle(9, 9, 8.5);

@@ -284,7 +284,6 @@ export class Feedback {
     });
     for (let i = 0, n = this.count(3); i < n; i++) this.spark(x, y, angle + (Math.random() - 0.5) * 0.7, 0.6, PAL.amber, 380);
     this.puff(x + Math.cos(angle) * 4, y + Math.sin(angle) * 4, 1, 0.45);
-    this.shell(x - Math.cos(angle) * 18, y, Math.cos(angle) >= 0 ? 1 : -1);
   }
 
   private enemyHit(ev: Extract<GameEvent, { type: 'enemyHit' }>): void {
