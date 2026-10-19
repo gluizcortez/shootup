@@ -65,6 +65,9 @@ const MIN_GAP: Partial<Record<SfxId, number>> = {
 
 const MAX_VOICES = 24;
 
+/** Pentatônica de dó: a rajada da galinha vira uma escadinha musical. */
+const GALINHA_SCALE = [523, 587, 659, 784, 880, 1046, 1175];
+
 export class AudioSystem {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -73,6 +76,8 @@ export class AudioSystem {
   private voiceEnds: number[] = [];
   private volume = 0.7;
   private muted = false;
+  private galinhaStep = 0;
+  private galinhaLast = -1;
 
   /** Navegadores só liberam áudio após um gesto do usuário. */
   unlock(): void {
@@ -166,10 +171,16 @@ export class AudioSystem {
         this.sweep(ctx, out, t, 'sine', 980 * vary, 260, 0.14, 0.22);
         this.noiseBurst(ctx, out, t, 0.04, 1800, 1, 0.12, 'bandpass');
         return t + 0.15;
-      case 'enemyShotGalinha':
-        this.noiseBurst(ctx, out, t, 0.045, 900 * vary, 1.2, 0.22, 'bandpass');
-        this.sweep(ctx, out, t, 'square', 160, 70, 0.05, 0.12);
-        return t + 0.06;
+      case 'enemyShotGalinha': {
+        // Metralhadora de brinquedo: cada tiro da rajada é um "plóc" numa escala alegre que sobe.
+        if (t - this.galinhaLast > 0.3) this.galinhaStep = 0;
+        this.galinhaLast = t;
+        const note = GALINHA_SCALE[this.galinhaStep % GALINHA_SCALE.length] as number;
+        this.galinhaStep++;
+        this.sweep(ctx, out, t, 'sine', note * 1.7, note, 0.07, 0.2);
+        this.sweep(ctx, out, t, 'triangle', note * 2, note * 2, 0.025, 0.05);
+        return t + 0.08;
+      }
       case 'telegraphPato':
         this.noiseBurst(ctx, out, t, 0.02, 3500, 2, 0.25, 'highpass');
         this.noiseBurst(ctx, out, t + 0.09, 0.03, 2500, 2, 0.3, 'highpass');
