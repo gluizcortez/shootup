@@ -30,11 +30,11 @@ export class PlayerView {
     scene: Phaser.Scene,
     private readonly hh: number,
     shoulder: { x: number; y: number },
-    private readonly floorY: number,
+    private readonly groundAt: (x: number) => number,
   ) {
     this.shoulderX = shoulder.x;
     this.shoulderY = -hh + shoulder.y;
-    this.shadow = scene.add.image(0, floorY + 1, 'shadow').setScale(0.8 * INV).setDepth(9);
+    this.shadow = scene.add.image(0, 0, 'shadow').setScale(0.8 * INV).setDepth(9);
     this.legL = scene.add.image(-4, -14, 'pl_leg').setOrigin(0.5, 0).setScale(INV);
     this.legR = scene.add.image(5, -14, 'pl_leg').setOrigin(0.5, 0).setScale(INV);
     this.body = scene.add.image(0, -24, 'pl_body').setScale(INV);
@@ -83,7 +83,7 @@ export class PlayerView {
     if (this.dead) {
       this.deathT += dt;
       this.deathVy += 1400 * dt;
-      this.root.y = Math.min(this.root.y + this.deathVy * dt, this.floorY + 60);
+      this.root.y = Math.min(this.root.y + this.deathVy * dt, this.groundAt(this.root.x) + 60);
       this.root.rotation += this.deathSpin * dt;
       this.root.alpha = Math.max(0, 1 - this.deathT / 1.4);
       this.shadow.setVisible(false);
@@ -138,8 +138,9 @@ export class PlayerView {
       this.root.alpha = 1;
     }
 
-    const height = Math.max(0, this.floorY - y);
+    const gy = this.groundAt(x);
+    const height = Math.max(0, gy - y);
     const sh = Math.max(0.35, 1 - height / 220);
-    this.shadow.setVisible(true).setPosition(x, this.floorY + 1).setScale(0.8 * sh * INV, 0.8 * sh * INV).setAlpha(sh);
+    this.shadow.setVisible(true).setPosition(x, gy + 1).setScale(0.8 * sh * INV, 0.8 * sh * INV).setAlpha(sh);
   }
 }

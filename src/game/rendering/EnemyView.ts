@@ -40,10 +40,10 @@ export class EnemyView {
   constructor(
     scene: Phaser.Scene,
     readonly kind: EnemyKind,
-    private readonly floorY: number,
+    private readonly groundAt: (x: number) => number,
   ) {
     this.rig = kind === 'pato_pistoleiro' ? this.buildPato(scene) : this.buildGalinha(scene);
-    this.shadow = scene.add.image(0, floorY + 1, 'shadow').setScale(0.9 * INV).setDepth(9);
+    this.shadow = scene.add.image(0, 0, 'shadow').setScale(0.9 * INV).setDepth(9);
     this.marker = scene.add.image(0, 14, 'fx_drop').setScale(INV).setDepth(95).setVisible(false);
     const r = this.rig;
     const parts: Phaser.GameObjects.Image[] = [r.lift];
@@ -210,9 +210,10 @@ export class EnemyView {
     }
 
     // Sombra no chão: mostra a coluna onde o atirador está.
-    const height = Math.max(0, this.floorY - y);
+    const gy = this.groundAt(x);
+    const height = Math.max(0, gy - y);
     const sh = Math.max(0.3, 1 - height / 500);
-    this.shadow.setPosition(x, this.floorY + 1).setScale(0.9 * sh * INV).setAlpha(0.4 + sh * 0.4);
+    this.shadow.setPosition(x, gy + 1).setScale(0.9 * sh * INV).setAlpha(0.4 + sh * 0.4);
   }
 
   private updateMinigun(e: Enemy, dt: number): void {

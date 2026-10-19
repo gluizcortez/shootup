@@ -162,3 +162,34 @@ describe('settings', () => {
     expect(s.muted).toBe(false);
   });
 });
+
+import { Terrain, heightAt } from '@/core/physics/terrain';
+
+describe('Terrain', () => {
+  const def = {
+    baseY: 400,
+    left: 0,
+    right: 800,
+    features: [
+      { kind: 'ramp' as const, side: 'left' as const, height: 70, plateau: 50, slope: 100 },
+      { kind: 'ramp' as const, side: 'right' as const, height: 70, plateau: 50, slope: 100 },
+      { kind: 'bump' as const, x: 250, height: 20, halfWidth: 50 },
+    ],
+  };
+  const t = new Terrain(def);
+  it('centro plano no nível base', () => {
+    expect(t.groundAt(400)).toBeCloseTo(400);
+  });
+  it('platô alto junto às paredes, simétrico', () => {
+    expect(t.groundAt(20)).toBeCloseTo(330);
+    expect(t.groundAt(780)).toBeCloseTo(330);
+    expect(t.topY).toBeCloseTo(330);
+  });
+  it('morrinho com pico no centro dele', () => {
+    expect(heightAt(def, 250)).toBeCloseTo(20);
+    expect(t.groundAt(250)).toBeLessThan(t.groundAt(220));
+  });
+  it('relevo contínuo (sem degraus)', () => {
+    for (let x = 0; x < 800; x += 0.5) expect(Math.abs(t.groundAt(x + 0.5) - t.groundAt(x))).toBeLessThan(1.5);
+  });
+});

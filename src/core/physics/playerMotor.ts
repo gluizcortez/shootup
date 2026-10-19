@@ -1,4 +1,5 @@
 import { approach, sign } from '../math/scalar';
+import type { Terrain } from './terrain';
 
 /**
  * Parâmetros de movimento do jogador. Todos em pixels e segundos.
@@ -31,9 +32,13 @@ export interface MotorTuning {
 export interface ArenaBounds {
   left: number;
   right: number;
+  /** Nível base do chão (o relevo sobe a partir dele; veja Terrain). */
   floorY: number;
   ceilingY: number;
 }
+
+/** Quanto o motor "gruda" no chão ao descer rampas andando (px por passo). */
+const SNAP_DOWN = 10;
 
 export interface MotorState {
   x: number;
@@ -76,14 +81,16 @@ export function createMotor(x: number, y: number, hw: number, hh: number): Motor
   };
 }
 
-/** Avança o motor um passo fixo `dt`. Muta `s`. */
+/** Avança o motor um passo fixo `dt` sobre o relevo `terrain`. Muta `s`. */
 export function stepMotor(
   s: MotorState,
   input: MotorInput,
   t: MotorTuning,
   bounds: ArenaBounds,
+  terrain: Terrain,
   dt: number,
 ): void {
+  const wasGrounded = s.grounded;
   s.justJumped = false;
   s.justLanded = false;
 
@@ -137,11 +144,13 @@ export function stepMotor(
     if (s.vy < 0) s.vy = 0;
   }
 
-  // Chão.
+  // Chão com relevo: sobe rampas andando, gruda ao descer, pousa em qualquer altura.
+  const ground = terrain.groundUnder(s.x, s.hw * 0.6);
   const feet = s.y + s.hh;
-  if (feet >= bounds.floorY) {
-    s.y = bounds.floorY - s.hh;
-    if (!s.grounded) {
+  const snapping = wasGrounded && !s.justJumped && s.vy >= 0 && ground - feet <= SNAP_DOWN;
+  if (feet >= ground || snapping) {
+    s.y = ground - s.hh;
+    if (!wasGrounded) {
       s.justLanded = true;
       s.landingSpeed = Math.max(0, s.vy);
     }

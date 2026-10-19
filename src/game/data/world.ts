@@ -1,5 +1,5 @@
 import type { WorldConfig } from '@/core/run/world';
-import { ARENA } from './arena';
+import { ARENA, TERRAIN } from './arena';
 import { ENEMIES } from './enemies';
 import { PLAYER } from './player';
 import { PISTOL } from './weapons';
@@ -7,6 +7,7 @@ import { WAVES } from './waves';
 
 export const WORLD_CONFIG: WorldConfig = {
   bounds: ARENA,
+  terrain: TERRAIN,
   player: PLAYER,
   weapon: PISTOL,
   enemies: ENEMIES,

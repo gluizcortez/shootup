@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { Terrain } from '@/core/physics/terrain';
 import { ARENA, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
 import { PAL } from './palette';
 import { TEX_SCALE } from './textures';
@@ -22,7 +23,10 @@ export class Stage {
   /** 0..1, sobe com o combo e anima a plateia. */
   excitement = 0;
 
-  constructor(private readonly scene: Phaser.Scene) {
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly terrain: Terrain,
+  ) {
     this.bakeTextures();
     scene.add.image(0, 0, 'stage_bg').setOrigin(0).setScale(1 / S).setDepth(-100);
 
@@ -45,7 +49,7 @@ export class Stage {
 
     // Lâmpadas de camarim nas bordas das cortinas.
     for (const x of [ARENA.left + 46, ARENA.right - 46]) {
-      for (let y = 40; y < ARENA.floorY - 10; y += 22) {
+      for (let y = 40; y < terrain.groundAt(x) - 10; y += 22) {
         this.bulbs.push(scene.add.image(x, y, 'px_dot').setScale(0.5).setTint(PAL.amber).setDepth(-80));
       }
     }
@@ -197,16 +201,30 @@ export class Stage {
       g.fillRect((x - 7) * S, (TRUSS_Y + 11) * S, 14 * S, 3 * S);
     }
 
-    // Piso do palco.
+    // Piso do palco seguindo o relevo (rampas nos cantos, morrinhos).
+    const top: Phaser.Geom.Point[] = [];
+    for (let x = 0; x <= VIEW_WIDTH; x += 4) top.push(new Phaser.Geom.Point(x * S, this.terrain.groundAt(x) * S));
+    const poly = (offset: number) => [
+      ...top.map((p) => new Phaser.Geom.Point(p.x, p.y + offset * S)),
+      new Phaser.Geom.Point(W, H),
+      new Phaser.Geom.Point(0, H),
+    ];
     g.fillStyle(0x3a2f4f, 1);
-    g.fillRect(0, floor, W, H - floor);
+    g.fillPoints(poly(0), true);
+    // Faixa mais escura logo abaixo da borda: dá volume às rampas.
     g.fillStyle(0x2f2642, 1);
-    for (let x = 0; x < W; x += 64 * S) g.fillRect(x, floor + 6 * S, 2 * S, 30 * S);
-    g.fillStyle(PAL.amber, 1);
-    g.fillRect(0, floor, W, 3 * S);
-    g.fillStyle(0xfff1c1, 0.5);
-    g.fillRect(0, floor, W, 1 * S);
-    // Saia do palco.
+    g.fillPoints(poly(14), true);
+    g.fillStyle(0x3a2f4f, 1);
+    g.fillPoints(poly(18), true);
+    // Tábuas: linhas verticais curtas que acompanham o relevo.
+    g.fillStyle(0x2f2642, 1);
+    for (let x = 32; x < VIEW_WIDTH; x += 64) g.fillRect(x * S, (this.terrain.groundAt(x) + 22) * S, 2 * S, 26 * S);
+    // Borda âmbar contínua.
+    g.lineStyle(3 * S, PAL.amber, 1);
+    g.strokePoints(top, false);
+    g.lineStyle(1 * S, 0xfff1c1, 0.6);
+    g.strokePoints(top.map((p) => new Phaser.Geom.Point(p.x, p.y - 1 * S)), false);
+    // Saia do palco (frente plana, abaixo de tudo).
     g.fillStyle(0x1d1729, 1);
     g.fillRect(0, floor + 36 * S, W, H - floor - 36 * S);
     g.fillStyle(PAL.coral, 0.7);

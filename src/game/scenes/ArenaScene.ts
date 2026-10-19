@@ -10,7 +10,8 @@ import { FrameStats } from '@/shared/frameStats';
 import { loadSettings, prefersReducedMotion } from '@/shared/settings';
 import type { Settings } from '@/shared/settings';
 import type { HudSnapshot } from '@/shared/types';
-import { ARENA, RENDER_ZOOM, SIM_STEP, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
+import { ARENA, RENDER_ZOOM, SIM_STEP, TERRAIN, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
+import { Terrain } from '@/core/physics/terrain';
 import { WORLD_CONFIG } from '../data/world';
 import { EnemyView } from '../rendering/EnemyView';
 import { PlayerView } from '../rendering/PlayerView';
@@ -53,6 +54,9 @@ export class ArenaScene extends Phaser.Scene {
   private readonly viewPool: Record<EnemyKind, EnemyView[]> = { pato_pistoleiro: [], galinha_rambo: [] };
   private readonly liveViews = new Map<number, EnemyView>();
   private readonly simInput: SimInput = { ...EMPTY_INPUT };
+  /** Relevo para a renderização (sombras, partículas); o World tem o seu, igual. */
+  private readonly terrain = new Terrain(TERRAIN);
+  private readonly groundAt = (x: number): number => this.terrain.groundAt(x);
   private readonly eventScratch: GameEvent[] = [];
   private settings: Settings = loadSettings();
   private hitstop = 0;
@@ -73,11 +77,11 @@ export class ArenaScene extends Phaser.Scene {
     cam.centerOn(VIEW_WIDTH / 2, VIEW_HEIGHT / 2);
     cam.setBackgroundColor('#151922');
 
-    this.stage = new Stage(this);
+    this.stage = new Stage(this, this.terrain);
     this.world = this.newWorld();
-    this.playerView = new PlayerView(this, WORLD_CONFIG.player.hh, WORLD_CONFIG.player.shoulder, ARENA.floorY);
+    this.playerView = new PlayerView(this, WORLD_CONFIG.player.hh, WORLD_CONFIG.player.shoulder, this.groundAt);
     this.projectileRenderer = new ProjectileRenderer(this, this.world.projectiles);
-    this.particles = new Particles(this, PARTICLE_CAPACITY[this.settings.vfxQuality], ARENA.floorY);
+    this.particles = new Particles(this, PARTICLE_CAPACITY[this.settings.vfxQuality], this.groundAt);
     this.texts = new FloatingText(this);
     this.input2 = new InputSystem(this, RENDER_ZOOM, { x: VIEW_WIDTH / 2 + 200, y: ARENA.floorY - 30 });
 
@@ -241,7 +245,7 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private acquireView(uid: number, kind: EnemyKind): EnemyView {
-    const view = this.viewPool[kind].pop() ?? new EnemyView(this, kind, ARENA.floorY);
+    const view = this.viewPool[kind].pop() ?? new EnemyView(this, kind, this.groundAt);
     this.liveViews.set(uid, view);
     return view;
   }

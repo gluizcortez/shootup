@@ -11,6 +11,8 @@ import { boxesOverlap, sweptCircleHitsBox } from '../physics/collision';
 import type { Box } from '../physics/collision';
 import { createMotor, stepMotor } from '../physics/playerMotor';
 import type { ArenaBounds, MotorState, MotorTuning } from '../physics/playerMotor';
+import { Terrain } from '../physics/terrain';
+import type { TerrainDef } from '../physics/terrain';
 import { breakCombo, createCombo, registerKill, tickCombo } from '../scoring/combo';
 import type { ComboState, ComboTuning } from '../scoring/combo';
 import type { GameEvent } from './events';
@@ -31,6 +33,7 @@ export interface PlayerConfig {
 
 export interface WorldConfig {
   bounds: ArenaBounds;
+  terrain: TerrainDef;
   player: PlayerConfig;
   weapon: WeaponDef;
   enemies: Record<EnemyKind, EnemyDef>;
@@ -84,6 +87,7 @@ export const EMPTY_INPUT: SimInput = {
  */
 export class World {
   readonly rng: Rng;
+  readonly terrain: Terrain;
   readonly player: PlayerState;
   readonly enemies: Enemy[] = [];
   readonly projectiles: ProjectilePool;
@@ -111,7 +115,9 @@ export class World {
     this.rng = new Rng(seed);
     const b = config.bounds;
     const p = config.player;
-    const motor = createMotor((b.left + b.right) / 2, b.floorY - p.hh, p.hw, p.hh);
+    this.terrain = new Terrain(config.terrain);
+    const cx = (b.left + b.right) / 2;
+    const motor = createMotor(cx, this.terrain.groundAt(cx) - p.hh, p.hw, p.hh);
     motor.grounded = true;
     this.player = {
       motor,
@@ -194,7 +200,7 @@ export class World {
     p.py = m.y;
     p.invuln = Math.max(0, p.invuln - dt);
 
-    stepMotor(m, input, this.config.player.motor, this.config.bounds, dt);
+    stepMotor(m, input, this.config.player.motor, this.config.bounds, this.terrain, dt);
     if (m.justJumped) this.emit({ type: 'playerJumped', x: m.x, y: m.y + m.hh });
     if (m.justLanded) this.emit({ type: 'playerLanded', x: m.x, y: m.y + m.hh, speed: m.landingSpeed });
 
@@ -284,10 +290,11 @@ export class World {
       }
 
       // Impacto em chão/paredes/teto ou fim de vida.
-      const hitFloor = p.y + p.radius >= b.floorY;
+      const groundY = this.terrain.groundAt(p.x);
+      const hitFloor = p.y + p.radius >= groundY;
       const out = p.x < b.left - 60 || p.x > b.right + 60 || p.y < b.ceilingY - 60;
       if (hitFloor) {
-        this.emit({ type: 'projectileImpact', x: p.x, y: b.floorY, team: p.team, angle: Math.atan2(p.vy, p.vx) });
+        this.emit({ type: 'projectileImpact', x: p.x, y: groundY, team: p.team, angle: Math.atan2(p.vy, p.vx) });
         this.projectiles.release(p);
       } else if (out || p.life <= 0) {
         this.projectiles.release(p);

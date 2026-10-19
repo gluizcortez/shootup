@@ -59,7 +59,7 @@ export class Particles {
   constructor(
     scene: Phaser.Scene,
     capacity: number,
-    private readonly floorY: number,
+    private readonly groundAt: (x: number) => number,
   ) {
     for (let i = 0; i < capacity; i++) {
       const img = scene.add.image(0, 0, 'px_dot').setVisible(false).setActive(false).setDepth(20);
@@ -156,8 +156,9 @@ export class Particles {
         s.swayPhase += dt * 6;
         x += Math.cos(s.swayPhase) * s.sway * dt;
       }
-      if (s.bounceY > 0 && y > this.floorY - 1 && s.vy > 0) {
-        y = this.floorY - 1;
+      const floorY = s.bounceY > 0 ? this.groundAt(x) : 0;
+      if (s.bounceY > 0 && y > floorY - 1 && s.vy > 0) {
+        y = floorY - 1;
         if (!s.bounced) {
           s.vy = -s.vy * s.bounceY;
           s.vx *= 0.6;
