@@ -3,7 +3,9 @@ import type { RunPhase } from '@/core/run/runPhase';
 import { bus } from '@/shared/bus';
 import { loadSettings, saveSettings } from '@/shared/settings';
 import type { Settings } from '@/shared/settings';
-import type { Callout, CardInfo, CardOffer, HudSnapshot, PerfSnapshot, RunSummary } from '@/shared/types';
+import { insertScore, loadLastName, loadScores, saveLastName, saveScores } from '@/shared/leaderboard';
+import type { ScoreEntry } from '@/shared/leaderboard';
+import type { Callout, CardInfo, CardOffer, HudSnapshot, PerfSnapshot, RunSummary, UiSfx } from '@/shared/types';
 
 export interface UiState {
   phase: RunPhase;
@@ -14,6 +16,8 @@ export interface UiState {
   offer: CardOffer | null;
   hand: CardInfo[];
   settings: Settings;
+  scores: ScoreEntry[];
+  lastName: string;
 }
 
 let state: UiState = {
@@ -25,6 +29,8 @@ let state: UiState = {
   offer: null,
   hand: [],
   settings: loadSettings(),
+  scores: loadScores(),
+  lastName: loadLastName(),
 };
 
 const listeners = new Set<() => void>();
@@ -71,5 +77,23 @@ export const actions = {
   restart: () => bus.emit('ui:restart', undefined),
   quitToMenu: () => bus.emit('ui:quitToMenu', undefined),
   pickCard: (id: string) => bus.emit('ui:pickCard', id),
+  sfx: (id: UiSfx) => bus.emit('ui:sfx', id),
+  /** Grava a run no placar local e devolve a posição (0 = não entrou). */
+  saveScore: (name: string, s: RunSummary): number => {
+    const { list, rank } = insertScore(state.scores, {
+      name,
+      score: s.score,
+      wave: s.wave,
+      kills: s.kills,
+      bestCombo: s.bestCombo,
+      timeSeconds: s.timeSeconds,
+      date: new Date().toISOString(),
+    });
+    saveScores(list);
+    const clean = list[rank - 1]?.name ?? name;
+    saveLastName(clean);
+    set({ scores: list, lastName: clean });
+    return rank;
+  },
   cardHover: () => bus.emit('ui:cardHover', undefined),
 };

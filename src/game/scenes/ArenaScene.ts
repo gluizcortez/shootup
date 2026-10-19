@@ -28,6 +28,22 @@ import { Particles } from '../systems/Particles';
 import { ScreenShake } from '../systems/ScreenShake';
 import type { EnemyKind } from '@/core/enemies/types';
 
+/** Um campo de texto da UI (ex.: nome no placar) está com o foco. */
+function typingInUi(): boolean {
+  const el = document.activeElement;
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+}
+
+/** Marcos de combo que o narrador anuncia. */
+const COMBO_MILESTONES: ReadonlyArray<[number, string]> = [
+  [5, 'A PLATEIA ACORDOU!'],
+  [10, 'ISSO É AUDIÊNCIA!'],
+  [15, 'O DIRETOR CHOROU!'],
+  [25, 'RECORDE DE IBOPE!'],
+  [40, 'TÁ PEGANDO FOGO, BICHO!'],
+];
+const HEARTBEAT_EVERY = 0.85;
+
 const PARTICLE_CAPACITY = { low: 160, medium: 360, high: 700 } as const;
 const DEATH_SEQUENCE = 1.3;
 
@@ -63,6 +79,8 @@ export class ArenaScene extends Phaser.Scene {
   };
   private readonly liveViews = new Map<number, EnemyVisual>();
   private trailTimer = 0;
+  private heartbeatTimer = 0;
+  private lastMilestone = 0;
   private offerId = 0;
   private readonly simInput: SimInput = { ...EMPTY_INPUT };
   /** Relevo para a renderização (sombras, partículas); o World tem o seu, igual. */
@@ -157,9 +175,11 @@ export class ArenaScene extends Phaser.Scene {
     kb.on('keydown-ESC', () => this.togglePause());
     kb.on('keydown-P', () => this.togglePause());
     kb.on('keydown-R', () => {
+      if (typingInUi()) return;
       if (this.phase.phase === 'GAME_OVER' || this.phase.phase === 'PAUSED') this.startRun();
     });
     kb.on('keydown-ENTER', () => {
+      if (typingInUi()) return;
       if (this.phase.phase === 'MENU' || this.phase.phase === 'GAME_OVER') this.startRun();
     });
     kb.on('keydown-F3', (e: KeyboardEvent) => {
@@ -237,6 +257,10 @@ export class ArenaScene extends Phaser.Scene {
         this.setPhase('PLAYING');
       }),
       bus.on('ui:cardHover', () => this.audio.play('cardHover')),
+      bus.on('ui:sfx', (id) => {
+        this.audio.unlock();
+        this.audio.play(id);
+      }),
       bus.on('ui:settings', (s) => {
         this.settings = s;
         this.feedback.applySettings(s);
@@ -252,6 +276,10 @@ export class ArenaScene extends Phaser.Scene {
   private setPhase(next: RunPhase): void {
     if (!this.phase.to(next)) return;
     if (next !== 'PLAYING') this.input2.releaseAll();
+    // Fora do jogo o teclado volta para a página (ex.: digitar o nome no placar).
+    const kb = this.input.keyboard;
+    if (next === 'PLAYING') kb?.enableGlobalCapture();
+    else kb?.disableGlobalCapture();
     this.audio.play('ui');
     this.emitPhase();
   }
@@ -273,6 +301,7 @@ export class ArenaScene extends Phaser.Scene {
     this.hitstop = 0;
     this.deathTimer = -1;
     this.stage.excitement = 0;
+    this.lastMilestone = 0;
     bus.emit('game:offer', null);
     this.emitHand();
     this.emitHud(true);
@@ -321,6 +350,16 @@ export class ArenaScene extends Phaser.Scene {
         view.bind(e);
       }
       view.update(e, alpha, running ? dt : 0, this.reducedMotion);
+    }
+    // Vida no fim: coração batendo (o HUD pulsa em vermelho junto).
+    if (phase === 'PLAYING' && w.player.alive && w.player.hp === 1) {
+      this.heartbeatTimer -= dt;
+      if (this.heartbeatTimer <= 0) {
+        this.heartbeatTimer = HEARTBEAT_EVERY;
+        this.audio.play('heartbeat');
+      }
+    } else {
+      this.heartbeatTimer = 0;
     }
     // Rastro de poeira das investidas.
     if (running) {
@@ -398,12 +437,29 @@ export class ArenaScene extends Phaser.Scene {
         bus.emit('game:callout', { id: Date.now(), title: 'ONDA LIMPA!', subtitle: `+${ev.bonus} de bônus da produção` });
       } else if (ev.type === 'playerDied') {
         this.deathTimer = DEATH_SEQUENCE;
+      } else if (ev.type === 'enemyKilled') {
+        this.announceCombo(ev.combo);
+        if (ev.kind === 'don_pombone') {
+          bus.emit('game:callout', { id: Date.now(), title: 'DON POMBONE DERRUBADO!', subtitle: 'a família está de luto' });
+        }
+      } else if (ev.type === 'comboBroken') {
+        this.lastMilestone = 0;
       } else if (ev.type === 'bossEnraged') {
         bus.emit('game:callout', { id: Date.now(), title: 'O DON FICOU BRAVO!', subtitle: 'agora é pessoal' });
-      } else if (ev.type === 'enemyKilled' && ev.kind === 'don_pombone') {
-        bus.emit('game:callout', { id: Date.now(), title: 'DON POMBONE DERRUBADO!', subtitle: 'a família está de luto' });
       } else if (ev.type === 'upgradeOffer') {
         this.openCards(ev.wave);
+      }
+    }
+  }
+
+  /** Narrador grita nos marcos de combo, com a plateia vibrando. */
+  private announceCombo(count: number): void {
+    for (const [n, line] of COMBO_MILESTONES) {
+      if (count >= n && this.lastMilestone < n) {
+        this.lastMilestone = n;
+        this.audio.play('cheer');
+        this.stage.excitement = 1;
+        bus.emit('game:callout', { id: Date.now(), title: `COMBO ${n}!`, subtitle: line });
       }
     }
   }

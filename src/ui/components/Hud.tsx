@@ -116,8 +116,10 @@ export function Hud() {
   const hp = useGame((s) => s.hud.hp);
   const maxHp = useGame((s) => s.hud.maxHp);
   const weapon = useGame((s) => s.hud.weaponName);
+  const danger = hp === 1 && maxHp > 1;
   return (
-    <div className="hud">
+    <div className={`hud ${danger ? 'hud--danger' : ''}`}>
+      {danger && <div className="danger-vignette" aria-hidden="true" />}
       <WaveBlock />
       <ScoreBlock />
       <div className="hud-bottom-left">

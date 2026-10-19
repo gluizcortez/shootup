@@ -13,7 +13,7 @@ export class FloatingText {
   private readonly items: Floater[] = [];
   private cursor = 0;
 
-  constructor(scene: Phaser.Scene, capacity = 28) {
+  constructor(scene: Phaser.Scene, capacity = 40) {
     for (let i = 0; i < capacity; i++) {
       const text = scene.add
         .text(0, 0, '', {
@@ -38,6 +38,16 @@ export class FloatingText {
     f.life = f.maxLife = life;
     f.vy = -70;
     f.scale = 1;
+    f.text.setRotation(0);
+  }
+
+  /** Onomatopeia de gibi: palavra grande, torta e com mais "salto". */
+  comic(x: number, y: number, word: string, color: string, size: number): void {
+    this.spawn(x, y, word, color, size, 0.75);
+    const f = this.items[(this.cursor + this.items.length - 1) % this.items.length] as Floater;
+    f.text.setRotation((Math.random() - 0.5) * 0.5);
+    f.vy = -110;
+    f.scale = 1.4;
   }
 
   update(dt: number): void {
@@ -53,7 +63,7 @@ export class FloatingText {
       f.text.y += f.vy * dt;
       // Salto: começa grande, assenta rápido (spring barato).
       const pop = t < 0.15 ? 1.5 - (t / 0.15) * 0.5 : 1;
-      f.text.setScale(pop);
+      f.text.setScale(pop * f.scale);
       f.text.alpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
     }
   }

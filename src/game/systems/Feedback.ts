@@ -36,6 +36,17 @@ const KILL_PROP: Record<EnemyKind, string> = {
   porco_executivo: 'porco_case',
   don_pombone: 'pombone_hat',
 };
+/** Onomatopeias de gibi no abate, por espécie. */
+const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
+  pato_pistoleiro: ['QUÁ!', 'POW!', 'BLAM!', 'PLOC!'],
+  galinha_rambo: ['CÓ?!', 'KABUM!', 'CRÁS!', 'BÓÓÓ!'],
+  vaca_loca: ['MUUU!', 'PLOFT!', 'TÓIN!', 'CATAPLOFT!'],
+  pombo_mafioso: ['RRU!', 'PUF!', 'ZÁS!', 'FUI!'],
+  porco_executivo: ['ÓINC!', 'KA-CHING!', 'FALIU!', 'DEMITIDO!'],
+  don_pombone: ['CAPUT!'],
+};
+const COMIC_COLORS = [CSS.amber, CSS.coral, CSS.turquoise, CSS.violet];
+
 const TELEGRAPH_SFX: Record<EnemyKind, SfxId> = {
   pato_pistoleiro: 'telegraphPato',
   galinha_rambo: 'telegraphGalinha',
@@ -219,6 +230,7 @@ export class Feedback {
       }
       case 'playerHurt':
         this.audio.play('hurt');
+        this.texts.comic(ev.x, ev.y - 34, Math.random() < 0.5 ? 'AI!' : 'UI!', CSS.coral, 22);
         this.shake.add(0.55);
         this.hooks.hitstop(0.08);
         if (this.flashOn) this.flashAlpha = 0.28;
@@ -341,6 +353,15 @@ export class Feedback {
       bounceY: 0.35,
       depth: 26,
     });
+    const words = COMIC_WORDS[ev.kind];
+    this.texts.comic(
+      ev.x + (Math.random() - 0.5) * 20,
+      ev.y - 10,
+      words[Math.floor(Math.random() * words.length)] as string,
+      COMIC_COLORS[Math.floor(Math.random() * COMIC_COLORS.length)] as string,
+      heavy ? 30 : 24,
+    );
+    if (Math.random() < 0.35) this.audio.play('boing');
     if (this.numbersOn) {
       const label = ev.multiplier > 1 ? `+${ev.score} ×${ev.multiplier}` : `+${ev.score}`;
       this.texts.spawn(ev.x, ev.y - 34, label, CSS.turquoise, 18, 0.9);
@@ -362,7 +383,8 @@ export class Feedback {
     this.ring(ev.x, ev.y - 20, PAL.warmWhite);
     this.emit({ texture: 'pombone_hat', x: ev.x, y: ev.y - 60, vx: 120, vy: -520, life: 2.4, gravity: 900, spin: 6, bounceY: 0.4, depth: 26 });
     this.emit({ texture: 'pombone_gun', x: ev.x, y: ev.y, vx: -160, vy: -380, life: 2.4, gravity: 1100, spin: -8, bounceY: 0.3, depth: 26 });
-    if (this.numbersOn) this.texts.spawn(ev.x, ev.y - 60, `+${ev.score}`, CSS.amber, 30, 1.6);
+    this.texts.comic(ev.x, ev.y - 20, 'CAPUT!', CSS.amber, 44);
+    if (this.numbersOn) this.texts.spawn(ev.x, ev.y - 70, `+${ev.score}`, CSS.amber, 30, 1.6);
   }
 
   /** Notas e moedas de mentirinha voando (Porco Executivo). */

@@ -42,6 +42,11 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 | Chamar o chefe | `F6` chama o Don Pombone na hora (mesmas condições do `F4`) |
 | Testar cartas | `F5` abre uma oferta de cartas na hora (mesmas condições do `F4`) |
 
+## Menu e placar
+
+- **Menu principal:** logo pulando letra por letra, selo "AO VIVO" piscando, refletores varrendo o palco e um letreiro com piadas dos patrocinadores. Botões: Jogar, Placar, Como jogar (controles e o elenco de inimigos) e Opções. O recorde atual aparece embaixo.
+- **Placar local:** top 10 salvo só neste navegador (`localStorage`). Ao morrer, se a pontuação entrar no top 10, você digita seu nome (até 12 caracteres) e vê sua posição destacada; no 1º lugar toca uma fanfarra de "NOVO RECORDE!". Runs com comandos de debug não entram. O ranking online (Supabase, validado no servidor) fica para uma fase futura.
+
 ## Como testar a sensação do jogo
 
 - **Movimento:** acelera e para quase na hora; virar de lado é instantâneo; pulo curto se tocar, longo se segurar; queda mais pesada que a subida; dá para pular logo depois de "sair" do chão (coyote time) e o pulo apertado pouco antes de pousar é lembrado (jump buffer).
@@ -70,6 +75,8 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 - **Balas:** pistola a 880 px/s, Pato a 290 px/s e Galinha a 330 px/s, para dar tempo de ler e desviar.
 - **Cenário:** estúdio visto da plateia, com a metade de cima livre (treliça de luzes no topo, de onde os animais caem) e o logo apagado no fundo para não competir com os inimigos.
 - **Ondas:** a 1 só tem patos, a vaca estreia na 2, a galinha na 3, os pombos na 4 e o porco na 7; a onda 10 é do Don Pombone. Depois dela o jogo continua escalando sozinho. Combo multiplica pontos e anima a plateia.
+- **Pacote de efeitos e sons:** onomatopeias de gibi a cada abate ("QUÁ!", "MUUU!", "ÓINC!", "KA-CHING!", "CAPUT!"…) com "boing" de mola de vez em quando; "AI!" quando você leva dano; o narrador grita nos combos 5, 10, 15, 25 e 40 com a plateia aplaudindo e assobiando; com 1 coração sobrando, o coração bate alto e as bordas da tela pulsam em vermelho; os botões fazem som ao passar o mouse e ao clicar.
+- **Tiros do jogador:** bolinhas amarelas com contorno.
 - **Opções (Esc):** tremor de tela, flashes, números de dano, quantidade de partículas e volume. `prefers-reduced-motion` liga um padrão mais calmo.
 
 ## Arquitetura
@@ -94,9 +101,9 @@ Decisões principais:
 
 ## Estado
 
-Feito: arena 16:9 adaptável, personagem provisório, movimento/pulo/mira/tiro manual, pistola, colisões (com teste varrido para projéteis rápidos), vida com i-frames, morte em câmera lenta, resumo da run e reinício em um clique, HUD mínimo, pausa e configurações salvas localmente, Pato Pistoleiro, Galinha Rambo, Vaca Loca, Pombo Mafioso, Porco Executivo, chefe Don Pombone, ondas até a 10 e além, 7 cartas entre ondas (com perfuração e ricochete).
+Feito: arena 16:9 adaptável, personagem provisório, movimento/pulo/mira/tiro manual, pistola, colisões (com teste varrido para projéteis rápidos), vida com i-frames, morte em câmera lenta, resumo da run e reinício em um clique, HUD, menu principal, placar local, pausa e configurações salvas localmente, Pato Pistoleiro, Galinha Rambo, Vaca Loca, Pombo Mafioso, Porco Executivo, chefe Don Pombone, ondas até a 10 e além, 7 cartas entre ondas (com perfuração e ricochete).
 
-Ainda não feito (só quando pedido): árvore de sinergias, shotgun, outros chefes, menu completo, música, Supabase/ranking.
+Ainda não feito (só quando pedido): árvore de sinergias, shotgun, outros chefes, música, Supabase/ranking online.
 
 Problemas conhecidos:
 - Arte e sons são **placeholders procedurais temporários**, desenhados em código.

@@ -1,10 +1,19 @@
 import { useRef } from 'react';
 import type { ButtonHTMLAttributes, PointerEvent } from 'react';
+import { actions } from '../store/gameStore';
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' };
 
 /** Botão com resposta tátil: sobe, inclina seguindo o cursor e comprime no clique. */
-export function TactileButton({ variant = 'primary', className = '', onPointerMove, onPointerLeave, ...rest }: Props) {
+export function TactileButton({
+  variant = 'primary',
+  className = '',
+  onPointerMove,
+  onPointerLeave,
+  onPointerEnter,
+  onClick,
+  ...rest
+}: Props) {
   const ref = useRef<HTMLButtonElement>(null);
 
   const move = (e: PointerEvent<HTMLButtonElement>) => {
@@ -36,6 +45,14 @@ export function TactileButton({ variant = 'primary', className = '', onPointerMo
       className={`tbtn tbtn--${variant} ${className}`}
       onPointerMove={move}
       onPointerLeave={leave}
+      onPointerEnter={(e) => {
+        actions.sfx('uiHover');
+        onPointerEnter?.(e);
+      }}
+      onClick={(e) => {
+        actions.sfx('uiClick');
+        onClick?.(e);
+      }}
       {...rest}
     />
   );

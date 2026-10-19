@@ -49,3 +49,18 @@ test('arte e HUD renderizam no canvas (screenshot para inspeção)', async ({ pa
   await expect(page.getByTestId('hud-wave')).toHaveText('1', { timeout: 30_000 });
   await page.screenshot({ path: 'test-results/gameplay.png' });
 });
+
+test('menu: placar local abre e volta', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'shootup.scores.v1',
+      JSON.stringify([{ name: 'DON', score: 4200, wave: 6, kills: 40, bestCombo: 12, timeSeconds: 300, date: '2026-10-01T00:00:00Z' }]),
+    ),
+  );
+  await page.reload();
+  await page.getByTestId('menu-scores').click();
+  await expect(page.getByTestId('scores')).toContainText('DON');
+  await page.getByRole('button', { name: 'VOLTAR' }).click();
+  await expect(page.getByTestId('play')).toBeVisible();
+});

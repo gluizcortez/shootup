@@ -80,7 +80,11 @@ export type UiToGame = {
   settings: Settings;
   pickCard: string;
   cardHover: void;
+  /** Sons da interface (hover, clique, recorde). */
+  sfx: UiSfx;
 };
+
+export type UiSfx = 'uiHover' | 'uiClick' | 'record' | 'rankIn';
 
 export type BusEvents = { [K in keyof GameToUi as `game:${K}`]: GameToUi[K] } & {
   [K in keyof UiToGame as `ui:${K}`]: UiToGame[K];

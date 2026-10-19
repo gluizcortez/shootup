@@ -38,7 +38,14 @@ export type SfxId =
   | 'kaching'
   | 'shieldHit'
   | 'shieldBreak'
-  | 'bossRage';
+  | 'bossRage'
+  | 'uiHover'
+  | 'uiClick'
+  | 'record'
+  | 'rankIn'
+  | 'cheer'
+  | 'heartbeat'
+  | 'boing';
 
 /** Intervalo mínimo entre repetições do mesmo som (evita empilhar ruído). */
 const MIN_GAP: Partial<Record<SfxId, number>> = {
@@ -51,6 +58,9 @@ const MIN_GAP: Partial<Record<SfxId, number>> = {
   whistle: 0.08,
   shieldHit: 0.05,
   killPombo: 0.05,
+  uiHover: 0.04,
+  cheer: 0.5,
+  boing: 0.06,
 };
 
 const MAX_VOICES = 24;
@@ -298,6 +308,39 @@ export class AudioSystem {
         this.sweep(ctx, out, t, 'sawtooth', 120, 260, 0.6, 0.3, false, 1200, 8);
         this.noiseBurst(ctx, out, t, 0.4, 600, 0.8, 0.5, 'lowpass');
         return t + 0.65;
+      case 'uiHover':
+        this.sweep(ctx, out, t, 'triangle', 1700 * vary, 2000, 0.03, 0.05);
+        return t + 0.04;
+      case 'uiClick':
+        // "Plim" de botão de programa de auditório.
+        this.sweep(ctx, out, t, 'square', 880, 1320, 0.05, 0.1, false, 3000);
+        this.sweep(ctx, out, t + 0.05, 'triangle', 1760, 1760, 0.08, 0.1);
+        return t + 0.14;
+      case 'record':
+        // Fanfarra de recorde + plateia ensandecida.
+        [523, 659, 784, 1046, 784, 1046, 1318].forEach((n, i) => this.sweep(ctx, out, t + i * 0.1, 'square', n, n, 0.12, 0.14, false, 4000));
+        this.sweep(ctx, out, t + 0.75, 'sawtooth', 1046, 1060, 0.7, 0.12, false, 3000, 6);
+        this.applause(ctx, out, t + 0.2, 2.4);
+        return t + 2.6;
+      case 'rankIn':
+        [659, 880, 1046].forEach((n, i) => this.sweep(ctx, out, t + i * 0.08, 'triangle', n, n, 0.14, 0.16));
+        this.applause(ctx, out, t + 0.1, 1.2);
+        return t + 1.3;
+      case 'cheer':
+        // Plateia: aplausos + assobios + "uhuu".
+        this.applause(ctx, out, t, 1.3);
+        this.sweep(ctx, out, t + 0.05, 'sine', 1800 * vary, 2600, 0.25, 0.06);
+        this.sweep(ctx, out, t + 0.35, 'sine', 2000 * vary, 1500, 0.3, 0.05);
+        this.sweep(ctx, out, t + 0.1, 'sawtooth', 300 * vary, 420, 0.45, 0.05, false, 1200, 5);
+        return t + 1.4;
+      case 'heartbeat':
+        this.sweep(ctx, out, t, 'sine', 70, 45, 0.12, 0.55);
+        this.sweep(ctx, out, t + 0.18, 'sine', 65, 40, 0.14, 0.45);
+        return t + 0.35;
+      case 'boing':
+        // Mola cartunesca (onomatopeias de abate).
+        this.sweep(ctx, out, t, 'sine', 220 * vary, 660, 0.18, 0.12, false, undefined, 18);
+        return t + 0.2;
       case 'cardPick':
         [659, 880, 1318].forEach((n, i) => this.sweep(ctx, out, t + i * 0.05, 'triangle', n, n, 0.1, 0.16));
         this.noiseBurst(ctx, out, t, 0.06, 2500, 0.8, 0.2, 'bandpass');
