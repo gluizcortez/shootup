@@ -25,16 +25,16 @@ export interface RosterEntry {
   from: number;
   /** Peso do sorteio para preencher as vagas da onda. */
   weight: number;
-  /** Teto deste vilão numa mesma onda (melee e esquadrilhas não lotam a arena). */
-  maxPerWave?: number;
+  /** Fração máxima da onda que este vilão pode ocupar (mínimo 1), para melee e esquadrilhas não lotarem a arena. */
+  maxShare?: number;
   /** Frase do narrador na onda de estreia. */
   debutCallout?: string;
 }
 
-/** Tamanho da onda comum: `base + perWave × (onda − 1)`, arredondado para baixo, até `max`. */
+/** Tamanho da onda comum: `base`, +1 a cada `every` ondas, até `max`. */
 export interface WaveSize {
   base: number;
-  perWave: number;
+  every: number;
   max: number;
 }
 
@@ -102,15 +102,20 @@ export interface WaveState {
   boss: boolean;
 }
 
+/** Quantos deste vilão cabem numa onda de `total` (sem `maxShare`, sem teto). */
+export function maxCount(r: RosterEntry, total: number): number {
+  return r.maxShare === undefined ? total : Math.max(1, Math.floor(total * r.maxShare));
+}
+
 /** Quantos vilões a onda comum `n` traz. */
 export function waveSize(n: number, size: WaveSize): number {
-  return Math.max(1, Math.min(size.max, Math.floor(size.base + size.perWave * (n - 1))));
+  return Math.max(1, Math.min(size.max, size.base + Math.floor((n - 1) / size.every)));
 }
 
 /**
  * Onda comum `n`: exatamente `waveSize(n)` vilões, todos com `delay` 0 (entram
  * juntos), em colunas espalhadas pela largura. Estreias da onda vêm primeiro;
- * o resto é sorteado por peso entre os já liberados, respeitando `maxPerWave`.
+ * o resto é sorteado por peso entre os já liberados, respeitando `maxShare`.
  * Uma esquadrilha de ninjas conta como 1 vilão.
  */
 export function generateWave(n: number, cfg: WaveConfig, rng: Rng): WaveDef {
@@ -125,7 +130,7 @@ export function generateWave(n: number, cfg: WaveConfig, rng: Rng): WaveDef {
   const debuts = unlocked.filter((r) => r.from === n);
   for (const r of debuts) if (kinds.length < total) push(r.kind);
   while (kinds.length < total) {
-    const open = unlocked.filter((r) => r.maxPerWave === undefined || (counts.get(r.kind) ?? 0) < r.maxPerWave);
+    const open = unlocked.filter((r) => r.maxShare === undefined || (counts.get(r.kind) ?? 0) < maxCount(r, total));
     if (open.length === 0) break;
     let roll = rng.range(0, open.reduce((sum, r) => sum + r.weight, 0));
     let pick = open[open.length - 1] as RosterEntry;
