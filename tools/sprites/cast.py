@@ -94,3 +94,62 @@ def sparkle(x, y, core=SPARK, glow=(200, 220, 255)):
     """Estrelinha de 5 pixels."""
     return [(x, y, core), (x - 1, y, glow), (x + 1, y, glow), (x, y - 1, glow), (x, y + 1, glow)]
 BLUE_TRACK = ramp('#0a1050', '#1430a0', '#2d6bff', '#70a0ff', '#c0d8ff')
+
+
+def breathe(img, cut, dy=1):
+    """Respiração: as linhas acima de `cut` descem `dy` pixels (pernas ficam onde estão)."""
+    import numpy as _np
+    from PIL import Image as _Image
+    a = _np.array(img)
+    out = a.copy()
+    out[dy:cut + dy] = a[0:cut]
+    out[0:dy] = 0
+    return _Image.fromarray(out, 'RGBA')
+
+
+def frames_of(fn, cut, faces=('blink', 'aim', 'shoot', 'hurt', 'dead')):
+    """Quadros de um corpo com rosto variável: base, respiração (_b) e um por rosto."""
+    out = {'': lambda: fn('idle'), '_b': lambda: breathe(fn('idle'), cut)}
+    for f in faces:
+        out['_' + f] = (lambda f=f: fn(f))
+    return out
+
+
+# Bocas e olhos de reserva para rostos pequenos (k contorno, w dente/branco,
+# m boca, t língua). O '.' não pinta.
+FACE_CMAP = {'k': INK, 'w': (255, 255, 255), 'm': (150, 30, 60), 't': (255, 110, 140), 'b': INK,
+             's': (120, 220, 255), 'r': (255, 60, 70)}
+MOUTH = {
+    'aim': ['kkkkkk'],
+    'shoot': ['.kkkk.', 'kwwwwk', 'kmmtmk', '.kkkk.'],
+    'hurt': ['..kk..', '.k..k.', 'k....k'],
+    'dead': ['kkkkkk', '..ktk.', '...t..'],
+}
+EYE = {
+    'blink': ['...', 'kkk', '...'],
+    'aim': ['kk.', '.kk', 'wkk'],
+    'hurt': ['k..', '.k.', 'k..'],
+    'dead': ['k.k', '.k.', 'k.k'],
+}
+
+
+def sweat(x, y):
+    return [(x, y, (200, 240, 255)), (x, y + 1, (120, 220, 255)), (x - 1, y + 1, (120, 220, 255))]
+
+
+def face_part(face, table, default, pos, cmap, skin):
+    """Troca um pedaço do rosto (olho ou boca) pela expressão do momento.
+
+    `default` é o desenho normal; se `face` tem versão em `table`, a área do
+    desenho normal é coberta de pele e a expressão é carimbada centralizada.
+    """
+    from engine import pattern as _pattern
+    if face not in table:
+        return _pattern(default, pos, cmap)
+    h, w = len(default), max(len(r) for r in default)
+    out = [(pos[0] + i, pos[1] + j, skin) for j in range(h) for i in range(w)]
+    alt = table[face]
+    ah, aw = len(alt), max(len(r) for r in alt)
+    ox = pos[0] + (w - aw) // 2
+    oy = pos[1] + (h - ah) // 2
+    return out + _pattern(alt, (ox, oy), FACE_CMAP)

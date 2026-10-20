@@ -9,7 +9,7 @@ sunga amarela, cinturão de campeão, bandana e bigode loiro em ferradura;
 quadro extra da barrigada no ar.
 """
 import engine as E
-from cast import (BLUE_TRACK, CHROME, CYAN, GOLD, GUNMETAL, HAIR_BLOND, HOTPINK, INK, OUTLINE_TINT, RED, RIM,
+from cast import (EYE, FACE_CMAP, MOUTH, face_part, BLUE_TRACK, CHROME, CYAN, GOLD, GUNMETAL, HAIR_BLOND, HOTPINK, INK, OUTLINE_TINT, RED, RIM,
                   SKIN_DARK, WHITE, YELLOW, sparkle)
 from engine import Part, capsule, ellipse, pattern, poly, ramp, render, rrect, union
 
@@ -23,18 +23,24 @@ def sneaker(x, y, color, sh, g):
     return p, d
 
 
-def breaker_body():
-    """Pés em (17, 49)."""
+# Passada em 4 tempos: (desvio x, levantada) da perna de trás e da da frente.
+STRIDE = [((3, 0), (-3, 0)), ((0, 2), (0, 0)), ((-3, 0), (3, 0)), ((0, 0), (0, 2))]
+
+
+def breaker_body(step=None, face='idle'):
+    """Pés em (17, 49). `step` 0..3 escolhe o tempo da passada."""
     E.init(34, 50)
     parts, decals = [], []
-    for x, sh in ((8, -1), (17, 0)):
-        p, d = sneaker(x, 44, RED[2], sh, f'sn{x}')
+    gait = STRIDE[step] if step is not None else ((0, 0), (0, 0))
+    for (x, sh), (dx, up) in zip(((8, -1), (17, 0)), gait):
+        p, d = sneaker(x + dx, 44 - up, RED[2], sh, f'sn{x}')
         parts += p
         decals += d
-    for x, sh in ((9, -1), (17, 0)):
-        leg = Part(rrect(x, 29, 7, 16, 2.4), RED, group=f'leg{x}', R=2.4, shift=sh, bias=0.4)
+    for (x, sh), (dx, up) in zip(((9, -1), (17, 0)), gait):
+        leg = Part(rrect(x + dx * 0.6, 29, 7, 16 - up, 2.4), RED, group=f'leg{x}', R=2.4, shift=sh, bias=0.4)
         parts.append(leg)
-    decals += [(10.4, y, WHITE[3]) for y in range(30, 44)] + [(22, y, WHITE[4]) for y in range(30, 44)]
+        stripe_x = (10.4 if sh else 22) + dx * 0.6
+        decals += [(stripe_x, y, WHITE[3] if sh else WHITE[4]) for y in range(30, 44 - up)]
     jacket = Part(rrect(8, 16, 18, 15, 4), BLUE_TRACK, group='j', R=3.4, bias=0.4, grad=(0.2, 0.1))
     s1 = Part(rrect(8.6, 19, 17, 1.2, 0), WHITE, group='j', R=3, lines=False, light=jacket.mask)
     s2 = Part(rrect(8.6, 21, 17, 1.2, 0), RED, group='j', R=3, lines=False, light=jacket.mask)
@@ -52,9 +58,9 @@ def breaker_body():
     decals += pattern(['g.......g', '.g.....g.', '..g...g..', '...g.g...', '....G....'], (13, 16.6),
                       {'g': GOLD[3], 'G': GOLD[4]})
     decals += pattern(['.GG.', 'G$$G', '.GG.'], (15.6, 22.6), {'G': GOLD[3], '$': GOLD[1]})
-    decals += pattern(['.kk.', 'kwkk', '.kk.'], (21.4, 8.6), {'k': INK, 'w': (255, 255, 255)})
-    decals += pattern(['kkkkkk', 'kwwGwk', '.kkkk.'], (19.4, 12.6), {'k': INK, 'w': (255, 255, 255),
-                                                                   'G': GOLD[4]})
+    decals += face_part(face, EYE, ['.kk.', 'kwkk', '.kk.'], (21.4, 8.6), {'k': INK, 'w': (255, 255, 255)}, SKIN_DARK[2])
+    decals += face_part(face, MOUTH, ['kkkkkk', 'kwwGwk', '.kkkk.'], (19.4, 12.6),
+                        {'k': INK, 'w': (255, 255, 255), 'G': GOLD[4]}, SKIN_DARK[2])
     decals += [(4.4, 13, CYAN[3]), (11.4, 13, CYAN[3]), (7, 10.4, HOTPINK[3]), (8, 10.4, HOTPINK[3]),
                (9, 10.4, HOTPINK[3])]
     decals += [(3, 8, INK), (4, 7, INK), (5, 6.4, INK)] + [(x, 6.4, INK) for x in range(6, 11)] + [(12, 7, INK),
@@ -84,15 +90,17 @@ def breaker_spin():
     return render(parts, decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-def mammoth_body():
-    """Pés em (25, 63)."""
+def mammoth_body(step=None, face='idle'):
+    """Pés em (25, 63). `step` 0..3 escolhe o tempo da passada."""
     E.init(50, 64)
     parts, decals = [], []
-    for x, sh in ((12, -1), (27, 0)):
-        parts.append(Part(rrect(x, 50, 11, 13, 3), RED, group=f'b{x}', R=2.6, shift=sh, bias=0.4, k=3))
-        parts.append(Part(rrect(x + 0.6, 50.6, 9.8, 4, 1.6), YELLOW, group=f'b{x}', R=1.4, shift=sh, lines=False))
-    for x, sh in ((13, -1), (28, 0)):
-        parts.append(Part(rrect(x, 40, 9, 12, 3), TAN, group=f't{x}', R=2.6, shift=sh, bias=0.5))
+    gait = STRIDE[step] if step is not None else ((0, 0), (0, 0))
+    for (x, sh), (dx, up) in zip(((12, -1), (27, 0)), gait):
+        parts.append(Part(rrect(x + dx, 50 - up, 11, 13, 3), RED, group=f'b{x}', R=2.6, shift=sh, bias=0.4, k=3))
+        parts.append(Part(rrect(x + dx + 0.6, 50.6 - up, 9.8, 4, 1.6), YELLOW, group=f'b{x}', R=1.4, shift=sh,
+                          lines=False))
+    for (x, sh), (dx, up) in zip(((13, -1), (28, 0)), gait):
+        parts.append(Part(rrect(x + dx * 0.6, 40 - up, 9, 12, 3), TAN, group=f't{x}', R=2.6, shift=sh, bias=0.5))
     trunks = Part(rrect(11, 35, 28, 9, 3), YELLOW, group='trunks', R=2.4, bias=0.5)
     tstripe = Part(rrect(11.6, 38.6, 26.8, 1.6, 0), RED, group='trunks', R=1, lines=False, light=trunks.mask)
     torso = Part(rrect(7, 14, 36, 24, 8), TAN, group='torso', R=6, bias=0.5, grad=(0.2, 0.15))
@@ -113,7 +121,9 @@ def mammoth_body():
     nose = Part(ellipse((33, 9.6), 1.6, 1.6), TAN, group='nose', R=1, bias=0.4)
     parts += [trunks, tstripe, arm_r, torso, tank, tstr, belt, plate, arm_l, fore, fist, head, band, stache, nose]
     decals += [(23, 3.4, YELLOW[4]), (28, 3, YELLOW[4]), (31, 3.6, YELLOW[4])]
-    decals += pattern(['ww.', 'wkk', '.k.'], (28.4, 7.4), {'w': (255, 255, 255), 'k': INK})
+    decals += face_part(face, EYE, ['ww.', 'wkk', '.k.'], (28.4, 7.4), {'w': (255, 255, 255), 'k': INK}, TAN[2])
+    if face in MOUTH:
+        decals += pattern(MOUTH[face], (25.6, 15.6), FACE_CMAP)
     decals += [(x, 6, INK) for x in range(27, 32)]
     decals += pattern(['.rr.', 'rRWr', 'rRRr', '.rr.'], (23.6, 33.4), {'r': RED[1], 'R': RED[2], 'W': (255, 220, 220)})
     decals += [(x, 30, TAN[4]) for x in range(16, 22)] + [(x, 30, TAN[4]) for x in range(28, 34)]
@@ -146,5 +156,9 @@ def mammoth_flop():
     return render(parts, decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-TEXTURES = {'breaker_body': breaker_body, 'breaker_spin': breaker_spin, 'lutador_body': mammoth_body,
-            'lutador_flop': mammoth_flop}
+TEXTURES = {'breaker_body': lambda: breaker_body(), 'breaker_spin': breaker_spin,
+            'lutador_body': lambda: mammoth_body(), 'lutador_flop': mammoth_flop,
+            'breaker_body_dead': lambda: breaker_body(face='dead'),
+            'lutador_body_dead': lambda: mammoth_body(face='dead')}
+for _i in range(4):
+    TEXTURES[f'breaker_walk_{_i}'] = (lambda i=_i: breaker_body(i))

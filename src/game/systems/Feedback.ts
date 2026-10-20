@@ -3,6 +3,7 @@ import type { GameEvent } from '@/core/run/events';
 import type { EnemyKind } from '@/core/enemies/types';
 import type { Settings, VfxQuality } from '@/shared/settings';
 import { VIEW_MARGIN } from '../data/view';
+import { BODY_KEY } from '../rendering/enemyFrames';
 import { CSS, NEON, PAL } from '../rendering/palette';
 import type { AudioSystem, SfxId } from './AudioSystem';
 import type { FloatingText } from './FloatingText';
@@ -128,6 +129,7 @@ export class Feedback {
   private numbersOn = true;
   private readonly flashRect: Phaser.GameObjects.Rectangle;
   private flashAlpha = 0;
+  private readonly textures: Phaser.Textures.TextureManager;
 
   constructor(
     scene: Phaser.Scene,
@@ -139,6 +141,7 @@ export class Feedback {
     private readonly width: number,
     height: number,
   ) {
+    this.textures = scene.textures;
     this.flashRect = scene.add
       .rectangle(width / 2, height / 2 + (VIEW_MARGIN.bottom - VIEW_MARGIN.top) / 2, width + VIEW_MARGIN.side * 2 + 80, height + VIEW_MARGIN.top + VIEW_MARGIN.bottom + 80, PAL.coral)
       .setAlpha(0)
@@ -454,6 +457,7 @@ export class Feedback {
     } else if (heavy) {
       this.audio.play('slam');
     }
+    this.corpse(ev.x, ev.y, ev.kind, 1);
     // O acessório voa longe: piada visual.
     this.emit({
       texture: KILL_PROP[ev.kind],
@@ -495,10 +499,31 @@ export class Feedback {
     for (let i = 0, n = this.count(90); i < n; i++) this.confetti();
     this.ring(ev.x, ev.y, PAL.gold);
     this.ring(ev.x, ev.y - 20, PAL.warmWhite);
+    this.corpse(ev.x, ev.y, ev.kind, 1.3);
     this.emit({ texture: 'pombone_hat', x: ev.x, y: ev.y - 60, vx: 120, vy: -520, life: 2.4, gravity: 900, spin: 6, bounceY: 0.4, depth: 26 });
     this.emit({ texture: 'pombone_gun', x: ev.x, y: ev.y, vx: -160, vy: -380, life: 2.4, gravity: 1100, spin: -8, bounceY: 0.3, depth: 26 });
     this.texts.comic(ev.x, ev.y - 20, 'CAPUT!', CSS.amber, 44);
     if (this.numbersOn) this.texts.spawn(ev.x, ev.y - 70, `+${ev.score}`, CSS.amber, 30, 1.6);
+  }
+
+  /** Corpo nocauteado (quadro `_dead`) é arremessado girando e quica no chão. */
+  private corpse(x: number, y: number, kind: EnemyKind, scale: number): void {
+    const key = BODY_KEY[kind];
+    if (!key || !this.textures.exists(`${key}_dead`)) return;
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    this.emit({
+      texture: `${key}_dead`,
+      x,
+      y: y - 6,
+      vx: dir * (90 + Math.random() * 90),
+      vy: -320 - Math.random() * 120,
+      life: 1.1,
+      gravity: 1400,
+      spin: dir * (5 + Math.random() * 4),
+      bounceY: 0.3,
+      scaleFrom: scale,
+      depth: 25,
+    });
   }
 
   /** Notas e moedas de mentirinha voando (Porco Executivo). */

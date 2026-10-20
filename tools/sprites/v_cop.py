@@ -6,7 +6,7 @@ cinto, dinheiro sujo no bolso, Ray-Ban espelhado, giroflex nas costas e
 pistolona cromada com mira laser.
 """
 import engine as E
-from cast import (BLACK, BROWN, CHROME, CREAM, GOLD, GREEN, GUNMETAL, HAIR_BROWN, HOTPINK, INK, OUTLINE_TINT,
+from cast import (FACE_CMAP, MOUTH, frames_of, sweat, BLACK, BROWN, CHROME, CREAM, GOLD, GREEN, GUNMETAL, HAIR_BROWN, HOTPINK, INK, OUTLINE_TINT,
                   PURPLE, RED, RIM, SKIN, TEAL, WHITE, sparkle)
 from engine import Part, ellipse, pattern, poly, ramp, render, rrect, union
 
@@ -16,7 +16,7 @@ BLUE = ramp('#0a1050', '#1430a0', '#2d6bff', '#70a0ff', '#c0d8ff')
 DONUT = ramp('#4a2010', '#8a5228', '#d9a35e', '#f0c88a', '#fff0c8')
 
 
-def body():
+def body(face='idle'):
     """Pés em (20, 53)."""
     E.init(40, 54)
     parts, decals = [], []
@@ -48,7 +48,12 @@ def body():
     # barba por fazer e sorrisinho torto
     for x, y in ((25, 12), (27, 13), (29, 14), (26, 14), (24, 13), (28, 15)):
         decals.append((x, y, SKIN[1]))
-    decals += [(26.6, 14.6, INK), (27.6, 14.6, INK), (28.6, 14.2, INK)]
+    if face in MOUTH:
+        decals += pattern(MOUTH[face], (24.6, 13.6), FACE_CMAP)
+    else:
+        decals += [(26.6, 14.6, INK), (27.6, 14.6, INK), (28.6, 14.2, INK)]
+    if face == 'hurt':
+        decals += sweat(18, 4)
     decals += [(25.5, 32.3, (255, 243, 176))]
     decals += [(14, 24, GREEN[4]), (15, 24, GREEN[4]), (16, 24, GREEN[4])]
     decals += sparkle(26, 31)
@@ -104,5 +109,5 @@ def donut():
     return render([d, icing], decals, outline_tint=OUTLINE_TINT, rim=None)
 
 
-TEXTURES = {'policial_body': body, 'policial_shades': shades, 'policial_siren': siren, 'policial_gun': gun,
+TEXTURES = {**{'policial_body' + k: v for k, v in frames_of(body, 31).items()}, 'policial_shades': shades, 'policial_siren': siren, 'policial_gun': gun,
             'policial_donut': donut}

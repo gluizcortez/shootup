@@ -5,13 +5,13 @@ bravas, asa-delta de brinquedo nas costas, pontas da bandana tremulando e
 uma Uzi.
 """
 import engine as E
-from cast import (BLACK, GREEN, GUNMETAL, HOTPINK, INK, OUTLINE_TINT, RIM, SKIN, YELLOW, sparkle)
+from cast import (frames_of, sweat, BLACK, GREEN, GUNMETAL, HOTPINK, INK, OUTLINE_TINT, RIM, SKIN, YELLOW, sparkle)
 from engine import Part, ellipse, pattern, poly, ramp, render, rrect
 
 GI = ramp('#06040c', '#14102a', '#241e40', '#3a3264', '#5e5498')
 
 
-def body():
+def body(face='idle'):
     E.init(34, 30)
     parts = []
     for x0, sh in ((10.6, -1), (17.6, 0)):
@@ -21,11 +21,17 @@ def body():
     hood = Part(ellipse((21, 8.2), 6.8, 6.6), GI, group='hood', R=3.4, bias=0.8)
     slit = Part(rrect(18, 5.8, 9.6, 3.8, 1.4), SKIN, group='slit', R=1.2, bias=0.6, lines=False)
     parts += [torso, sash, hood, slit]
-    decals = pattern([
-        'bbb.bbb.',
-        '.kk..kk.',
-        '.kw..kw.',
-    ], (19.2, 5.2), {'b': INK, 'k': INK, 'w': (255, 255, 255)})
+    eyes = {
+        'idle': ['bbb.bbb.', '.kk..kk.', '.kw..kw.'],
+        'blink': ['bbb.bbb.', '........', '.kk..kk.'],
+        'aim': ['bb...bb.', '..b.b...', '.kk..kk.'],
+        'shoot': ['.bb..bb.', 'kwk.kwk.', 'kkk.kkk.'],
+        'hurt': ['........', 'k.k.k.k.', '.k...k..'],
+        'dead': ['........', 'k.k.k.k.', '.k...k..'],
+    }
+    decals = pattern(eyes[face], (19.2, 5.2), {'b': INK, 'k': INK, 'w': (255, 255, 255)})
+    if face == 'hurt':
+        decals += sweat(27, 3)
     # nó da faixa e dobras do gi
     decals += pattern(['gg', 'Gg', '.g'], (7, 19.4), {'g': GREEN[3], 'G': GREEN[4]})
     decals += pattern(['f..', '.f.', '..f'], (13, 13), {'f': GI[3]})
@@ -61,4 +67,4 @@ def gun():
     return render([mag, uzi, barrel, glove], decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-TEXTURES = {'pombo_body': body, 'pombo_wing': wing, 'pombo_hat': hat, 'pombo_gun': gun}
+TEXTURES = {**{'pombo_body' + k: v for k, v in frames_of(body, 21).items()}, 'pombo_wing': wing, 'pombo_hat': hat, 'pombo_gun': gun}

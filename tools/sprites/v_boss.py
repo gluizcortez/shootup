@@ -8,7 +8,7 @@ cicatriz, barba por fazer, charuto e o fuzil de ouro com lança-granadas.
 import numpy as np
 
 import engine as E
-from cast import (BLACK, CREAM, GOLD, GREY, GUNMETAL, HOTPINK, INK, OUTLINE_TINT, PINK, RED, RIM, SKIN_TAN,
+from cast import (BLACK, CREAM, GOLD, GREY, GUNMETAL, HOTPINK, INK, OUTLINE_TINT, PINK, RED, RIM, SKIN_TAN, frames_of,
                   STEEL, WHITE, sparkle)
 from engine import Part, capsule, ellipse, pattern, poly, ramp, render, rrect, union
 
@@ -18,7 +18,8 @@ POMADE = ramp('#05030a', '#100c20', '#1e1840', '#34307a', '#6c74d8')
 DARKGOLD = ramp('#4a2a04', '#8a5a0a', '#d4a017', '#f0c840', '#fff0a0')
 
 
-def body():
+def body(face='idle'):
+    """`face`: idle, blink, aim, shoot, hurt ou dead (troca rosto e charuto)."""
     E.init(96, 92)
     parts, decals = [], []
     # pernas e sapato bicolor
@@ -49,7 +50,7 @@ def body():
                 bias=0.7, grad=(0.15, 0.1))
     nose = Part(ellipse((75.2, 22.4), 4, 4.6), SKIN_TAN, group='nose', R=2.4, bias=0.6)
     cigar = Part(rrect(72, 30.4, 16.4, 4.2, 2), CIGAR, group='cigar', R=1.6, bias=0.6)
-    parts += [neck, ear, head, nose, cigar]
+    parts += [neck, ear, head, nose] + ([] if face == 'dead' else [cigar])
     # correntão em V (duas voltas)
     for (a, b, w) in (((47, 37.6), (56, 54), 1.2), ((56, 54), (65, 37.6), 1.2), ((49.4, 37.6), (56, 49), 0.8),
                       ((56, 49), (62.6, 37.6), 0.8)):
@@ -73,28 +74,17 @@ def body():
         for x in range(50, 76):
             if head.mask[y, x] and rng.random() < 0.3 and (x - 60) ** 2 / 300 + (y - 33) ** 2 / 90 < 1:
                 decals.append((x, y, SKIN_TAN[1] if rng.random() < 0.6 else SKIN_TAN[0]))
-    # olho de pálpebra pesada + sobrancelhão
-    decals += pattern([
-        'bbbbbbbbbbbbbbbbbbb.',
-        '..bbbbbbbbbbbbbbbbbb',
-        '.....ssssssssss.....',
-        '....sSSSSSSSSSSs....',
-        '....wwwwwkkkkwww....',
-        '....wwwwkkkkkkww....',
-        '.....wwwkkkkkww.....',
-        '.......wwwwww.......',
-    ], (55, 9.6), {'b': INK, 's': SKIN_TAN[1], 'S': SKIN_TAN[2], 'w': (250, 246, 236), 'k': INK})
-    decals += [(65, 14.6, (255, 255, 255))]
+    decals += boss_face(face)
     # cicatriz
     decals += pattern(['r.....', '.r....', '..r.r.', '...r..', '....r.', '.....r', '......'], (66, 23),
                       {'r': (200, 70, 80)})
-    # careta com dentes
-    decals += pattern(['kkkkkkkkkkkkk', 'kwwwwwwwwkkkk', '.kkkkkkkkkkk.'], (63, 30.4),
-                      {'k': INK, 'w': (250, 246, 236)})
-    # brasa e fumaça do charuto
-    decals += pattern(['oO', 'Oy', 'oO'], (86.6, 31), {'o': (255, 90, 42), 'O': (255, 140, 60), 'y': (255, 230, 120)})
-    decals += pattern(['..ss', '.s..', 's...', '.s..', '..s.'], (88, 21), {'s': (200, 200, 220)})
-    decals += [(76, 31.6, GOLD[3]), (76, 32.6, GOLD[2]), (76, 33.6, GOLD[3])]
+    if face != 'dead':
+        # brasa e fumaça do charuto
+        decals += pattern(['oO', 'Oy', 'oO'], (86.6, 31), {'o': (255, 90, 42), 'O': (255, 140, 60),
+                                                          'y': (255, 230, 120)})
+        puff = ['..ss', '.s..', 's...', '.s..', '..s.'] if face != 'blink' else ['.ss.', 's..s', '.ss.', '....', '....']
+        decals += pattern(puff, (88, 21), {'s': (200, 200, 220)})
+        decals += [(76, 31.6, GOLD[3]), (76, 32.6, GOLD[2]), (76, 33.6, GOLD[3])]
     # dobras do terno e botões
     decals += pattern(['f....', '.ff..', '...ff', '.....'], (30, 66), {'f': SUIT[1]})
     decals += pattern(['f....', '.ff..', '...ff'], (52, 72), {'f': SUIT[1]})
@@ -102,6 +92,96 @@ def body():
     # brilho na careca e anel no mastro
     decals += sparkle(48, 8) + sparkle(28, 54)
     return render(parts, decals, outline_tint=OUTLINE_TINT, rim=RIM)
+
+
+EYE_W = (250, 246, 236)
+FACE_CMAP = {'b': INK, 's': SKIN_TAN[1], 'S': SKIN_TAN[2], 'w': EYE_W, 'k': INK, 'r': (220, 40, 60),
+             'm': (120, 20, 40), 't': (255, 110, 140), 'v': (150, 40, 90)}
+
+
+def boss_face(face):
+    """Olho (pálpebra pesada) e boca do Tony para cada momento."""
+    eyes = {
+        'idle': [
+            'bbbbbbbbbbbbbbbbbbb.',
+            '..bbbbbbbbbbbbbbbbbb',
+            '.....ssssssssss.....',
+            '....sSSSSSSSSSSs....',
+            '....wwwwwkkkkwww....',
+            '....wwwwkkkkkkww....',
+            '.....wwwkkkkkww.....',
+            '.......wwwwww.......',
+        ],
+        'blink': [
+            'bbbbbbbbbbbbbbbbbbb.',
+            '..bbbbbbbbbbbbbbbbbb',
+            '.....ssssssssss.....',
+            '....sSSSSSSSSSSs....',
+            '....sSSSSSSSSSSs....',
+            '....kkkkkkkkkkkk....',
+            '.....ssssssssss.....',
+            '....................',
+        ],
+        'aim': [
+            'bb..................',
+            '.bbbbbb.............',
+            '...bbbbbbbbbbbbb....',
+            '....sSSSbbbbbbbbbb..',
+            '....wwwwwkkrkwww....',
+            '....wwwwkkrrkkww....',
+            '.....wwwkkkkkww.....',
+            '.......wwwwww.......',
+        ],
+        'shoot': [
+            '.bbbbbbbbbbbbbbbbb..',
+            'bb...............bb.',
+            '....wwwwwwwwwww.....',
+            '...wwwwwwkkkkwww....',
+            '...wwwwwkkkkkkww....',
+            '...wwwwwkkkkkkww....',
+            '....wwwwwkkkkww.....',
+            '......wwwwwww.......',
+        ],
+        'hurt': [
+            '..bb.........bb.....',
+            '....bbb...bbb.......',
+            '.......bbb..........',
+            '....kk.......kk.....',
+            '......kk...kk.......',
+            '........kkk.........',
+            '......kk...kk.......',
+            '....kk.......kk.....',
+        ],
+        'dead': [
+            '....................',
+            '.bbbbbbbbbbbbbbbbb..',
+            '....................',
+            '.....kk.....kk......',
+            '.......kk.kk........',
+            '.........k..........',
+            '.......kk.kk........',
+            '.....kk.....kk......',
+        ],
+    }
+    mouths = {
+        'idle': ['kkkkkkkkkkkkk', 'kwwwwwwwwkkkk', '.kkkkkkkkkkk.'],
+        'blink': ['kkkkkkkkkkkkk', 'kwwwwwwwwkkkk', '.kkkkkkkkkkk.'],
+        'aim': ['kkkkkkkkkkkkk', 'kwkwkwkwkwkwk', 'kkkkkkkkkkkkk'],
+        'shoot': ['.kkkkkkkkkkk.', 'kwwwwwwwwwwwk', 'kmmmmmmmmmmmk', 'kmmmmttmmmmmk', 'kmmmtttttmmk.',
+                  '.kkkkkkkkkk..'],
+        'hurt': ['..kkkkkkkk...', '.k........k..', 'k..........k.'],
+        'dead': ['kkkkkkkkkkkk.', '.kktttkk.....', '..ktttk......', '...kkk.......'],
+    }
+    out = pattern(eyes[face], (55, 9.6), FACE_CMAP)
+    if face in ('idle', 'aim'):
+        out += [(65, 14.6, (255, 255, 255))]
+    if face == 'aim':
+        # veia saltando na testa
+        out += pattern(['.v.v', 'v.v.', '.v..'], (49, 5), FACE_CMAP)
+    if face == 'hurt':
+        out += [(73, 14, (120, 220, 255)), (73, 15, (120, 220, 255)), (72, 16, (200, 240, 255))]
+    out += pattern(mouths[face], (63, 30.4 if face != 'shoot' else 29.4), FACE_CMAP)
+    return out
 
 
 def wing():
@@ -147,4 +227,5 @@ def gun():
     return render([mag, launcher, body_, barrel, fist], decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-TEXTURES = {'pombone_body': body, 'pombone_wing': wing, 'pombone_hat': hat, 'pombone_gun': gun}
+TEXTURES = {'pombone' + '_body' + k: v for k, v in frames_of(body, 64).items()}
+TEXTURES.update({'pombone_wing': wing, 'pombone_hat': hat, 'pombone_gun': gun})

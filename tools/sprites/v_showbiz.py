@@ -11,7 +11,7 @@ de comercial, gota de suor, headset, peruca, TV de tubo voadora e
 celular-tijolo.
 """
 import engine as E
-from cast import (BLACK, BROWN, CHROME, CREAM, CYAN, GREEN, GUNMETAL, HAIR_BLACK, HOTPINK, INK, ORANGE, OUTLINE_TINT,
+from cast import (EYE, FACE_CMAP, MOUTH, face_part, frames_of, sweat, BLACK, BROWN, CHROME, CREAM, CYAN, GREEN, GUNMETAL, HAIR_BLACK, HOTPINK, INK, ORANGE, OUTLINE_TINT,
                   PURPLE, RED, RIM, SKIN, SKIN_TAN, TEAL, WHITE, YELLOW, BLUE_TRACK, sequin_tex, sparkle)
 from engine import Part, capsule, ellipse, pattern, poly, ramp, render, rrect, union
 
@@ -30,7 +30,7 @@ def sneaker(x, y, color, sh, g):
     return p, d
 
 
-def dj_body():
+def dj_body(face='idle'):
     """Pés em (18, 51)."""
     E.init(36, 52)
     parts, decals = [], []
@@ -53,7 +53,10 @@ def dj_body():
     decals += [(x, 2.6, HOTPINK[3]) for x in range(14, 27)]
     decals += pattern(['kkkkkkkkkk', 'kyyyyyyyyk', 'kkkkkkkkkk', 'kyyyyyyyyk', 'kkkkkkkkkk'], (18.6, 9.4),
                       {'k': INK, 'y': YELLOW[3]})
-    decals += pattern(['kkkkkk', 'kwwwwk', '.kkkk.'], (20.4, 15.2), {'k': INK, 'w': (255, 255, 255)})
+    decals += face_part(face, MOUTH, ['kkkkkk', 'kwwwwk', '.kkkk.'], (20.4, 15.2), {'k': INK, 'w': (255, 255, 255)},
+                        SKIN_B[2])
+    if face == 'hurt':
+        decals += sweat(17, 8)
     decals += pattern(['g.......g', '.g.....g.', '..g...g..', '...g.g...', '....G....'], (13.6, 18.6),
                       {'g': (160, 100, 14), 'G': (255, 250, 200)})
     decals += pattern(['.oo.', 'o$$o', '.oo.'], (16.6, 27.4), {'o': (160, 100, 14), '$': (255, 250, 200)})
@@ -100,7 +103,7 @@ def dj_gun():
     return render([arm, box, cone, tw, fist], decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-def magico_body():
+def magico_body(face='idle'):
     """Pés em (18, 51)."""
     E.init(36, 52)
     parts, decals = [], []
@@ -121,7 +124,12 @@ def magico_body():
                 HAIR_BLACK, group='hair', R=1.6, bias=-0.4)
     nose = Part(ellipse((27, 10.6), 1.4, 1.4), SKIN, group='nose', R=1, bias=0.4, lines=False)
     parts += [coat, shirt, bow, neck, head, hair, nose]
-    decals += pattern(['.kk.', 'kwKk', '.kk.'], (22.4, 8.6), {'k': INK, 'w': (255, 255, 255), 'K': INK})
+    decals += face_part(face, EYE, ['.kk.', 'kwKk', '.kk.'], (22.4, 8.6), {'k': INK, 'w': (255, 255, 255), 'K': INK},
+                        SKIN[2])
+    if face in MOUTH:
+        decals += pattern(MOUTH[face], (20.4, 15.4), FACE_CMAP)
+    if face == 'hurt':
+        decals += sweat(16, 6)
     decals += [(21.6, 7.4, INK), (22.6, 7, INK), (23.6, 6.8, INK), (24.6, 6.6, INK)]
     decals += pattern([
         'k........k',
@@ -170,7 +178,7 @@ def magico_gun():
     return render(parts, decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-def vendor_body():
+def vendor_body(face='idle'):
     """Pés em (19, 51)."""
     E.init(38, 52)
     parts, decals = [], []
@@ -196,14 +204,17 @@ def vendor_body():
                 decals.append((x, y, TEAL[3] if (x + y) % 2 else TEAL[2]))
     decals += [(18.4, 22, YELLOW[3]), (19.4, 22, YELLOW[3]), (20.4, 22, YELLOW[3]), (18.4, 25.6, YELLOW[3]),
                (19.4, 25.6, YELLOW[3]), (20.4, 25.6, YELLOW[3])]
-    decals += pattern(['.kk.', 'kwKk', '.kk.'], (23, 7.6), {'k': INK, 'w': (255, 255, 255), 'K': INK})
+    decals += face_part(face, EYE, ['.kk.', 'kwKk', '.kk.'], (23, 7.6), {'k': INK, 'w': (255, 255, 255), 'K': INK},
+                        SKIN[2])
     decals += [(x, 6, INK) for x in range(22, 26)]
-    decals += pattern([
+    decals += face_part(face, MOUTH, [
         'kkkkkkkkkk',
         'kwwgwwgwwk',
         '.kwwwwwwk.',
         '..kkkkkk..',
-    ], (18.6, 11.8), {'k': INK, 'w': (255, 255, 255), 'g': (196, 202, 214)})
+    ], (18.6, 11.8), {'k': INK, 'w': (255, 255, 255), 'g': (196, 202, 214)}, SKIN[2])
+    if face == 'hurt':
+        decals += sweat(26, 3)
     decals += pattern(['.c.', 'ccc', 'cwc', '.c.'], (14.6, 2.8), {'c': CYAN[3], 'w': (255, 255, 255)})
     decals += [(15, 11, INK), (15, 12, INK), (15, 13, INK), (16, 13.4, INK), (18, 14, INK), (20, 14.6, INK),
                (22, 15, GUNMETAL[3])]
@@ -254,7 +265,10 @@ def vendor_gun():
     return render([sleeve, brick, fist], decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-TEXTURES = {'dj_body': dj_body, 'dj_deck': dj_deck, 'dj_phones': dj_phones, 'dj_gun': dj_gun,
-            'magico_body': magico_body, 'magico_hat': magico_hat, 'magico_card': magico_card,
-            'magico_gun': magico_gun, 'vendedor_body': vendor_body, 'vendedor_tv': vendor_tv,
+TEXTURES = {**{'dj_body' + k: v for k, v in frames_of(dj_body, 31).items()},
+            **{'magico_body' + k: v for k, v in frames_of(magico_body, 33).items()},
+            **{'vendedor_body' + k: v for k, v in frames_of(vendor_body, 33).items()},
+            'dj_deck': dj_deck, 'dj_phones': dj_phones, 'dj_gun': dj_gun,
+            'magico_hat': magico_hat, 'magico_card': magico_card,
+            'magico_gun': magico_gun, 'vendedor_tv': vendor_tv,
             'vendedor_toupee': vendor_toupee, 'vendedor_gun': vendor_gun}

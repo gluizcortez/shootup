@@ -5,12 +5,12 @@ listradas, joelheira, shortinho roxo, regata neon com raio, sorrisão
 com mecha rosa. Uzi rosa-choque.
 """
 import engine as E
-from cast import (BLACK, CYAN, GUNMETAL, HAIR_BLOND, HOTPINK, INK, OUTLINE_TINT, PURPLE, RED, RIM, SKIN, WHITE,
+from cast import (EYE, MOUTH, face_part, frames_of, sweat, BLACK, CYAN, GUNMETAL, HAIR_BLOND, HOTPINK, INK, OUTLINE_TINT, PURPLE, RED, RIM, SKIN, WHITE,
                   YELLOW, sparkle)
 from engine import Part, ellipse, pattern, poly, render, rrect, union
 
 
-def body():
+def body(face='idle'):
     """Pés (centro das rodinhas) em (18, 53)."""
     E.init(36, 54)
     parts, decals = [], []
@@ -41,14 +41,17 @@ def body():
     nose = Part(ellipse((27.4, 8.6), 1.4, 1.4), SKIN, group='nose', R=1, bias=0.6, lines=False)
     parts += [shorts, stripe, tank, bolt, neck, headp, nose]
     # olho arregalado de quem tomou 4 latas de refrigerante
-    decals += pattern(['.kk.', 'kwwk', 'kwKk', '.kk.'], (22, 5.4), {'k': INK, 'w': (255, 255, 255), 'K': INK})
+    decals += face_part(face, EYE, ['.kk.', 'kwwk', 'kwKk', '.kk.'], (22, 5.4), {'k': INK, 'w': (255, 255, 255), 'K': INK},
+                        SKIN[3])
     # sorrisão com aparelho
-    decals += pattern([
+    decals += face_part(face, MOUTH, [
         'kkkkkkk',
         'kwmwmwk',
         'kwwwwwk',
         '.kkkkk.',
-    ], (20.4, 10), {'k': INK, 'w': (255, 255, 255), 'm': (150, 160, 190)})
+    ], (20.4, 10), {'k': INK, 'w': (255, 255, 255), 'm': (150, 160, 190)}, SKIN[2])
+    if face == 'hurt':
+        decals += sweat(17, 3)
     decals += [(19, 10, (255, 122, 168)), (18, 10, (255, 122, 168)), (28, 6, INK)]
     decals += sparkle(14, 17)
     return render(parts, decals, outline_tint=OUTLINE_TINT, rim=RIM)
@@ -93,4 +96,4 @@ def gun():
     return render([grip, mag, arm, cuff, uzi, muzzle, glove], decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-TEXTURES = {'patinador_body': body, 'patinador_hair': hair, 'patinador_visor': visor, 'patinador_gun': gun}
+TEXTURES = {**{'patinador_body' + k: v for k, v in frames_of(body, 33).items()}, 'patinador_hair': hair, 'patinador_visor': visor, 'patinador_gun': gun}

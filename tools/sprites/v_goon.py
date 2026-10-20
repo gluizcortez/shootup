@@ -4,12 +4,12 @@ arregaçada, camiseta rosa, Ray-Ban, barba por fazer, topete de gel e
 mocassim sem meia. Desce de paraquedas listrado em neon.
 """
 import engine as E
-from cast import (BROWN, CHROME, GOLD, GUNMETAL, HAIR_BROWN, HOTPINK, INK, OUTLINE_TINT, PINK, RIM, SKIN, TEAL,
+from cast import (BROWN, CHROME, GOLD, GUNMETAL, HAIR_BROWN, HOTPINK, INK, OUTLINE_TINT, PINK, RIM, SKIN, TEAL, FACE_CMAP, MOUTH, frames_of, sweat,
                   WHITE, YELLOW, CYAN, CREAM, noise_tex, sparkle)
 from engine import Part, capsule, ellipse, pattern, poly, render, rrect, union
 
 
-def body():
+def body(face='idle'):
     E.init(44, 40)
     parts, decals = [], []
     # mocassins sem meia (tornozelo à mostra)
@@ -45,15 +45,28 @@ def body():
         for x in range(25, 36):
             if head.mask[y, x] and (x * 2 + y * 3) % 5 == 0 and not (y < 14 and x < 28):
                 decals.append((x, y, (196, 128, 112)))
-    # Ray-Ban com reflexo neon
+    # Ray-Ban com reflexo neon (o brilho corre na piscada; torto quando apanha)
+    glint = 'w' if face != 'blink' else 'c'
+    gy = 6.6 + (1 if face == 'dead' else 0)
     decals += pattern([
         'kkkkkkkkkkk.',
-        'kccwkkkccwkk',
+        f'kcc{glint}kkkcc{glint}kk',
         'kcbbk.kcbbk.',
         '.kkk...kkk..',
-    ], (24.6, 6.6), {'k': INK, 'c': CYAN[3], 'w': (255, 255, 255), 'b': CYAN[1]})
-    # sorrisinho de lado e covinha
-    decals += pattern(['....mm', 'mmmm..'], (29.4, 15.2), {'m': (90, 30, 44)})
+    ], (24.6, gy), {'k': INK, 'c': CYAN[3], 'w': (255, 255, 255), 'b': CYAN[1]})
+    if face == 'blink':
+        decals += [(26, 7.6, (255, 255, 255)), (31, 7.6, (255, 255, 255))]
+    if face == 'aim':
+        decals += pattern(['bb.....bb', '..b...b..'], (25, 4.6), FACE_CMAP)
+    if face in ('hurt', 'dead'):
+        decals += pattern(['w.', '.w', 'w.'], (27, 7.6), {'w': (255, 255, 255)})  # lente trincada
+    if face == 'hurt':
+        decals += sweat(23, 4)
+    # boca: sorrisinho de lado com covinha, ou a expressão do momento
+    if face in MOUTH:
+        decals += pattern(MOUTH[face], (29.4, 14.6), FACE_CMAP)
+    else:
+        decals += pattern(['....mm', 'mmmm..'], (29.4, 15.2), {'m': (90, 30, 44)})
     # brinco de ouro + corrente
     decals += [(20.6, 14.4, GOLD[3]), (20.6, 15.2, GOLD[2])]
     decals += pattern(['g....g', '.g..g.', '..gg..'], (20.6, 15.6), {'g': GOLD[3]})
@@ -137,4 +150,5 @@ def line_px(x0, y0, x1, y1):
     return {(int(round(x0 + (x1 - x0) * i / n)), int(round(y0 + (y1 - y0) * i / n))) for i in range(n + 1)}
 
 
-TEXTURES = {'pato_body': body, 'pato_hat': hat, 'pato_gun': gun, 'pato_balloons': balloons}
+TEXTURES = {'pato_body' + k: v for k, v in frames_of(body, 30).items()}
+TEXTURES.update({'pato_hat': hat, 'pato_gun': gun, 'pato_balloons': balloons})

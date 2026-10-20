@@ -5,6 +5,7 @@ import { TEX, TEX_SCALE } from './textures';
 import { VICE_TEX } from './texturesVice';
 import { VICE2_TEX } from './texturesVice2';
 import { normalizeAngle, Spring } from './spring';
+import { BODY_KEY, type EnemyFace, pickEnemyFace } from './enemyFrames';
 
 const INV = 1 / TEX_SCALE;
 
@@ -55,6 +56,12 @@ export class EnemyView implements EnemyVisual {
   private telegraphT = 0;
   private telegraphDur = 0;
   private shotKick = 0;
+  /** Corpo com quadros de rosto no atlas (null quando só há o desenho de reserva). */
+  private readonly faceKey: string | null;
+  private face: EnemyFace = '';
+  private hurt = 0;
+  /** Boca aberta do grito de tiro (s restantes). */
+  private shout = 0;
   /** Mira laser do Policial Corrupto (desenhada no mundo, fora do container). */
   private readonly laser: Phaser.GameObjects.Graphics | null;
   uid = -1;
@@ -65,6 +72,8 @@ export class EnemyView implements EnemyVisual {
     private readonly groundAt: (x: number) => number,
   ) {
     this.rig = this.build(scene, kind);
+    const key = BODY_KEY[kind];
+    this.faceKey = key && scene.textures.exists(`${key}_aim`) ? key : null;
     this.shadow = scene.add.image(0, 0, 'shadow').setScale(0.9 * INV).setDepth(9);
     const big = kind === 'don_pombone';
     this.shieldScale = big ? 1.15 / 1.3 : 1;
@@ -274,6 +283,9 @@ export class EnemyView implements EnemyVisual {
     this.telegraphT = 0;
     this.telegraphDur = 0;
     this.shotKick = 0;
+    this.hurt = 0;
+    this.shout = 0;
+    this.setFace('');
     this.rig.excl.setVisible(false);
     this.rig.glow.setScale(0);
     this.clearFlash();
@@ -289,6 +301,7 @@ export class EnemyView implements EnemyVisual {
 
   onHit(): void {
     this.flash = 0.07;
+    this.hurt = 0.18;
     for (const o of this.parts()) o.setTintFill(0xffffff);
     this.squash.kick(-3);
   }
@@ -301,6 +314,7 @@ export class EnemyView implements EnemyVisual {
 
   onShot(): void {
     this.shotKick = 1;
+    this.shout = 0.16;
     if (this.kind === 'pato_pistoleiro') {
       this.telegraphDur = 0;
       this.rig.excl.setVisible(false);
@@ -308,6 +322,12 @@ export class EnemyView implements EnemyVisual {
   }
 
   onLanded(): void {}
+
+  private setFace(face: EnemyFace): void {
+    if (!this.faceKey || face === this.face) return;
+    this.face = face;
+    this.rig.body.setTexture(this.faceKey + face);
+  }
 
   private parts(): Phaser.GameObjects.Image[] {
     return [this.rig.body, this.rig.prop, this.rig.gun];
@@ -409,6 +429,9 @@ export class EnemyView implements EnemyVisual {
 
     // Arma: aponta para onde a IA mira (ângulo do mundo convertido para o espaço local).
     this.shotKick = Math.max(0, this.shotKick - dt * 10);
+    this.hurt = Math.max(0, this.hurt - dt);
+    this.shout = Math.max(0, this.shout - dt);
+    this.setFace(pickEnemyFace({ state: e.state, hurt: this.hurt, shotKick: this.shout > 0 ? 1 : 0, time: this.time, seed: e.uid }));
     const local = normalizeAngle(e.facing > 0 ? e.aimAngle : Math.PI - e.aimAngle) - this.root.rotation * e.facing;
     let gunRot = local - this.shotKick * 0.5;
     if (this.kind === 'galinha_rambo') {

@@ -8,7 +8,7 @@ caça-níquel que cospe moedas.
 from scipy import ndimage
 
 import engine as E
-from cast import (BROWN, CREAM, CYAN, GOLD, GREEN, GREY, GUNMETAL, HOTPINK, INK, LIME, OUTLINE_TINT, PINK, RED,
+from cast import (FACE_CMAP, MOUTH, face_part, frames_of, sweat, BROWN, CREAM, CYAN, GOLD, GREEN, GREY, GUNMETAL, HOTPINK, INK, LIME, OUTLINE_TINT, PINK, RED,
                   RIM, SKIN, WHITE, YELLOW, checker_tex, sparkle)
 from engine import Part, capsule, ellipse, pattern, poly, ramp, render, rrect, union
 
@@ -23,7 +23,7 @@ def plaid(idx, m):
     return out
 
 
-def body():
+def body(face='idle'):
     E.init(46, 46)
     parts, decals = [], []
     # sapato bicolor de malandro
@@ -82,7 +82,11 @@ def body():
         '.kkk...kkk..',
     ], (23.6, 6.2), {'k': INK, 'p': PINK[3], 'w': (255, 255, 255)})
     # boca com dente de ouro
-    decals += pattern(['kkkkk', 'kGkkk'], (30, 15.6), {'k': INK, 'G': GOLD[4]})
+    decals += face_part(face, MOUTH, ['kkkkk', 'kGkkk'], (30, 15.6), {'k': INK, 'G': GOLD[4]}, SKIN[2])
+    if face == 'aim':
+        decals += pattern(['bb.....bb', '..b...b..'], (24, 4.4), FACE_CMAP)
+    if face in ('hurt', 'dead'):
+        decals += sweat(21, 5) + sweat(36, 6)
     # pente-e-vem na careca
     decals += pattern(['..gggggggggg', 'gg..........'], (17, 1.4), {'g': GREY[1]})
     decals += [(22, 3, (255, 255, 240)), (23, 3, (255, 255, 240)), (24, 2.6, (255, 240, 220))]
@@ -152,4 +156,4 @@ def coin():
     return render([c], decals, outline_tint=OUTLINE_TINT, rim=None)
 
 
-TEXTURES = {'porco_body': body, 'porco_hat': hat, 'porco_heli': heli, 'porco_case': case, 'b_coin': coin}
+TEXTURES = {**{'porco_body' + k: v for k, v in frames_of(body, 39).items()}, 'porco_hat': hat, 'porco_heli': heli, 'porco_case': case, 'b_coin': coin}

@@ -5,12 +5,12 @@ regata cinza, bíceps com tatuagem neon "MOM", cinto de balas e coturno.
 Voa com um jetpack de dois extintores presos com fita rosa.
 """
 import engine as E
-from cast import (BLACK, BRASS, CHROME, CYAN, GREY, GUNMETAL, HAIR_BROWN, HOTPINK, INK, LEATHER, OUTLINE_TINT, RED,
+from cast import (FACE_CMAP, MOUTH, face_part, frames_of, sweat, BLACK, BRASS, CHROME, CYAN, GREY, GUNMETAL, HAIR_BROWN, HOTPINK, INK, LEATHER, OUTLINE_TINT, RED,
                   RIM, SKIN_TAN, STEEL, sparkle, noise_tex)
 from engine import Part, capsule, ellipse, pattern, poly, render, rrect, union
 
 
-def body():
+def body(face='idle'):
     E.init(48, 56)
     parts, decals = [], []
     # coturnos
@@ -46,7 +46,9 @@ def body():
     ], (30.6, 10), {'s': INK, 'b': STEEL[4]})
     decals += [(35.4, 18.6, STEEL[1]), (35, 20, STEEL[1])]
     # boca reta, queixo marcado e barba por fazer
-    decals += pattern(['mmmmmmmm'], (27.8, 23.4), {'m': INK})
+    decals += face_part(face, MOUTH, ['mmmmmmmm'], (27.8, 23.4), {'m': INK}, SKIN_TAN[2])
+    if face == 'hurt':
+        decals += sweat(24, 9)
     decals += pattern(['.dddd.', 'd....d'], (28.6, 26.2), {'d': SKIN_TAN[1]})
     for y in range(20, 28):
         for x in range(23, 31):
@@ -55,7 +57,8 @@ def body():
     # nariz quebrado
     decals += pattern(['.n', 'nn', 'nN'], (35.6, 15), {'n': SKIN_TAN[1], 'N': SKIN_TAN[3]})
     # sobrancelha de quem não ri desde 1984
-    decals += pattern(['bbbbbb'], (24.6, 11.4), {'b': HAIR_BROWN[1]})
+    brow = ['bb....', '..bbbb'] if face == 'aim' else ['bbbbbb']
+    decals += pattern(brow, (24.6, 10.6 if face == 'aim' else 11.4), {'b': HAIR_BROWN[1]})
     # tatuagem neon "MOM" num coração
     decals += pattern([
         '.pp.pp.',
@@ -131,5 +134,5 @@ def jetpack():
     return render(parts + [tape], decals, outline_tint=OUTLINE_TINT, rim=RIM)
 
 
-TEXTURES = {'galinha_body': body, 'galinha_glasses': glasses, 'galinha_gun_a': gun(0), 'galinha_gun_b': gun(2),
+TEXTURES = {**{'galinha_body' + k: v for k, v in frames_of(body, 44).items()}, 'galinha_glasses': glasses, 'galinha_gun_a': gun(0), 'galinha_gun_b': gun(2),
             'galinha_jetpack': jetpack}

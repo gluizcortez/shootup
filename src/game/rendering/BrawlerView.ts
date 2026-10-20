@@ -32,6 +32,11 @@ export class BrawlerView implements EnemyVisual {
   private flash = 0;
   private time = Math.random() * 10;
   private cycle = 0;
+  /** Passada no atlas (`<prefix>_walk_0..3`); null sem os quadros. */
+  private readonly walkPrefix: string | null;
+  private readonly baseKey: string;
+  private walkPhase = 0;
+  private walkKey = '';
   private telegraphT = 0;
   private telegraphDur = 0;
   private readonly exclY: number;
@@ -46,6 +51,9 @@ export class BrawlerView implements EnemyVisual {
     const breaker = kind === 'breaker_boombox';
     const bt = breaker ? T.breakerBody : T.lutadorBody;
     this.body = scene.add.image(0, 0, breaker ? 'breaker_body' : 'lutador_body').setOrigin(bt.fx / bt.w, bt.fy / bt.h).setScale(INV);
+    this.baseKey = breaker ? 'breaker_body' : 'lutador_body';
+    const prefix = breaker ? 'breaker_walk' : 'lutador_walk';
+    this.walkPrefix = scene.textures.exists(`${prefix}_3`) ? prefix : null;
     this.alt = breaker
       ? scene.add.image(0, 0, 'breaker_spin').setOrigin(T.breakerSpin.fx / T.breakerSpin.w, T.breakerSpin.fy / T.breakerSpin.h)
       : scene.add.image(0, 0, 'lutador_flop').setOrigin(T.lutadorFlop.cx / T.lutadorFlop.w, T.lutadorFlop.cy / T.lutadorFlop.h);
@@ -191,6 +199,16 @@ export class BrawlerView implements EnemyVisual {
       }
     }
 
+    // Passada quadro a quadro enquanto anda; parado volta ao corpo base.
+    let key = this.baseKey;
+    if (this.walkPrefix && e.state === 'walk' && Math.abs(e.vx) > 5) {
+      this.walkPhase += dt * (5 + Math.abs(e.vx) * 0.03);
+      key = `${this.walkPrefix}_${Math.floor(this.walkPhase) % 4}`;
+    }
+    if (key !== this.walkKey) {
+      this.walkKey = key;
+      this.body.setTexture(key);
+    }
     this.body.setVisible(!useAlt);
     this.alt.setVisible(useAlt);
     if (useAlt && this.kind === 'lutador_mamute') this.alt.setPosition(0, -e.def.hh);
