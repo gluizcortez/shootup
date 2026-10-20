@@ -26,12 +26,12 @@ export function GameOverScreen() {
 
   if (!summary) return null;
   const rows: Array<[string, string]> = [
-    ['Onda alcançada', String(summary.wave)],
-    ['Abates', String(summary.kills)],
-    ['Combo máximo', String(summary.bestCombo)],
-    ['Precisão', `${Math.round(summary.accuracy * 100)}%`],
-    ['Tempo', fmtTime(summary.timeSeconds)],
-    ['Arma', summary.weaponName],
+    ['Wave reached', String(summary.wave)],
+    ['Kills', String(summary.kills)],
+    ['Best combo', String(summary.bestCombo)],
+    ['Accuracy', `${Math.round(summary.accuracy * 100)}%`],
+    ['Time', fmtTime(summary.timeSeconds)],
+    ['Weapon', summary.weaponName],
   ];
   const save = () => {
     if (savedRank) return;
@@ -42,12 +42,12 @@ export function GameOverScreen() {
   return (
     <div className="screen screen--dim" data-testid="gameover">
       <div className="panel panel--gameover">
-        <div className="title-kicker">FIM DO PROGRAMA</div>
-        <h2 className="panel-title">ELIMINADO!</h2>
-        {rank === 1 && <div className="record-burst">NOVO RECORDE!</div>}
+        <div className="title-kicker">END OF PROGRAM</div>
+        <h2 className="panel-title">WASTED!</h2>
+        {rank === 1 && <div className="record-burst">NEW HIGH SCORE!</div>}
         <div className="final-score">
-          <span>PONTUAÇÃO</span>
-          <strong>{summary.score.toLocaleString('pt-BR')}</strong>
+          <span>SCORE</span>
+          <strong>{summary.score.toLocaleString('en-US')}</strong>
         </div>
         {entering ? (
           <form
@@ -57,7 +57,7 @@ export function GameOverScreen() {
               save();
             }}
           >
-            <label htmlFor="player-name">Você entrou no placar em {rank}º lugar! Seu nome:</label>
+            <label htmlFor="player-name">You made the board at #{rank}! Your name:</label>
             <div className="name-row">
               <input
                 id="player-name"
@@ -65,12 +65,12 @@ export function GameOverScreen() {
                 autoFocus
                 maxLength={NAME_MAX}
                 value={name}
-                placeholder="SEU NOME"
+                placeholder="YOUR NAME"
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
               />
               <TactileButton type="submit" data-testid="save-score">
-                SALVAR
+                SAVE
               </TactileButton>
             </div>
           </form>
@@ -89,10 +89,10 @@ export function GameOverScreen() {
             )}
           </>
         )}
-        {summary.debugTainted && <p className="note">Run com comandos de debug: não entra no placar.</p>}
+        {summary.debugTainted && <p className="note">Run used debug commands: it won't go on the board.</p>}
         <div className="panel-actions">
           <TactileButton autoFocus={!entering} onClick={actions.restart}>
-            TENTAR DE NOVO (R)
+            TRY AGAIN (R)
           </TactileButton>
           <TactileButton variant="ghost" onClick={actions.quitToMenu}>
             MENU

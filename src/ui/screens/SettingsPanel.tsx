@@ -2,9 +2,9 @@ import type { VfxQuality } from '@/shared/settings';
 import { updateSettings, useGame } from '../store/gameStore';
 
 const QUALITIES: Array<{ id: VfxQuality; label: string }> = [
-  { id: 'low', label: 'Baixa' },
-  { id: 'medium', label: 'Média' },
-  { id: 'high', label: 'Alta' },
+  { id: 'low', label: 'Low' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'high', label: 'High' },
 ];
 
 export function SettingsPanel() {
@@ -12,7 +12,7 @@ export function SettingsPanel() {
   return (
     <div className="settings">
       <label className="setting">
-        <span>Tremor de tela</span>
+        <span>Screen shake</span>
         <input
           type="range"
           min={0}
@@ -24,7 +24,7 @@ export function SettingsPanel() {
         <output>{Math.round(s.screenShake * 100)}%</output>
       </label>
       <label className="setting">
-        <span>Volume dos efeitos</span>
+        <span>Sound effects volume</span>
         <input
           type="range"
           min={0}
@@ -36,7 +36,7 @@ export function SettingsPanel() {
         <output>{Math.round(s.sfxVolume * 100)}%</output>
       </label>
       <label className="setting">
-        <span>Volume da música</span>
+        <span>Music volume</span>
         <input
           type="range"
           min={0}
@@ -48,7 +48,7 @@ export function SettingsPanel() {
         <output>{Math.round(s.musicVolume * 100)}%</output>
       </label>
       <div className="setting">
-        <span>Partículas</span>
+        <span>Particles</span>
         <div className="seg">
           {QUALITIES.map((q) => (
             <button
@@ -64,7 +64,7 @@ export function SettingsPanel() {
       </div>
       <label className="setting check">
         <input type="checkbox" checked={s.flashes} onChange={(e) => updateSettings({ flashes: e.target.checked })} />
-        <span>Flashes de dano</span>
+        <span>Damage flashes</span>
       </label>
       <label className="setting check">
         <input
@@ -72,11 +72,11 @@ export function SettingsPanel() {
           checked={s.damageNumbers}
           onChange={(e) => updateSettings({ damageNumbers: e.target.checked })}
         />
-        <span>Números de dano</span>
+        <span>Damage numbers</span>
       </label>
       <label className="setting check">
         <input type="checkbox" checked={s.muted} onChange={(e) => updateSettings({ muted: e.target.checked })} />
-        <span>Silenciar</span>
+        <span>Mute</span>
       </label>
     </div>
   );

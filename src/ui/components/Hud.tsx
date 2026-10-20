@@ -8,7 +8,7 @@ const HEART = 'M12 20 L3.5 11.5 C0.5 8.5 1.5 2.5 6.5 2.5 C9 2.5 11 4 12 6 C13 4 
 /** Corações com metades: vida e máximo andam de ½ em ½. Meio coração de capacidade aparece cortado. */
 function Hearts({ hp, max }: { hp: number; max: number }) {
   return (
-    <div className="hud-hearts" aria-label={`Vida ${hp} de ${max}`}>
+    <div className="hud-hearts" aria-label={`Health ${hp} of ${max}`}>
       {Array.from({ length: Math.ceil(max) }, (_, i) => {
         const fill = Math.max(0, Math.min(1, hp - i));
         const capHalf = max - i < 1;
@@ -37,7 +37,7 @@ function WaveBlock() {
   const progress = total > 0 ? Math.min(1, Math.max(0, 1 - remaining / total)) : 0;
   return (
     <div className="hud-wave">
-      <div className="hud-label">ONDA</div>
+      <div className="hud-label">WAVE</div>
       <div className="hud-wave-number" data-testid="hud-wave">
         {wave || '—'}
       </div>
@@ -54,13 +54,13 @@ function ScoreBlock() {
   const mult = useGame((s) => s.hud.multiplier);
   return (
     <div className="hud-score">
-      <div className="hud-label">PONTOS</div>
+      <div className="hud-label">SCORE</div>
       <Counter value={score} className="hud-score-number" />
       <span data-testid="hud-score" hidden>
         {score}
       </span>
       <div className={`hud-combo ${combo >= 2 ? 'on' : ''}`} key={`${mult}`}>
-        <span className="hud-combo-mult">×{mult.toLocaleString('pt-BR')}</span>
+        <span className="hud-combo-mult">×{mult.toLocaleString('en-US')}</span>
         <span className="hud-combo-count">{combo} COMBO</span>
       </div>
     </div>
@@ -120,8 +120,8 @@ function Perf() {
   if (!perf) return null;
   return (
     <div className="perf">
-      {perf.fps.toFixed(0)} FPS · média {perf.avgMs.toFixed(1)} ms · P95 {perf.p95Ms.toFixed(1)} ms · {perf.projectiles} proj ·{' '}
-      {perf.enemies} inim · {perf.particles} part
+      {perf.fps.toFixed(0)} FPS · avg {perf.avgMs.toFixed(1)} ms · P95 {perf.p95Ms.toFixed(1)} ms · {perf.projectiles} shots ·{' '}
+      {perf.enemies} enemies · {perf.particles} particles
     </div>
   );
 }

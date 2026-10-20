@@ -41,11 +41,11 @@ function typingInUi(): boolean {
 
 /** Marcos de combo que o narrador anuncia. */
 const COMBO_MILESTONES: ReadonlyArray<[number, string]> = [
-  [5, 'LUZ, CÂMERA, AÇÃO!'],
-  [10, 'ISSO É BILHETERIA!'],
-  [15, 'O DIRETOR CHOROU!'],
-  [25, 'DIRETO PRO VHS!'],
-  [40, 'TÁ PEGANDO FOGO, BICHO!'],
+  [5, 'LIGHTS, CAMERA, ACTION!'],
+  [10, 'BOX OFFICE GOLD!'],
+  [15, 'THE DIRECTOR IS CRYING!'],
+  [25, 'STRAIGHT TO VHS!'],
+  [40, 'TOTALLY RADICAL, DUDE!'],
 ];
 const HEARTBEAT_EVERY = 0.85;
 
@@ -510,21 +510,21 @@ export class ArenaScene extends Phaser.Scene {
     for (const ev of this.world.drainEvents(this.eventScratch)) {
       this.feedback.handle(ev);
       if (ev.type === 'waveStarted') {
-        bus.emit('game:callout', { id: Date.now(), title: `ONDA ${ev.wave}`, subtitle: ev.callout });
+        bus.emit('game:callout', { id: Date.now(), title: `WAVE ${ev.wave}`, subtitle: ev.callout });
       } else if (ev.type === 'waveCleared') {
-        bus.emit('game:callout', { id: Date.now(), title: 'ONDA LIMPA!', subtitle: `+${ev.bonus} de bônus da produção` });
+        bus.emit('game:callout', { id: Date.now(), title: 'WAVE CLEARED!', subtitle: `+${ev.bonus} production bonus` });
       } else if (ev.type === 'playerDied') {
         this.deathTimer = DEATH_SEQUENCE;
         this.audio.music?.sadTrombone();
       } else if (ev.type === 'enemyKilled') {
         this.announceCombo(ev.combo);
         if (ev.kind === 'don_pombone') {
-          bus.emit('game:callout', { id: Date.now(), title: 'TONI MANTEGA DERRUBADO!', subtitle: 'diga tchau pro seu amiguinho' });
+          bus.emit('game:callout', { id: Date.now(), title: 'TONY MANTEGA IS DOWN!', subtitle: 'say goodnight to the bad guy' });
         }
       } else if (ev.type === 'comboBroken') {
         this.lastMilestone = 0;
       } else if (ev.type === 'bossEnraged') {
-        bus.emit('game:callout', { id: Date.now(), title: 'O TONI FICOU BRAVO!', subtitle: 'agora é pessoal' });
+        bus.emit('game:callout', { id: Date.now(), title: 'TONY IS FURIOUS!', subtitle: 'now it\'s personal' });
       } else if (ev.type === 'upgradeOffer') {
         this.openCards(ev.wave);
       }

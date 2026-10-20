@@ -15,7 +15,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'gatilho_nervoso',
     name: 'Twitchy Trigger',
-    description: 'Fire 1.35% faster.',
+    description: 'Fires 1.35% faster.',
     rarity: 'comum',
     branch: 'balistica',
     tags: ['cadencia'],
@@ -25,7 +25,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'calibre_reforcado',
-    name: 'Beefy Caliber',
+    name: 'Beefed-Up Caliber',
     description: '+1.35 damage per bullet.',
     rarity: 'comum',
     branch: 'balistica',
@@ -48,7 +48,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'pe_leve',
     name: 'Light Feet',
-    description: 'Run 2.7% faster and jump 1.35% higher.',
+    description: 'Runs 2.7% faster and jumps 1.35% higher.',
     rarity: 'comum',
     branch: 'sobrevivencia',
     tags: ['movimento'],
@@ -120,7 +120,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'bala_viajante',
-    name: 'Globetrotter Bullet',
+    name: 'Road Trip Bullet',
     description: 'Bullets pierce +1.35 enemies (rounded down: 3 cards = 4) and fly 6.75% faster.',
     rarity: 'incomum',
     branch: 'balistica',
@@ -179,7 +179,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   // ── Raras ──
   {
     id: 'sinuca_mortal',
-    name: 'Deadly Pool Shot',
+    name: 'Trick Shot',
     description: 'On hit, the bullet bounces off the enemy in a random direction. If it hits another one, it deals 67.5% damage.',
     rarity: 'raro',
     branch: 'caos',
@@ -191,7 +191,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'casco_regenerado',
     name: 'Second Wind',
-    description: 'Heal 1.5 hearts (health goes in halves).',
+    description: 'Heals 1.5 hearts (health goes in halves).',
     rarity: 'raro',
     branch: 'sobrevivencia',
     tags: ['vida'],
@@ -237,7 +237,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'explosivo',
     name: 'Explosive',
-    description: 'Killed enemies explode into 2 bullets at 50% damage. Each extra card adds +1 bullet. At 5: GOLDEN, 100% damage.',
+    description: 'Killed enemies burst into 2 bullets with 50% damage. Each extra card adds +1 bullet. At 5: GOLDEN, 100% damage.',
     rarity: 'epico',
     branch: 'caos',
     tags: ['explosao'],
@@ -258,7 +258,7 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   {
     id: 'vampiresco',
     name: 'Vampiric',
-    description: 'Hits cause 1 bleed damage per second. Each extra card adds +1. At 5: GOLDEN, bleeds 2× faster.',
+    description: 'Hits cause 1 bleed per second. Each extra card adds +1. At 5: GOLDEN, bleeds 2× faster.',
     rarity: 'epico',
     branch: 'caos',
     tags: ['sangramento'],

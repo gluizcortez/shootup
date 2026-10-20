@@ -40,11 +40,11 @@ const KILL_PROP: Record<EnemyKind, string> = {
 };
 /** Onomatopeias de gibi no abate, por vilão. */
 const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
-  pato_pistoleiro: ['POW!', 'BLAM!', 'CORTA!', 'PLOC!'],
-  galinha_rambo: ['VOLTAREI!', 'KABUM!', 'CRÁS!', 'HASTA!'],
-  vaca_loca: ['OBRIGADO, OBRIGADO!', 'O REI SAIU!', 'PLOFT!', 'TÓIN!'],
-  pombo_mafioso: ['HAI!', 'PUF!', 'ZÁS!', 'SUMIU!'],
-  porco_executivo: ['KA-CHING!', 'FALIU!', 'DEMITIDO!', 'CRASH!'],
+  pato_pistoleiro: ['POW!', 'BLAM!', 'CUT!', 'PLOP!'],
+  galinha_rambo: ['I\'LL BE BACK!', 'KABOOM!', 'CRASH!', 'HASTA!'],
+  vaca_loca: ['THANK YOU VERY MUCH!', 'ELVIS HAS LEFT!', 'SPLAT!', 'BOING!'],
+  pombo_mafioso: ['HAI!', 'POOF!', 'ZAP!', 'VANISHED!'],
+  porco_executivo: ['KA-CHING!', 'BANKRUPT!', 'FIRED!', 'CRASH!'],
   don_pombone: ['CAPUT!'],
 };
 const COMIC_COLORS = [CSS.amber, CSS.coral, CSS.turquoise, CSS.violet];
@@ -141,7 +141,7 @@ export class Feedback {
         return;
       case 'enemyBuffed':
         this.audio.play('kaching');
-        if (this.numbersOn) this.texts.spawn(ev.x, ev.y - 40, 'REUNIÃO URGENTE!', CSS.amber, 14, 1.1);
+        if (this.numbersOn) this.texts.spawn(ev.x, ev.y - 40, 'URGENT MEETING!', CSS.amber, 14, 1.1);
         for (let i = 0, n = this.count(14); i < n; i++) this.money(ev.x, ev.y);
         return;
       case 'shieldBroken':
@@ -275,7 +275,7 @@ export class Feedback {
       }
       case 'playerHurt':
         this.audio.play('hurt');
-        this.texts.comic(ev.x, ev.y - 34, Math.random() < 0.5 ? 'AI!' : 'UI!', CSS.coral, 22);
+        this.texts.comic(ev.x, ev.y - 34, Math.random() < 0.5 ? 'OW!' : 'OUCH!', CSS.coral, 22);
         this.shake.add(0.55);
         this.hooks.hitstop(0.08);
         if (this.flashOn) this.flashAlpha = 0.28;

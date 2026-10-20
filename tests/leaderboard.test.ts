@@ -18,7 +18,7 @@ describe('placar local', () => {
     expect(sanitizeName('<script>x</script>')).toBe('scriptxscrip');
     expect(sanitizeName('a    b')).toBe('a b');
     expect(sanitizeName('ABCDEFGHIJKLMNOP')).toHaveLength(12);
-    expect(sanitizeName('   ')).toBe('ANÔNIMO');
+    expect(sanitizeName('   ')).toBe('ANONYMOUS');
     expect(sanitizeName('João Ação!')).toBe('João Ação!');
   });
 

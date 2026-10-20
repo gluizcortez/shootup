@@ -6,13 +6,13 @@ export function PauseScreen() {
   return (
     <div className="screen screen--dim">
       <div className="panel">
-        <h2 className="panel-title">INTERVALO COMERCIAL</h2>
+        <h2 className="panel-title">COMMERCIAL BREAK</h2>
         <div className="panel-actions">
           <TactileButton autoFocus onClick={actions.resume}>
-            CONTINUAR
+            RESUME
           </TactileButton>
           <TactileButton variant="ghost" onClick={actions.restart}>
-            REINICIAR
+            RESTART
           </TactileButton>
           <TactileButton variant="ghost" onClick={actions.quitToMenu}>
             MENU

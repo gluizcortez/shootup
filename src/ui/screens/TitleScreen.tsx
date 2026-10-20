@@ -4,28 +4,9 @@ import { ScoreTable } from '../components/ScoreTable';
 import { actions, useGame } from '../store/gameStore';
 import { SettingsPanel } from './SettingsPanel';
 
-type View = 'main' | 'scores' | 'help' | 'options';
+type View = 'main' | 'scores' | 'options';
 
 const LOGO = 'ShootUp!';
-
-/** Piadas do rodapé do programa, trocando sozinhas. */
-const TICKER = [
-  'Estrelando Johnny Replay, balconista de videolocadora e rei autodeclarado da pista de dança.',
-  'Seja gentil, rebobine a fita.',
-  'Nenhum dublê foi contratado. O orçamento acabou no bigode.',
-  'Johnny nunca foi à academia. A arma também nunca foi à academia: ela já nasceu grande.',
-  'Vídeo Replay — locadora 24h. Multa de atraso: uma explosão.',
-  'Classificação indicativa: muita zoeira.',
-]
-
-const CAST: Array<[string, string]> = [
-  ['Capanga Vice', 'desce de paraquedas neon e faz pose ("!") antes de cada tiro mirado.'],
-  ['Exterminador de Aluguel', 'gira a metralhadora, trava a mira e solta a rajada. Ele voltará.'],
-  ['Rei do Topete', 'imitador do rei do rock: rebola o joelho e investe pelo chão. Pule por cima!'],
-  ['Ninja de Asa-Delta', 'chega em bando de 3 em V e atira de Uzi junto depois do assobio.'],
-  ['Yuppie Turbo', 'joga moedas e dá escudo aos colegas pelo celular-tijolo. Mate primeiro!'],
-  ['Toni Mantega', 'o chefão da onda 10. Acelera o rotor da mochila antes de cada ataque.'],
-];
 
 function Logo() {
   return (
@@ -36,19 +17,6 @@ function Logo() {
         </span>
       ))}
     </h1>
-  );
-}
-
-function Ticker() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setI((v) => (v + 1) % TICKER.length), 3200);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div className="ticker" aria-live="polite">
-      <span key={i}>{TICKER[i]}</span>
-    </div>
   );
 }
 
@@ -79,77 +47,45 @@ export function TitleScreen() {
             <b /> ▶ PLAY
           </div>
           <Logo />
-          <p className="title-tagline">estrelando Johnny Replay</p>
+          <p className="title-tagline">starring Johnny Replay</p>
           <div className="menu">
             <TactileButton autoFocus className="menu-play" onClick={actions.start} data-testid="play">
-              JOGAR
+              PLAY
             </TactileButton>
             <div className="menu-row">
               <TactileButton variant="ghost" onClick={() => setView('scores')} data-testid="menu-scores">
-                PLACAR
-              </TactileButton>
-              <TactileButton variant="ghost" onClick={() => setView('help')}>
-                COMO JOGAR
+                SCORES
               </TactileButton>
               <TactileButton variant="ghost" onClick={() => setView('options')}>
-                OPÇÕES
+                OPTIONS
               </TactileButton>
             </div>
           </div>
           {best && (
             <div className="best">
-              RECORDE <strong>{best.score.toLocaleString('pt-BR')}</strong> · {best.name}
+              BEST <strong>{best.score.toLocaleString('en-US')}</strong> · {best.name}
             </div>
           )}
-          <Ticker />
         </div>
       )}
       {view !== 'main' && (
         <div className="panel panel--menu">
           {view === 'scores' && (
             <>
-              <h2 className="panel-title">PLACAR DO ESTÚDIO</h2>
+              <h2 className="panel-title">STUDIO HIGH SCORES</h2>
               <ScoreTable scores={scores} />
-              <p className="note">Placar salvo só neste navegador. O ranking online chega numa fase futura.</p>
-            </>
-          )}
-          {view === 'help' && (
-            <>
-              <h2 className="panel-title">COMO JOGAR</h2>
-              <ul className="controls">
-                <li>
-                  <kbd>A</kbd>
-                  <kbd>D</kbd> mover · <kbd>W</kbd>/<kbd>Espaço</kbd> pular (segure para ir mais alto)
-                </li>
-                <li>
-                  <kbd>Mouse</kbd> mirar · <kbd>Botão esq.</kbd> segurado atira
-                </li>
-                <li>
-                  <kbd>1</kbd>
-                  <kbd>2</kbd>
-                  <kbd>3</kbd> escolher carta · <kbd>Esc</kbd> pausa · <kbd>R</kbd> reinicia
-                </li>
-              </ul>
-              <h3 className="cast-title">ELENCO DA FITA</h3>
-              <dl className="cast">
-                {CAST.map(([name, desc]) => (
-                  <div key={name}>
-                    <dt>{name}</dt>
-                    <dd>{desc}</dd>
-                  </div>
-                ))}
-              </dl>
+              <p className="note">Scores are saved in this browser only. Online rankings arrive in a future phase.</p>
             </>
           )}
           {view === 'options' && (
             <>
-              <h2 className="panel-title">OPÇÕES</h2>
+              <h2 className="panel-title">OPTIONS</h2>
               <SettingsPanel />
             </>
           )}
           <div className="panel-actions">
             <TactileButton autoFocus onClick={() => setView('main')}>
-              VOLTAR
+              BACK
             </TactileButton>
           </div>
         </div>

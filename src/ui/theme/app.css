@@ -441,40 +441,6 @@ body,
   font-size: 1.3em;
 }
 
-.ticker {
-  margin: 1.2em auto 0;
-  width: min(36em, 80cqw);
-  padding: 0.35em 0.8em;
-  border-radius: 0.5em;
-  background: rgb(0 0 0 / 0.45);
-  border: 2px solid var(--c-outline);
-  font-size: 0.68em;
-  color: var(--c-white);
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.ticker span {
-  display: inline-block;
-  animation: ticker-in 3.2s var(--ease-out) both;
-}
-
-@keyframes ticker-in {
-  0% {
-    transform: translateY(1.2em);
-    opacity: 0;
-  }
-  10%,
-  90% {
-    transform: none;
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-1.2em);
-    opacity: 0;
-  }
-}
-
 /* Refletores varrendo o palco atrás do menu. */
 .spotlights {
   position: absolute;
@@ -524,38 +490,6 @@ body,
   width: min(36em, 88cqw);
   max-height: 86cqh;
   overflow: auto;
-}
-
-.cast-title {
-  margin: 1em 0 0.4em;
-  font-family: var(--font-display);
-  font-size: 0.8em;
-  letter-spacing: 0.2em;
-  color: var(--c-turquoise);
-}
-
-.cast {
-  margin: 0;
-  display: grid;
-  gap: 0.35em;
-  text-align: left;
-  font-size: 0.72em;
-}
-
-.cast div {
-  display: grid;
-  grid-template-columns: 9.5em 1fr;
-  gap: 0.6em;
-}
-
-.cast dt {
-  font-family: var(--font-display);
-  color: var(--c-amber);
-}
-
-.cast dd {
-  margin: 0;
-  color: #cfc6d8;
 }
 
 /* Placar */
@@ -703,19 +637,9 @@ body,
   .spotlights i,
   .menu-play,
   .record-burst,
-  .danger-vignette,
-  .ticker span {
+  .danger-vignette {
     animation: none;
   }
-}
-
-.controls {
-  list-style: none;
-  padding: 0;
-  margin: 1.6em 0 0;
-  font-size: 0.72em;
-  line-height: 2;
-  color: #cfc6d8;
 }
 
 kbd {
