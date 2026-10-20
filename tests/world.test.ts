@@ -229,6 +229,23 @@ describe('World — ondas e determinismo', () => {
     expect(events.find((e) => e.type === 'waveCleared')).toMatchObject({ wave: 1 });
   });
 
+  it('ao limpar a onda, os projéteis inimigos ainda no ar somem', () => {
+    const w = new World(WORLD_CONFIG, 77);
+    w.upgradesEnabled = false;
+    invulnerable(w);
+    const n = Math.round(30 / SIM_STEP);
+    let cleared = false;
+    for (let i = 0; i < n && !cleared; i++) {
+      // Bala inimiga parada lá no alto, garantindo que há algo no ar na hora da limpeza.
+      w.projectiles.spawn('enemy', 600, 120, 0, 0, 4, 1, false, 0, 100, 'teste');
+      w.step(aimAtFirstEnemy(w), SIM_STEP);
+      cleared = w.events.some((e) => e.type === 'waveCleared');
+      w.events.length = 0;
+    }
+    expect(cleared).toBe(true);
+    expect(w.projectiles.items.some((p) => p.active && p.team === 'enemy')).toBe(false);
+  });
+
   it('mesma seed + mesmas entradas = mesma run', () => {
     const play = (seed: number) => {
       const w = new World(WORLD_CONFIG, seed);

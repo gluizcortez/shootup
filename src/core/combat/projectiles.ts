@@ -111,6 +111,18 @@ export class ProjectilePool {
     this.activeCount--;
   }
 
+  /** Desativa todos os projéteis ativos de um time. Devolve quantos saíram. */
+  releaseTeam(team: Team): number {
+    let n = 0;
+    for (const p of this.items) {
+      if (p.active && p.team === team) {
+        this.release(p);
+        n++;
+      }
+    }
+    return n;
+  }
+
   clear(): void {
     for (const p of this.items) p.active = false;
     this.activeCount = 0;

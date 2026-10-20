@@ -761,6 +761,8 @@ export class World {
     if (res === 'started') {
       this.emit({ type: 'waveStarted', wave: this.waves.wave, total: this.waves.total, callout: this.waves.callout });
     } else if (res === 'cleared') {
+      // Rodada acabou: balas inimigas que ainda estavam no ar somem.
+      this.projectiles.releaseTeam('enemy');
       const bonus = this.config.waves.clearBonusPerWave * this.waves.wave;
       this.score += bonus;
       this.emit({ type: 'waveCleared', wave: this.waves.wave, bonus });
