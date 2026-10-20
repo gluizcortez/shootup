@@ -200,7 +200,7 @@ export const DON_POMBONE: PomboneDef = {
   role: 'ranged',
   boss: true,
   name: 'Tony Mantega',
-  maxHp: 560,
+  maxHp: 280,
   hw: 50,
   hh: 55,
   score: 500,
