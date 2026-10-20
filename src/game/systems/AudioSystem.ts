@@ -2,7 +2,9 @@
  * SFX 100% sintetizados com WebAudio: originais, sem arquivos e sem licença
  * de terceiros. Placeholders até a mixagem definitiva (GDD §9).
  */
+import type { VoiceLineId } from '../data/voices';
 import { MusicSystem } from './MusicSystem';
+import { VoiceSystem } from './VoiceSystem';
 
 export type SfxId =
   | 'shot'
@@ -74,6 +76,8 @@ export class AudioSystem {
   private musicGain: GainNode | null = null;
   /** Trilha sonora; existe só depois que o navegador libera o áudio. */
   music: MusicSystem | null = null;
+  /** Falas gravadas dos personagens; abaixam a música enquanto tocam. */
+  private voices: VoiceSystem | null = null;
   private musicVolume = 0.5;
   private noise: AudioBuffer | null = null;
   private readonly last = new Map<SfxId, number>();
@@ -95,7 +99,9 @@ export class AudioSystem {
         this.master.connect(comp).connect(this.ctx.destination);
         this.noise = this.makeNoise(this.ctx);
         this.musicGain = this.ctx.createGain();
-        this.musicGain.connect(comp);
+        const duck = this.ctx.createGain();
+        this.musicGain.connect(duck).connect(comp);
+        this.voices = new VoiceSystem(this.ctx, this.master, duck, import.meta.env.BASE_URL);
         this.music = new MusicSystem(this.ctx, this.musicGain, import.meta.env.BASE_URL);
         this.applyVolume();
       }
@@ -479,9 +485,20 @@ export class AudioSystem {
     return buf;
   }
 
+  /** Toca uma fala gravada (respeita volume de efeitos e o mudo). */
+  voice(id: VoiceLineId): void {
+    if (!this.ctx || this.muted || this.ctx.state !== 'running') return;
+    this.voices?.play(id);
+  }
+
+  stopVoice(): void {
+    this.voices?.stop();
+  }
+
   destroy(): void {
     void this.ctx?.close().catch(() => undefined);
     this.ctx = null;
     this.music = null;
+    this.voices = null;
   }
 }

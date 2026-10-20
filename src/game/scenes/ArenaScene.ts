@@ -13,6 +13,7 @@ import type { CardInfo, HudSnapshot } from '@/shared/types';
 import { ARENA, SIM_STEP, TERRAIN, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
 import { computeView } from '../data/view';
 import type { ViewLayout } from '../data/view';
+import { VOICE_LINES } from '../data/voices';
 import { Terrain } from '@/core/physics/terrain';
 import { isGolden } from '@/core/upgrades/upgrades';
 import { WORLD_CONFIG } from '../data/world';
@@ -352,6 +353,7 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private resetRun(): void {
+    this.audio.stopVoice();
     for (const uid of [...this.liveViews.keys()]) this.releaseView(uid);
     this.world = this.newWorld();
     this.particles.clear();
@@ -526,12 +528,17 @@ export class ArenaScene extends Phaser.Scene {
       } else if (ev.type === 'enemyKilled') {
         this.announceCombo(ev.combo);
         if (ev.kind === 'don_pombone') {
-          bus.emit('game:callout', { id: Date.now(), title: 'TONY MANTEGA IS DOWN!', subtitle: 'say goodnight to the bad guy' });
+          this.audio.voice('toniDeath');
+          bus.emit('game:callout', { id: Date.now(), title: 'TONY MANTEGA IS DOWN!', subtitle: `“${VOICE_LINES.toniDeath.text}”` });
         }
+      } else if (ev.type === 'enemyIncoming' && ev.kind === 'don_pombone') {
+        this.audio.voice('toniAppear');
+        bus.emit('game:callout', { id: Date.now(), title: 'TONY MANTEGA', subtitle: `“${VOICE_LINES.toniAppear.text}”` });
       } else if (ev.type === 'comboBroken') {
         this.lastMilestone = 0;
       } else if (ev.type === 'bossEnraged') {
-        bus.emit('game:callout', { id: Date.now(), title: 'TONY IS FURIOUS!', subtitle: 'now it\'s personal' });
+        this.audio.voice('toniRage');
+        bus.emit('game:callout', { id: Date.now(), title: 'TONY IS FURIOUS!', subtitle: `“${VOICE_LINES.toniRage.text}”` });
       } else if (ev.type === 'upgradeOffer') {
         this.openCards(ev.wave);
       }
