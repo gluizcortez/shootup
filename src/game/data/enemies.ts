@@ -137,12 +137,12 @@ export const POMBO_MAFIOSO: PomboDef = {
   recoverTime: 0.4,
 };
 
-/** Porco Executivo: joga leques de moedas e dá escudo aos colegas ("REUNIÃO URGENTE!"). */
+/** Tio do Cassino: cospe leques de moedas do caça-níquel e dá escudo aos colegas. */
 export const PORCO_EXECUTIVO: PorcoDef = {
   id: 'porco_executivo',
   behaviour: 'porco',
   role: 'ranged',
-  name: 'Yuppie Turbo',
+  name: 'Casino Uncle',
   maxHp: 28,
   hw: 18,
   hh: 20,

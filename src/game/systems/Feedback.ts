@@ -17,8 +17,8 @@ const FEATHER_TINT: Record<EnemyKind, number[]> = {
   galinha_rambo: [0x26222e, 0x8a8f9c, 0xff2d3d, 0xb8c0cc],
   vaca_loca: [0xfbf8ff, PAL.gold, 0xff2d3d, 0x0f0b18],
   pombo_mafioso: [0x1c1a2a, NEON.pink, 0x39ff88],
-  // Yuppie "morre" em papelada e dinheiro de mentirinha.
-  porco_executivo: [0xffffff, 0x7bd389, PAL.gold, 0xffb3d1],
+  // Tio do Cassino "morre" em fichas, cartas e moedas.
+  porco_executivo: [0x9be830, NEON.pink, PAL.gold, 0xf7f1e8],
   don_pombone: [PAL.donCoat, 0xd8192e, PAL.gold, NEON.pink],
 };
 
@@ -44,7 +44,7 @@ const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
   galinha_rambo: ['I\'LL BE BACK!', 'KABOOM!', 'CRASH!', 'HASTA!'],
   vaca_loca: ['THANK YOU VERY MUCH!', 'ELVIS HAS LEFT!', 'SPLAT!', 'BOING!'],
   pombo_mafioso: ['HAI!', 'POOF!', 'ZAP!', 'VANISHED!'],
-  porco_executivo: ['KA-CHING!', 'BANKRUPT!', 'FIRED!', 'CRASH!'],
+  porco_executivo: ['JACKPOT!', 'KA-CHING!', 'BUSTED!', 'THE HOUSE LOSES!'],
   don_pombone: ['CAPUT!'],
 };
 const COMIC_COLORS = [CSS.amber, CSS.coral, CSS.turquoise, CSS.violet];

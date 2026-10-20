@@ -40,7 +40,7 @@ export class EnemyView implements EnemyVisual {
   private readonly shadow: Phaser.GameObjects.Image;
   /** Seta de aviso no topo da tela enquanto o vilão está para entrar. */
   private readonly marker: Phaser.GameObjects.Image;
-  /** Bolha do escudo dado pelo Yuppie Turbo. */
+  /** Bolha do escudo dado pelo Tio do Cassino. */
   private readonly shield: Phaser.GameObjects.Image;
   private readonly shieldScale: number;
   /** Escala do visual (o chefe é desenhado na base e ampliado). */
@@ -109,16 +109,16 @@ export class EnemyView implements EnemyVisual {
 
   private buildPorco(scene: Phaser.Scene): Rig {
     const t = TEX.porcoBody;
-    const lift = scene.add.image(3, -50, 'porco_heli').setScale(INV);
+    const lift = scene.add.image(3, -55, 'porco_heli').setScale(INV);
     const body = scene.add.image(0, 0, 'porco_body').setOrigin(23 / t.w, 45 / t.h).setScale(INV);
-    const prop = scene.add.image(3, -42, 'porco_hat').setScale(INV).setRotation(0.08);
+    const prop = scene.add.image(3, -47, 'porco_hat').setScale(INV).setRotation(0.08);
     const gun = scene.add
-      .image(8, -18, 'porco_case')
+      .image(9, -22, 'porco_case')
       .setOrigin(TEX.porcoCase.pivotX / TEX.porcoCase.w, 0.5)
       .setScale(INV);
-    const glow = scene.add.image(24, -18, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
-    const excl = scene.add.image(-14, -56, 'fx_excl').setScale(INV).setVisible(false);
-    return { lift, flame: null, body, prop, gun, gunX: 8, gunY: -18, glow, excl, exclY: -56 };
+    const glow = scene.add.image(26, -22, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const excl = scene.add.image(-14, -60, 'fx_excl').setScale(INV).setVisible(false);
+    return { lift, flame: null, body, prop, gun, gunX: 9, gunY: -22, glow, excl, exclY: -60 };
   }
 
   private buildPombone(scene: Phaser.Scene): Rig {

@@ -121,7 +121,7 @@ export const TEX = {
   pomboWing: { w: 24, h: 12 },
   pomboGun: { w: 24, h: 9, pivotX: 3 },
   porcoBody: { w: 46, h: 46 },
-  porcoCase: { w: 26, h: 15, pivotX: 3 },
+  porcoCase: { w: 31, h: 21, pivotX: 4 },
   pomboneBody: { w: 96, h: 92 },
   pomboneWing: { w: 60, h: 28 },
   pomboneGun: { w: 64, h: 22, pivotX: 8 },
@@ -558,53 +558,105 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.fill(0x39ff88).rect(6, 2.2, 3, 0.8);
   });
 
-  // ── Yuppie Turbo (id porco_executivo): Wall Street com celular-tijolo ──
+  // ── Tio do Cassino (id porco_executivo): mafioso de cassino decadente ──
+  // Terno verde-limão xadrez, barriga estourando a camisa, correntes de ouro,
+  // anel em todo dedo, charuto aceso e um caça-níquel que cospe moedas.
+  const suitLime = 0x9be830;
+  const suitLimeDark = 0x6fb21c;
+  const checks = NEON.pink;
   make(scene, 'porco_body', TEX.porcoBody.w, TEX.porcoBody.h, (p) => {
-    p.oRound(15, 40, 7, 5, 1.5, 0x1b1820, 1); // sapato de bico fino
-    p.oRound(25, 40, 7, 5, 1.5, 0x1b1820, 1);
-    p.oRound(16, 32, 5, 9, 1.5, 0x3d4255, 1); // calça risca de giz
-    p.oRound(25, 32, 5, 9, 1.5, 0x3d4255, 1);
-    p.oEllipse(23, 28, 30, 22, 0xffb3d1); // camisa rosa
-    p.fill(0xf598bd).ellipse(23, 33, 26, 8);
-    p.fill(0xe8283c).rect(15, 18, 2.6, 20).rect(29, 18, 2.6, 20); // suspensórios
-    p.fill(PAL.gold).circle(16.3, 30, 1).circle(30.3, 30, 1);
-    p.fill(0xe8283c).poly([[23, 19], [26, 19], [27, 31], [24.5, 34], [22, 31]]); // gravata poderosa
-    p.fill(PAL.warmWhite).tri(20, 17, 29, 17, 24.5, 21); // colarinho
-    p.oCircle(25, 12, 10.5, PAL.skin); // cabeça
-    // Cabelo de gel penteado para trás, sem um fio fora do lugar.
-    p.fill(O).poly([[13, 12], [15, 3], [24, 0], [33, 2], [35, 6], [25, 5], [17, 9], [16, 15]]);
-    p.fill(0x2a1a12).poly([[14.5, 11.5], [16, 4], [24, 1.4], [32, 3], [32.8, 5], [25, 4], [17.4, 8], [16.6, 13]]);
-    p.stroke(0.6, 0x6a4a35).line(18, 5, 28, 2.6).line(17, 7.4, 30, 3.8);
-    p.fill(O).rect(26, 8.6, 6, 1.1); // sobrancelha
-    p.fill(O).round(27, 10.4, 4, 1.6, 0.8); // olho presunçoso
-    p.fill(0xe8a87f).circle(34.5, 13, 2); // nariz
-    p.fill(O).round(26.5, 16.4, 8, 3.6, 1.6); // sorriso de comissão
-    p.fill(PAL.warmWhite).rect(27.5, 16.8, 6, 1.4);
-    p.fill(PAL.gold).rect(30, 16.8, 1.3, 1.4); // dente de ouro
+    // Sapato bicolor de malandro.
+    p.oRound(13, 40, 8, 5, 1.8, 0xf7f1e8, 1).oRound(25, 40, 8, 5, 1.8, 0xf7f1e8, 1);
+    p.fill(0x6b3a1e).rect(17, 40.6, 3.6, 3.8).rect(29, 40.6, 3.6, 3.8);
+    // Calça do terno.
+    p.oRound(15, 32, 6, 9, 1.5, suitLime, 1).oRound(25, 32, 6, 9, 1.5, suitLime, 1);
+    p.fill(checks, 0.8).rect(15, 35, 6, 0.7).rect(25, 35, 6, 0.7).rect(17.6, 32, 0.7, 9).rect(27.6, 32, 0.7, 9);
+    // Paletó aberto.
+    p.oEllipse(22, 27, 34, 23, suitLime);
+    p.fill(suitLimeDark).ellipse(15, 30, 14, 16);
+    p.fill(checks, 0.75);
+    for (const x of [9, 14, 19, 26, 31, 36]) p.rect(x, 17, 0.8, 21);
+    for (const y of [21, 26, 31, 36]) p.rect(5.5, y, 33, 0.8);
+    // Camisa de oncinha estourando os botões e o barrigão pra fora.
+    p.fill(O).poly([[17, 16.5], [30, 16.5], [36, 30], [31, 39], [21, 39], [18, 28]]);
+    p.fill(0xffc857).poly([[18.2, 17.4], [29.4, 17.4], [34.8, 29.6], [30.4, 37.8], [21.6, 37.8], [19, 28]]);
+    p.fill(0x6b3a1e, 0.85);
+    for (const [x, y] of [[21, 20], [26, 19.6], [23.6, 24], [28.4, 23.4], [31.4, 27], [21.6, 28.4]] as const) p.circle(x, y, 0.9);
+    p.oEllipse(26, 34.5, 21, 12, PAL.skin, 1.2); // barrigão escapando da camisa
+    p.fill(0xe0a477).ellipse(26, 37.6, 17, 4.6);
+    p.fill(0x3a2116, 0.5).circle(22, 33, 0.5).circle(29, 32.6, 0.5).circle(25, 31.8, 0.5);
+    p.fill(O).ellipse(26.5, 34.6, 1.8, 2.2); // umbigo
+    p.fill(PAL.warmWhite).circle(22.4, 30.4, 0.9).circle(24, 27, 0.9); // botões que sobreviveram
+    p.fill(PAL.warmWhite).circle(38.5, 25, 0.9); // botão voando
+    // Peito cabeludo com três correntes de ouro.
+    p.fill(PAL.skin).tri(21, 16.4, 28.6, 16.4, 25, 21.6);
+    p.fill(0x3a2116, 0.7).circle(23.4, 17.6, 0.6).circle(25.6, 18.4, 0.6).circle(24.6, 19.8, 0.5);
+    p.stroke(0.8, PAL.gold).line(21.6, 17, 25, 20.6).line(25, 20.6, 28.4, 17);
+    p.stroke(0.7, 0xffe14d).line(20.6, 17, 25, 23).line(25, 23, 29.4, 17);
+    p.fill(PAL.gold).circle(25, 24, 1.6);
+    p.fill(O).rect(24.5, 23.2, 1, 1.6); // medalhão de cifrão
+    // Lapelas largas e lenço no bolso.
+    p.fill(suitLimeDark).poly([[16, 16.5], [20.6, 16.5], [19.6, 27], [15.6, 21]]);
+    p.fill(NEON.pink).poly([[9, 20.4], [12.4, 20.4], [11.6, 18], [10.4, 19.2]]);
+    // Cabeção: careca brilhando, cabelinho dos lados, bigode de vassoura.
+    p.oCircle(25, 10, 10, PAL.skin);
+    p.oEllipse(24, 18, 15, 6, PAL.skin, 1); // papada
+    p.fill(0xffffff, 0.65).ellipse(23, 2.6, 6, 2.4);
+    p.fill(0x8a8f9c).poly([[14.6, 7], [17.6, 5.4], [17, 13.6], [14.8, 12.6]]); // cabelo grisalho
+    p.stroke(0.6, 0x5a5f6c).line(17, 3.4, 30, 1.6).line(17.4, 2.4, 29, 0.8); // fios do pente-e-vem
+    p.fill(O).round(23.6, 6.2, 11.6, 4.8, 2); // óculos rosados
+    p.fill(0xff7ab8).round(24.4, 6.8, 4.6, 3.4, 1.2).round(30, 6.8, 4.6, 3.4, 1.2);
+    p.fill(0xffffff, 0.8).rect(25, 7.2, 1.6, 0.9).rect(30.6, 7.2, 1.6, 0.9);
+    p.oCircle(35, 11, 2.4, 0xe0927a, 0.9); // nariz de quem bebe
+    p.fill(0x3a2a24).poly([[26, 13], [36, 12.4], [37, 15.4], [31, 14.6], [26, 16]]); // bigodão
+    p.fill(O).round(30, 15, 5, 2, 0.8); // boca
+    p.fill(PAL.gold).rect(31.4, 15.2, 1.2, 1); // dente de ouro
+    // Charuto aceso.
+    p.oRound(34, 14.6, 9, 2.6, 1.2, 0x7a4a26, 0.8);
+    p.fill(PAL.gold).rect(36, 14.6, 1.2, 2.6);
+    p.fill(0xff5a2a).circle(43, 15.9, 1.2);
+    p.fill(0xffe14d).circle(43.2, 15.9, 0.6);
+    p.fill(0xd6dbe6, 0.55).circle(43.4, 11.6, 1.6).circle(44.2, 8, 1.2);
   });
   make(scene, 'porco_hat', 20, 16, (p) => {
-    // Boné de hélice (o único brinquedo que a bolsa não levou).
-    p.fill(O).ellipse(10, 12, 18, 9);
-    p.fill(NEON.pink).ellipse(10, 12, 16, 7.4);
-    p.fill(NEON.cyan).poly([[2.4, 12.5], [10, 8.4], [10, 15.6]]);
-    p.fill(0xffe14d).poly([[17.6, 12.5], [10, 8.4], [10, 15.6]]);
-    p.oRound(13, 13.5, 7, 2.4, 1, NEON.pink, 0.8); // aba
-    p.fill(PAL.gunLight).rect(9, 0, 2, 9); // mastro da hélice
+    // Chapeuzinho porkpie apertado na careca, com pena e mastro da hélice.
+    p.fill(O).round(1, 11, 18, 3.4, 1.6);
+    p.fill(0x2a1f3a).round(2, 11.6, 16, 2.2, 1);
+    p.oRound(5, 5.6, 10, 6.6, 1.6, 0x2a1f3a, 1);
+    p.fill(NEON.pink).rect(5, 9.6, 10, 1.6);
+    p.fill(NEON.cyan).poly([[13, 10], [18, 3], [16, 9.4]]); // pena
+    p.fill(PAL.gunLight).rect(9, 0, 2, 6); // mastro da hélice
   });
   make(scene, 'porco_heli', 40, 6, (p) => {
-    p.oRound(1, 1.5, 38, 3, 1.5, 0xe8e2f0, 1);
-    p.fill(NEON.pink).rect(1.5, 2, 4, 2).rect(34.5, 2, 4, 2);
+    // Hélice de duas cartas de baralho (um ás e um coringa).
+    p.oRound(1, 0.8, 18, 4.4, 1, 0xf7f1e8, 0.8).oRound(21, 0.8, 18, 4.4, 1, 0xf7f1e8, 0.8);
+    p.fill(0x15131f).tri(8, 1.6, 6.4, 4, 9.6, 4);
+    p.fill(0xff2d3d).circle(30, 3, 1.3);
+    p.fill(0xff2d3d).rect(2, 1.4, 1, 1).rect(36.8, 3.6, 1, 1);
     p.oCircle(20, 3, 2, PAL.gold, 0.8);
   });
   make(scene, 'porco_case', TEX.porcoCase.w, TEX.porcoCase.h, (p) => {
-    p.oRound(1, 4, 9, 6, 3, 0xffb3d1, 1); // manga dobrada
-    p.oCircle(10, 7, 2.6, PAL.skin, 0.8);
-    p.oRound(11, 2.5, 8, 12, 1.6, 0x4a4f5e, 1.2); // celular-tijolo
-    p.fill(0x9fe8a8).rect(12.2, 3.8, 5.6, 2.6); // visor verde
-    p.fill(0xd6dbe6);
-    for (let y = 7.4; y < 13; y += 1.9) p.rect(12.4, y, 1.4, 1).rect(14.3, y, 1.4, 1).rect(16.2, y, 1.4, 1);
-    p.oRound(17.5, -0.5, 1.6, 4, 0.6, 0x2a2f3a, 0.6); // antena
-    p.fill(NEON.pink).circle(18.3, 0.2, 0.9);
+    // Pega pela mão cheia de anéis (pivô em x=4); o caça-níquel cospe moedas pela bandeja da frente.
+    p.oRound(8, 3, 19, 17, 3, 0xd8192e, 1.2); // gabinete vermelho
+    p.fill(0xa30f22).rect(8, 15, 19, 5);
+    p.oRound(9.6, 0.6, 16, 4.4, 2, PAL.gold, 1); // letreiro
+    p.fill(0xff2d3d).rect(11.4, 1.8, 2.2, 1.6).rect(16.4, 1.8, 2.2, 1.6).rect(21.4, 1.8, 2.2, 1.6); // luzinhas
+    p.oRound(10, 6, 15, 6.6, 1, 0xf7f1e8, 1); // janela dos rolos
+    p.fill(0xff2d3d).rect(11.2, 7.2, 3.4, 1).rect(13, 7.2, 1, 4.4); // 7
+    p.fill(0xff2d3d).rect(16, 7.2, 3.4, 1).rect(17.8, 7.2, 1, 4.4); // 7
+    p.fill(0xb5179e).circle(22.4, 10, 1.4).circle(20.8, 10.6, 1.2); // cerejas
+    p.fill(0x39ff88).rect(21.2, 7.4, 0.8, 2.4);
+    p.oRound(24, 14, 6, 4, 1, PAL.gold, 1); // bandeja de moedas (boca do "canhão")
+    p.fill(O).rect(25, 15, 4.6, 1.6);
+    p.fill(PAL.gold).circle(27.4, 13.6, 1.2);
+    p.stroke(1.2, PAL.gunLight).line(27, 6, 29, 1.4); // alavanca
+    p.oCircle(29, 1.4, 1.6, 0xff2d3d, 0.7);
+    // Mão gorducha com anel em todo dedo.
+    p.oRound(1, 7, 8, 7, 3, PAL.skin, 1);
+    p.fill(PAL.gold).rect(3, 7, 1.2, 7).rect(5.2, 7, 1.2, 7);
+    p.fill(0x22e6ff).circle(3.6, 8.4, 0.8);
+    p.fill(0xff2d3d).circle(5.8, 12.4, 0.8);
+    p.oRound(0, 3.6, 5, 4.6, 2, suitLime, 1); // punho do paletó
   });
   make(scene, 'b_coin', 14, 14, (p) => {
     p.fill(O).circle(7, 7, 6.6);
