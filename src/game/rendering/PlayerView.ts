@@ -6,11 +6,24 @@ import { normalizeAngle, Spring } from './spring';
 
 const INV = 1 / TEX_SCALE;
 
-/** Visual do competidor. Lê o estado do World; nunca o altera. */
+const BODY_Y = -25;
+const HEAD_Y = -37;
+
+/** Centro do rosto, de onde o mullet pende. */
+const FACE_DY = -7.5;
+
+/**
+ * Visual do Johnny Replay. Lê o estado do World; nunca o altera.
+ */
 export class PlayerView {
   readonly root: Phaser.GameObjects.Container;
   private readonly body: Phaser.GameObjects.Image;
   private readonly head: Phaser.GameObjects.Image;
+  private readonly hair: Phaser.GameObjects.Image;
+  private readonly backArm: Phaser.GameObjects.Image;
+  /** O mullet balança atrasado em relação ao corpo. */
+  private readonly hairSpring = new Spring(260, 9);
+  private cheer = 0;
   private readonly legL: Phaser.GameObjects.Image;
   private readonly legR: Phaser.GameObjects.Image;
   private readonly arm: Phaser.GameObjects.Image;
@@ -35,15 +48,25 @@ export class PlayerView {
     this.shoulderX = shoulder.x;
     this.shoulderY = -hh + shoulder.y;
     this.shadow = scene.add.image(0, 0, 'shadow').setScale(0.8 * INV).setDepth(9);
-    this.legL = scene.add.image(-4, -14, 'pl_leg').setOrigin(0.5, 0).setScale(INV);
-    this.legR = scene.add.image(5, -14, 'pl_leg').setOrigin(0.5, 0).setScale(INV);
-    this.body = scene.add.image(0, -24, 'pl_body').setScale(INV);
-    this.head = scene.add.image(1, -40, 'pl_head').setOrigin(0.5, 0.62).setScale(INV);
+    this.hair = scene.add
+      .image(1, HEAD_Y + FACE_DY, 'pl_hair')
+      .setOrigin(TEX.plHair.cx / TEX.plHair.w, TEX.plHair.cy / TEX.plHair.h)
+      .setScale(INV);
+    this.backArm = scene.add
+      .image(-5, -33, 'pl_back')
+      .setOrigin(0.5, TEX.plBack.pivotY / TEX.plBack.h)
+      .setScale(INV);
+    this.legL = scene.add.image(-4, -16, 'pl_leg').setOrigin(0.5, 0).setScale(INV);
+    this.legR = scene.add.image(5, -16, 'pl_leg').setOrigin(0.5, 0).setScale(INV);
+    this.body = scene.add.image(0, BODY_Y, 'pl_body').setScale(INV);
+    this.head = scene.add.image(1, HEAD_Y, 'pl_head').setOrigin(0.5, 26 / TEX.plHead.h).setScale(INV);
     this.arm = scene.add
       .image(this.shoulderX, this.shoulderY, 'pl_arm')
       .setOrigin(TEX.plArm.pivotX / TEX.plArm.w, 0.5)
       .setScale(INV);
-    this.root = scene.add.container(0, 0, [this.legL, this.legR, this.body, this.head, this.arm]).setDepth(30);
+    this.root = scene.add
+      .container(0, 0, [this.hair, this.backArm, this.legL, this.legR, this.body, this.head, this.arm])
+      .setDepth(30);
   }
 
   onShot(): void {
@@ -53,10 +76,13 @@ export class PlayerView {
   onJump(): void {
     this.squash.set(0);
     this.squash.kick(4.5); // estica
+    this.hairSpring.kick(-6); // o cabelo fica para trás
+    this.cheer = 1;
   }
 
   onLand(speed: number): void {
     this.squash.kick(-Math.min(6, 1.5 + speed / 160)); // achata proporcional à queda
+    this.hairSpring.kick(Math.min(9, 2 + speed / 90)); // e o mullet desaba
   }
 
   onDeath(): void {
@@ -71,6 +97,8 @@ export class PlayerView {
     this.root.setRotation(0).setAlpha(1).setVisible(true);
     this.squash.set(0);
     this.squash.velocity = 0;
+    this.hairSpring.set(0);
+    this.hairSpring.velocity = 0;
     this.kick = 0;
   }
 
@@ -106,18 +134,35 @@ export class PlayerView {
         const s = Math.sin(this.runPhase);
         this.legL.rotation = s * 0.75;
         this.legR.rotation = -s * 0.75;
-        this.body.y = -24 - Math.abs(Math.cos(this.runPhase)) * 1.8;
+        this.body.y = BODY_Y - Math.abs(Math.cos(this.runPhase)) * 1.8;
       } else {
         this.legL.rotation *= 0.7;
         this.legR.rotation *= 0.7;
-        this.body.y = -24 + Math.sin(performance.now() / 260) * 0.5; // respiração
+        this.body.y = BODY_Y + Math.sin(performance.now() / 260) * 0.5; // respiração
       }
     } else {
       const rising = m.vy < 0;
       this.legL.rotation = rising ? -0.7 : 0.35;
       this.legR.rotation = rising ? 0.5 : -0.25;
-      this.body.y = -24;
+      this.body.y = BODY_Y;
     }
+    const bob = this.body.y - BODY_Y;
+
+    // Braço livre: faz muque parado, balança correndo, ergue no ar.
+    const t = performance.now() / 1000;
+    this.cheer = Math.max(0, this.cheer - dt * 1.5);
+    let armTarget: number;
+    if (!m.grounded) armTarget = Math.PI - 0.25;
+    else if (Math.abs(m.vx) > 20) armTarget = Math.sin(this.runPhase + Math.PI) * 0.7 + 0.2;
+    else armTarget = Math.PI - 0.9 + Math.sin(t * 3) * 0.12;
+    if (this.cheer > 0) armTarget = Math.PI - 0.15 + Math.sin(t * 22) * 0.2 * this.cheer;
+    this.backArm.rotation += (armTarget - this.backArm.rotation) * Math.min(1, dt * 14);
+    this.backArm.y = -33 + bob;
+
+    // Cabelo: mola própria (pulo e pouso) + esticão na queda livre.
+    const hd = this.hairSpring.update(dt);
+    const fall = m.grounded ? 0 : Math.max(-1, Math.min(1, m.vy / 900)) * 0.12;
+    this.hair.setScale(INV * (1 + hd * 0.1 - fall * 0.3), INV * (1 - hd * 0.22 + fall));
 
     // Braço + pistola mirando, com recuo visual (não mexe no cursor nem na mira real).
     this.kick = Math.max(0, this.kick - dt * 14);
@@ -125,9 +170,14 @@ export class PlayerView {
     const k = this.kick * this.kick;
     this.arm.rotation = local - k * 0.42;
     this.arm.x = this.shoulderX - Math.cos(local) * k * 6;
-    this.arm.y = this.shoulderY - Math.sin(local) * k * 6 + (this.body.y + 24);
+    this.arm.y = this.shoulderY - Math.sin(local) * k * 6 + bob;
     this.head.rotation = local * 0.22;
-    this.head.y = -40 + (this.body.y + 24);
+    this.head.y = HEAD_Y + bob;
+    // Mullet acompanha o rosto girando em torno do pescoço.
+    const r = this.head.rotation;
+    this.hair.rotation = r;
+    this.hair.x = 1 - Math.sin(r) * FACE_DY;
+    this.hair.y = HEAD_Y + bob + Math.cos(r) * FACE_DY;
 
     // Piscar durante i-frames.
     if (p.invuln > 0) {

@@ -1,15 +1,17 @@
 import Phaser from 'phaser';
-import { RENDER_ZOOM, VIEW_HEIGHT, VIEW_WIDTH } from './data/arena';
+import { computeView } from './data/view';
 import { ArenaScene } from './scenes/ArenaScene';
 import { BootScene } from './scenes/BootScene';
 
 export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameConfig {
+  // A cena reajusta o tamanho a cada mudança da janela (ArenaScene.applyLayout).
+  const layout = computeView(parent.clientWidth / Math.max(1, parent.clientHeight));
   return {
     type: Phaser.AUTO,
     parent,
-    width: VIEW_WIDTH * RENDER_ZOOM,
-    height: VIEW_HEIGHT * RENDER_ZOOM,
-    backgroundColor: '#151922',
+    width: layout.canvasW,
+    height: layout.canvasH,
+    backgroundColor: '#12061f',
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,

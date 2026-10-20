@@ -1,8 +1,12 @@
 import type { ArenaBounds } from '@/core/physics/playerMotor';
 import type { TerrainDef } from '@/core/physics/terrain';
 
-/** Resolução lógica 16:9. O canvas escala para caber na janela. */
-export const VIEW_WIDTH = 960;
+/**
+ * Retângulo lógico da arena (onde a simulação acontece). A câmera sempre o
+ * mostra inteiro e preenche o resto da janela com cenário (ver `view.ts`),
+ * então não há faixas pretas em nenhuma proporção comum de tela.
+ */
+export const VIEW_WIDTH = 1200;
 export const VIEW_HEIGHT = 540;
 
 export const ARENA: ArenaBounds = {
@@ -22,15 +26,18 @@ export const TERRAIN: TerrainDef = {
   left: ARENA.left,
   right: ARENA.right,
   features: [
-    { kind: 'ramp', side: 'left', height: 74, plateau: 58, slope: 96 },
-    { kind: 'ramp', side: 'right', height: 74, plateau: 58, slope: 96 },
-    { kind: 'bump', x: ARENA.left + 232, height: 22, halfWidth: 58 },
-    { kind: 'bump', x: ARENA.right - 232, height: 22, halfWidth: 58 },
+    { kind: 'ramp', side: 'left', height: 74, plateau: 70, slope: 110 },
+    { kind: 'ramp', side: 'right', height: 74, plateau: 70, slope: 110 },
+    { kind: 'bump', x: ARENA.left + 290, height: 22, halfWidth: 62 },
+    { kind: 'bump', x: ARENA.right - 290, height: 22, halfWidth: 62 },
   ],
 };
 
 /** Simulação a 120 Hz. */
 export const SIM_STEP = 1 / 120;
 
-/** O canvas renderiza em 2× a resolução lógica para a arte ficar nítida em telas grandes. */
-export const RENDER_ZOOM = 2;
+/**
+ * Largura do canvas em pixels quando a janela tem a proporção da arena.
+ * Mantém o custo de preenchimento perto de 1920×1080 em qualquer proporção.
+ */
+export const RENDER_WIDTH = 1920;

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { GameEvent } from '@/core/run/events';
 import type { EnemyKind } from '@/core/enemies/types';
 import type { Settings, VfxQuality } from '@/shared/settings';
+import { VIEW_MARGIN } from '../data/view';
 import { CSS, PAL } from '../rendering/palette';
 import type { AudioSystem, SfxId } from './AudioSystem';
 import type { FloatingText } from './FloatingText';
@@ -89,11 +90,11 @@ export class Feedback {
     private readonly shake: ScreenShake,
     private readonly audio: AudioSystem,
     private readonly hooks: FeedbackHooks,
-    width: number,
+    private readonly width: number,
     height: number,
   ) {
     this.flashRect = scene.add
-      .rectangle(width / 2, height / 2, width + 40, height + 40, PAL.coral)
+      .rectangle(width / 2, height / 2 + (VIEW_MARGIN.bottom - VIEW_MARGIN.top) / 2, width + VIEW_MARGIN.side * 2 + 80, height + VIEW_MARGIN.top + VIEW_MARGIN.bottom + 80, PAL.coral)
       .setAlpha(0)
       .setDepth(90)
       .setBlendMode(Phaser.BlendModes.ADD);
@@ -549,7 +550,7 @@ export class Feedback {
     const colors = [PAL.amber, PAL.turquoise, PAL.coral, PAL.violet, PAL.warmWhite];
     this.emit({
       texture: 'px_feather',
-      x: 100 + Math.random() * 760,
+      x: 60 + Math.random() * (this.width - 120),
       y: -10,
       vx: (Math.random() - 0.5) * 80,
       vy: 80 + Math.random() * 120,

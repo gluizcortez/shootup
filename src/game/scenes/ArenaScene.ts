@@ -10,7 +10,9 @@ import { FrameStats } from '@/shared/frameStats';
 import { loadSettings, prefersReducedMotion } from '@/shared/settings';
 import type { Settings } from '@/shared/settings';
 import type { CardInfo, HudSnapshot } from '@/shared/types';
-import { ARENA, RENDER_ZOOM, SIM_STEP, TERRAIN, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
+import { ARENA, SIM_STEP, TERRAIN, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
+import { computeView } from '../data/view';
+import type { ViewLayout } from '../data/view';
 import { Terrain } from '@/core/physics/terrain';
 import { isGolden } from '@/core/upgrades/upgrades';
 import { WORLD_CONFIG } from '../data/world';
@@ -38,10 +40,10 @@ function typingInUi(): boolean {
 
 /** Marcos de combo que o narrador anuncia. */
 const COMBO_MILESTONES: ReadonlyArray<[number, string]> = [
-  [5, 'A PLATEIA ACORDOU!'],
-  [10, 'ISSO É AUDIÊNCIA!'],
+  [5, 'LUZ, CÂMERA, AÇÃO!'],
+  [10, 'ISSO É BILHETERIA!'],
   [15, 'O DIRETOR CHOROU!'],
-  [25, 'RECORDE DE IBOPE!'],
+  [25, 'DIRETO PRO VHS!'],
   [40, 'TÁ PEGANDO FOGO, BICHO!'],
 ];
 const HEARTBEAT_EVERY = 0.85;
@@ -98,6 +100,7 @@ export class ArenaScene extends Phaser.Scene {
   private perfTimer = 0;
   private readonly debugEnabled = import.meta.env.DEV || new URLSearchParams(location.search).has('debug');
   private readonly unsubs: Array<() => void> = [];
+  private layout: ViewLayout = computeView(VIEW_WIDTH / VIEW_HEIGHT);
 
   constructor() {
     super('Arena');
@@ -105,9 +108,7 @@ export class ArenaScene extends Phaser.Scene {
 
   create(): void {
     const cam = this.cameras.main;
-    cam.setZoom(RENDER_ZOOM);
-    cam.centerOn(VIEW_WIDTH / 2, VIEW_HEIGHT / 2);
-    cam.setBackgroundColor('#151922');
+    cam.setBackgroundColor('#12061f');
 
     this.stage = new Stage(this, this.terrain);
     this.world = this.newWorld();
@@ -115,7 +116,9 @@ export class ArenaScene extends Phaser.Scene {
     this.projectileRenderer = new ProjectileRenderer(this, this.world.projectiles);
     this.particles = new Particles(this, PARTICLE_CAPACITY[this.settings.vfxQuality], this.groundAt);
     this.texts = new FloatingText(this);
-    this.input2 = new InputSystem(this, RENDER_ZOOM, { x: VIEW_WIDTH / 2 + 200, y: ARENA.floorY - 30 });
+    this.input2 = new InputSystem(this, { x: VIEW_WIDTH / 2 + 200, y: ARENA.floorY - 30 });
+    this.applyLayout();
+    this.watchResize();
 
     this.crosshair = this.add.image(0, 0, 'crosshair').setScale(1 / TEX_SCALE).setDepth(100);
     this.hitmarker = this.add.image(0, 0, 'hitmarker').setScale(1 / TEX_SCALE).setDepth(101).setVisible(false);
@@ -161,6 +164,43 @@ export class ArenaScene extends Phaser.Scene {
     this.emitHud(true);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
+  }
+
+  /** Canvas acompanha a proporção da janela; a arena fica inteira e o resto vira cenário. */
+  private applyLayout(): void {
+    const parent = this.scale.parent as HTMLElement | null;
+    const aspect = parent && parent.clientHeight > 0 ? parent.clientWidth / parent.clientHeight : VIEW_WIDTH / VIEW_HEIGHT;
+    const layout = computeView(aspect);
+    this.layout = layout;
+    if (this.scale.width !== layout.canvasW || this.scale.height !== layout.canvasH) {
+      this.scale.setGameSize(layout.canvasW, layout.canvasH);
+    }
+    const cam = this.cameras.main;
+    cam.setSize(layout.canvasW, layout.canvasH);
+    cam.setZoom(layout.zoom);
+    this.centerCamera(0, 0);
+    this.input2.setView(layout.left, layout.top, layout.zoom);
+    this.stage.setView(layout.top);
+  }
+
+  private centerCamera(dx: number, dy: number): void {
+    const l = this.layout;
+    this.cameras.main.centerOn(l.left + l.width / 2 + dx, l.top + l.height / 2 + dy);
+  }
+
+  private watchResize(): void {
+    const parent = this.scale.parent as HTMLElement | null;
+    if (!parent || typeof ResizeObserver === 'undefined') return;
+    let pending = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(pending);
+      pending = requestAnimationFrame(() => this.applyLayout());
+    });
+    ro.observe(parent);
+    this.unsubs.push(() => {
+      cancelAnimationFrame(pending);
+      ro.disconnect();
+    });
   }
 
   private get reducedMotion(): boolean {
@@ -408,8 +448,7 @@ export class ArenaScene extends Phaser.Scene {
       this.stage.update(dt, this.reducedMotion);
     }
 
-    const cam = this.cameras.main;
-    cam.centerOn(VIEW_WIDTH / 2 + this.shake.x, VIEW_HEIGHT / 2 + this.shake.y);
+    this.centerCamera(this.shake.x, this.shake.y);
 
     // Mira: compensa o shake para o cursor ficar colado ao mouse.
     const aim = this.input2.aim;

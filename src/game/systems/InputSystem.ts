@@ -12,11 +12,11 @@ export class InputSystem {
   private firing = false;
   private aimX: number;
   private aimY: number;
+  private view = { left: 0, top: 0, zoom: 1 };
   private readonly unsubs: Array<() => void> = [];
 
   constructor(
     private readonly scene: Phaser.Scene,
-    private readonly zoom: number,
     defaultAim: { x: number; y: number },
   ) {
     const kb = scene.input.keyboard;
@@ -48,8 +48,9 @@ export class InputSystem {
       if (!p.leftButtonDown()) this.firing = false;
     };
     const move = (p: Phaser.Input.Pointer) => {
-      this.aimX = p.x / this.zoom;
-      this.aimY = p.y / this.zoom;
+      // Coordenadas do mundo sem o tremor da câmera: a mira fica colada ao mouse.
+      this.aimX = this.view.left + p.x / this.view.zoom;
+      this.aimY = this.view.top + p.y / this.view.zoom;
     };
     scene.input.on('pointerdown', down);
     scene.input.on('pointerup', up);
@@ -61,6 +62,11 @@ export class InputSystem {
       scene.input.off('pointerupoutside', up);
       scene.input.off('pointermove', move);
     });
+  }
+
+  /** Região visível atual (canto superior esquerdo em coordenadas do mundo). */
+  setView(left: number, top: number, zoom: number): void {
+    this.view = { left, top, zoom };
   }
 
   get aim(): { x: number; y: number } {

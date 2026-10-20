@@ -10,14 +10,13 @@ const LOGO = 'ShootUp!';
 
 /** Piadas do rodapé do programa, trocando sozinhas. */
 const TICKER = [
-  'Patrocínio: Seguros Quá-Quá — "a gente cobre até bico".',
-  'Nenhum pato foi ferido de verdade. Só no orgulho.',
-  'Pipoca Boom: estoura antes de você.',
-  'A Vaca Loca pediu pra avisar: ela não freia.',
-  'O Porco Executivo marcou uma reunião sobre você.',
-  'Don Pombone manda lembranças. E balas.',
-  'Aplausos são obrigatórios. A plateia é refém.',
-];
+  'Estrelando Johnny Replay, balconista de videolocadora e astro de ação autodeclarado.',
+  'Seja gentil, rebobine a fita.',
+  'Nenhum dublê foi contratado. O orçamento acabou no bigode.',
+  'Johnny nunca foi à academia. A arma também nunca foi à academia: ela já nasceu grande.',
+  'Vídeo Replay — locadora 24h. Multa de atraso: uma explosão.',
+  'Classificação indicativa: muita zoeira.',
+]
 
 const CAST: Array<[string, string]> = [
   ['Pato Pistoleiro', 'faz pose dramática ("!") antes de cada tiro mirado.'],
@@ -77,10 +76,10 @@ export function TitleScreen() {
       {view === 'main' && (
         <div className="title-card">
           <div className="onair">
-            <b /> AO VIVO
+            <b /> ▶ PLAY
           </div>
           <Logo />
-          <p className="title-tagline">The World's Worst Show</p>
+          <p className="title-tagline">estrelando Johnny Replay</p>
           <div className="menu">
             <TactileButton autoFocus className="menu-play" onClick={actions.start} data-testid="play">
               JOGAR

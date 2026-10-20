@@ -7,7 +7,7 @@ body,
 #root {
   margin: 0;
   height: 100%;
-  background: #0b0d12;
+  background: #07020f;
   color: var(--c-white);
   font-family: var(--font-body);
   overflow: hidden;
@@ -19,10 +19,11 @@ body,
   place-items: center;
 }
 
+/* Ocupa a janela inteira (entre 3:2 e 2,4:1); o Phaser preenche a sobra com cenário. */
 .stage-frame {
   position: relative;
-  width: min(100vw, calc(100vh * 16 / 9));
-  aspect-ratio: 16 / 9;
+  width: min(100vw, calc(100vh * 2.4));
+  height: min(100vh, calc(100vw / 1.5));
   container-type: size;
   background: var(--c-charcoal);
   box-shadow: 0 0 0 1px #000, 0 30px 80px rgb(0 0 0 / 0.6);
@@ -45,9 +46,17 @@ body,
 }
 
 /* ── HUD ─────────────────────────────────────────────────────────── */
+/* Caixa da arena (1200×540) dentro da janela: mesma conta de data/view.ts. */
 .hud {
+  --arena-w: min(100cqw, calc(100cqh * 1200 / 540));
+  --arena-h: calc(var(--arena-w) * 540 / 1200);
   position: absolute;
-  inset: 0;
+  width: var(--arena-w);
+  height: var(--arena-h);
+  left: calc((100cqw - var(--arena-w)) / 2);
+  top: calc((100cqh - var(--arena-h)) * 0.3);
+  container-type: size;
+  font-size: clamp(10px, calc(var(--arena-w) * 0.016), 22px);
   font-variant-numeric: tabular-nums;
 }
 

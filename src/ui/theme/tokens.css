@@ -1,12 +1,13 @@
 /* Tokens visuais (GDD §7). Fonte de verdade para cores, tipografia e movimento da UI. */
 :root {
-  --c-charcoal: #151922;
-  --c-plum: #272035;
-  --c-plum-2: #3a2f4f;
-  --c-turquoise: #42dec4;
+  /* Miami anos 80: neon rosa, ciano e roxo sobre noite anil. */
+  --c-charcoal: #12061f;
+  --c-plum: #24103f;
+  --c-plum-2: #3a1a66;
+  --c-turquoise: #22e6ff;
   --c-amber: #ffc857;
-  --c-coral: #ff5964;
-  --c-violet: #b37cff;
+  --c-coral: #ff2fa8;
+  --c-violet: #9b5cff;
   --c-white: #f7f1e8;
   --c-outline: #0d0f15;
 

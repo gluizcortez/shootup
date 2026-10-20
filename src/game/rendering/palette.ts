@@ -46,3 +46,14 @@ export const CSS = {
   outline: '#0D0F15',
   violet: '#B37CFF',
 } as const;
+
+/** Neon de Miami anos 80: cenário e efeitos da temática Johnny Replay. */
+export const NEON = {
+  pink: 0xff2fa8,
+  cyan: 0x22e6ff,
+  violet: 0x9b5cff,
+  yellow: 0xffe14d,
+  pinkCss: '#FF2FA8',
+  cyanCss: '#22E6FF',
+  yellowCss: '#FFE14D',
+} as const;

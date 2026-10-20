@@ -80,10 +80,13 @@ function make(scene: Phaser.Scene, key: string, w: number, h: number, draw: (p: 
 
 /** Tamanho lógico (sem TEX_SCALE) de cada textura, para posicionar origens. */
 export const TEX = {
-  plBody: { w: 30, h: 26 },
-  plHead: { w: 28, h: 28 },
-  plLeg: { w: 8, h: 14 },
-  plArm: { w: 36, h: 14, pivotX: 4 },
+  plBody: { w: 36, h: 28 },
+  plHead: { w: 34, h: 32 },
+  /** O centro do rosto fica em (22, 16) da textura do cabelo. */
+  plHair: { w: 40, h: 36, cx: 22, cy: 16 },
+  plLeg: { w: 11, h: 17 },
+  plArm: { w: 42, h: 20, pivotX: 5 },
+  plBack: { w: 14, h: 22, pivotY: 3 },
   patoBody: { w: 44, h: 40 },
   patoHat: { w: 36, h: 18 },
   patoGun: { w: 22, h: 10, pivotX: 4 },
@@ -107,43 +110,117 @@ export const TEX = {
 } as const;
 
 export function generateTextures(scene: Phaser.Scene): void {
-  // ── Competidor (protagonista provisório) ─────────────────────────────
-  make(scene, 'pl_body', TEX.plBody.w, TEX.plBody.h, (p) => {
-    p.oRound(4, 3, 22, 20, 7, PAL.turquoise);
-    p.fill(0x2fb7a2).round(4, 15, 22, 8, 4); // sombra do paletó
-    p.fill(PAL.warmWhite).tri(12, 3, 18, 3, 15, 10); // gola
-    p.fill(PAL.coral).tri(14, 5, 16, 5, 15, 13); // gravata
-    p.fill(PAL.amber).circle(21, 10, 2.6); // broche-estrela do programa
-    p.fill(PAL.warmWhite).circle(20.3, 9.3, 0.9);
+  // ── Johnny Replay (protagonista) ─────────────────────────────────────
+  // Balconista de videolocadora que jura ser astro de ação: mullet, bigodão,
+  // aviador espelhado, bandana, regata branca, jaqueta vermelha sem mangas,
+  // braços de palito e uma arma grande demais para ele.
+  const jacket = 0xe8283c;
+  const jacketDark = 0xa8172b;
+  const hair = 0x3a2116;
+  const hairLight = 0x6a3d25;
+  const bandana = 0xff2d3d;
+  make(scene, 'pl_hair', TEX.plHair.w, TEX.plHair.h, (p) => {
+    // Mullet: curto e espetado em cima, comprido atrás (balança com mola).
+    const back: Array<[number, number, number]> = [
+      [13, 14, 7.5],
+      [11, 21, 5.5],
+      [10.5, 27, 4.8],
+      [12, 31.5, 3.6],
+    ];
+    const top: Array<[number, number, number]> = [
+      [22, 8.5, 8.5],
+      [15, 9.5, 6.5],
+      [28, 9, 5.5],
+    ];
+    for (const [x, y, r] of [...back, ...top]) p.fill(O).circle(x, y, r + 1.5);
+    p.fill(O).tri(18, 3, 22, -0.5, 24, 3).tri(24, 2.5, 30, 0.5, 29, 5).tri(12, 6, 13, 0.5, 18, 4);
+    for (const [x, y, r] of [...back, ...top]) p.fill(hair).circle(x, y, r);
+    p.fill(hair).tri(19, 3.5, 22, 1, 23.5, 4).tri(24.5, 3.5, 29, 2, 28.5, 5.5).tri(13, 6.5, 13.6, 2, 17.5, 4.6);
+    p.fill(hairLight).circle(20, 6, 2.4).circle(13, 13, 1.8).circle(10.5, 22, 1.5).circle(10.5, 28, 1.2);
+    // Pontas da bandana voando atrás.
+    p.fill(O).poly([[14, 10], [2, 7], [3.5, 11.5], [13.5, 14]]).poly([[14, 12], [4, 16], [6.5, 18.5], [14, 15]]);
+    p.fill(bandana).poly([[13.5, 10.8], [3.6, 8.4], [4.6, 10.8], [13.4, 13]]).poly([[13.6, 13], [5.6, 16.4], [6.9, 17.4], [13.6, 14.5]]);
   });
   make(scene, 'pl_head', TEX.plHead.w, TEX.plHead.h, (p) => {
-    p.oCircle(14, 16, 9, PAL.skin);
-    // Capacete de auditório: domo âmbar com faixa turquesa e lâmpada.
-    p.fill(O).ellipse(14, 11, 23, 15);
-    p.fill(PAL.amber).ellipse(14, 11, 20, 12);
-    p.fill(PAL.amber).rect(4, 11, 20, 3);
-    p.fill(PAL.turquoise).rect(4, 11, 20, 2.5);
-    p.fill(0xfff1c1).ellipse(10, 8, 6, 3);
-    p.fill(O).rect(13, 1, 2, 4);
-    p.oCircle(14, 2.5, 2, PAL.coral, 1);
-    // Rosto olhando para a direita.
-    p.fill(PAL.warmWhite).circle(18, 17, 3.2);
-    p.fill(O).circle(19.2, 17.2, 1.6);
-    p.fill(0xe9967a).circle(21.5, 21, 1.6); // bochecha
-    p.fill(O).rect(16, 22.2, 4, 1.2); // boca determinada
+    p.oCircle(10.5, 19, 3, PAL.skin, 1.2); // orelha
+    p.oEllipse(17, 18.5, 19, 21, PAL.skin); // rosto comprido de quem nunca malhou
+    p.fill(0xe8a87f).circle(11, 19, 1.2);
+    p.fill(0xe0a27c).ellipse(19, 27, 9, 3); // queixo fraquinho
+    // Bandana vermelha na testa.
+    p.fill(O).round(7, 6.6, 21, 5.4, 2);
+    p.fill(bandana).round(8, 7.4, 19, 3.8, 1.5);
+    p.fill(0xff8a8a).rect(9, 8, 17, 0.9);
+    p.fill(0xffffff, 0.8).circle(12, 9.6, 0.5).circle(17, 9.4, 0.5).circle(22, 9.6, 0.5);
+    // Aviador espelhado (reflete um pôr do sol neon).
+    p.fill(O).poly([[16.5, 13], [28, 13], [27.5, 18], [24, 20.5], [19, 19.5], [16.5, 16]]);
+    p.fill(O).poly([[11.5, 13.6], [15.6, 13.6], [15.2, 17.6], [12.4, 18]]);
+    p.fill(0xff4fa3).poly([[17.6, 14], [27, 14], [26.8, 16], [17.6, 16]]);
+    p.fill(0xffb347).poly([[17.6, 16], [26.8, 16], [26.4, 17.4], [18, 17.4]]);
+    p.fill(0x22e6ff).poly([[18, 17.4], [26.4, 17.4], [23.6, 19.4], [19.4, 18.8]]);
+    p.fill(0xff4fa3, 0.8).poly([[12.4, 14.4], [15, 14.4], [14.8, 16.8], [12.8, 17]]);
+    p.fill(0xffffff, 0.95).tri(19, 14.4, 21.5, 14.4, 19, 16.4);
+    p.fill(O).rect(26, 13.6, 4.5, 1.2); // haste
+    // Nariz.
+    p.fill(O).ellipse(27.5, 21.5, 6, 6);
+    p.fill(0xf0b08a).ellipse(27.5, 21.5, 4.2, 4.2);
+    // Bigodão exagerado, caindo nas pontas.
+    p.fill(O).poly([[19, 23.4], [31, 23.4], [32.5, 28.5], [29.5, 26.5], [21, 26.5], [18, 29]]);
+    p.fill(hair).poly([[19.8, 24.2], [30.2, 24.2], [31.3, 26.9], [29.3, 25.6], [21.2, 25.6], [19.2, 27.4]]);
+    p.fill(hairLight).rect(22, 24.6, 6, 0.8);
+    // Boca de durão (que não convence).
+    p.fill(O).rect(22.5, 27.6, 5, 1.1);
+  });
+  make(scene, 'pl_body', TEX.plBody.w, TEX.plBody.h, (p) => {
+    // Tronco magrelo: regata branca canelada com o umbigo à mostra.
+    p.oRound(11, 4, 14, 22, 4, PAL.warmWhite);
+    p.fill(0xd9d3c8);
+    for (let x = 13; x < 24; x += 2.4) p.rect(x, 6, 0.6, 18);
+    p.fill(PAL.skin).tri(14, 4, 22, 4, 18, 9); // decote
+    p.fill(0xf0c6a0).circle(18, 21.5, 0.8);
+    // Jaqueta vermelha sem mangas, gola levantada, aberta.
+    p.fill(O).round(8.5, 3, 7.5, 24, 3).round(20, 3, 7.5, 24, 3);
+    p.fill(jacket).round(9.5, 4, 5.5, 22, 2.4).round(21, 4, 5.5, 22, 2.4);
+    p.fill(jacketDark).rect(9.5, 19, 5.5, 2).rect(21, 19, 5.5, 2);
+    p.fill(O).tri(9, 4, 14.5, 4, 10, -0.5).tri(27, 4, 21.5, 4, 26, -0.5); // gola em pé
+    p.fill(jacket).tri(10, 3.5, 13.5, 3.5, 10.6, 0.8).tri(26, 3.5, 22.5, 3.5, 25.4, 0.8);
+    p.fill(0xb8bcc8).rect(15, 6, 0.8, 18).rect(20.2, 6, 0.8, 18); // zíperes
+    // Cinto com fivela de águia dourada.
+    p.fill(O).rect(10.5, 22.5, 15, 3.5);
+    p.fill(0x5a3a22).rect(11, 23, 14, 2.5);
+    p.oRound(15.5, 22.4, 5, 3.6, 0.8, PAL.gold, 0.6);
+    // Bottom de broche: "ASTRO".
+    p.oCircle(24, 9, 1.6, 0x22e6ff, 0.6);
   });
   make(scene, 'pl_leg', TEX.plLeg.w, TEX.plLeg.h, (p) => {
-    p.oRound(1.5, 0, 5, 10, 2, PAL.plumLight, 1);
-    p.oRound(1, 9, 7, 4, 2, PAL.coral, 1); // tênis
+    p.oRound(3, 0, 5.5, 12, 2, 0xc9a87a, 1); // calça cáqui
+    p.fill(0xa8875c).rect(3, 7, 5.5, 1);
+    p.oRound(2, 10, 8, 4, 1.2, PAL.warmWhite, 1); // cano alto
+    p.fill(bandana).rect(2, 11, 8, 1);
+    p.oRound(1.5, 12.5, 9.5, 3.8, 1.8, PAL.warmWhite, 1); // tênis
+    p.fill(0x22e6ff).tri(4, 13.2, 9.5, 13.4, 6.5, 15);
+    p.fill(0x9aa3b5).rect(1.5, 15.4, 9.5, 1);
   });
   make(scene, 'pl_arm', TEX.plArm.w, TEX.plArm.h, (p) => {
-    // Braço (manga) + mão + pistola. Pivô no ombro (x=4).
-    p.oRound(1, 4.5, 12, 6, 3, PAL.turquoise, 1);
-    p.oCircle(14, 8, 3.2, PAL.skin, 1);
-    p.oRound(14, 3, 18, 6, 1.5, PAL.gunMetal, 1.2); // ferrolho
-    p.oRound(15, 6.5, 5, 7, 1.5, PAL.gunMetal, 1.2); // empunhadura
-    p.fill(PAL.gunLight).rect(15, 4, 15, 1.5);
-    p.fill(PAL.amber).rect(29, 4, 2, 2); // massa de mira
+    // Pivô no ombro (x=5). Braço de palito + luva sem dedos + revólver gigante.
+    p.oCircle(5, 10, 3, PAL.skin, 1);
+    p.oRound(5, 8.6, 10, 3, 1.4, PAL.skin, 1);
+    p.oRound(13.5, 7.5, 5, 6, 1.6, 0x4a2c1c, 1); // luva
+    p.oRound(15, 10, 6, 8, 1.6, 0x8a5a2b, 1.2); // cabo de madeira
+    p.fill(0xb07a42).rect(16.5, 11, 1.2, 5.5);
+    p.oRound(16, 3, 11, 9, 2.6, 0xc4cad6, 1.3); // tambor enorme
+    p.fill(0x8e95a6).rect(18, 5, 1.4, 5).rect(21, 5, 1.4, 5).rect(24, 5, 1.4, 5);
+    p.oRound(25, 3.6, 15, 5.4, 1.2, 0xc4cad6, 1.3); // cano comprido
+    p.fill(0xffffff, 0.75).rect(17, 3.8, 22, 1.1);
+    p.oRound(37.5, 1.6, 2.2, 2.6, 0.6, 0xc4cad6, 0.8); // massa de mira
+    p.fill(O).rect(39.6, 4.4, 1.4, 3.8); // boca do cano
+    p.fill(0xff4fa3).rect(26, 8.4, 11, 0.7); // filete neon (customizado, claro)
+  });
+  make(scene, 'pl_back', TEX.plBack.w, TEX.plBack.h, (p) => {
+    // Braço livre: palito com luva, faz "muque" (sem muque nenhum).
+    p.oRound(5, 1, 4, 13, 1.8, PAL.skin, 1);
+    p.fill(0xf7cfa8).ellipse(7.6, 8, 2.4, 3.2); // bíceps de ervilha
+    p.oRound(3.5, 13, 7, 7, 2.6, 0x4a2c1c, 1); // punho de luva
+    p.fill(PAL.skin).rect(4.5, 17.6, 5, 1.6);
   });
 
   // ── Pato Pistoleiro ──────────────────────────────────────────────────
