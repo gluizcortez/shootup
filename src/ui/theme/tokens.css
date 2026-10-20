@@ -1,4 +1,17 @@
 /* Tokens visuais (GDD §7). Fonte de verdade para cores, tipografia e movimento da UI. */
+
+/* Fontes pixel (SIL OFL 1.1, licenças em public/fonts). Locais: o jogo roda offline. */
+@font-face {
+  font-family: 'Jersey 10';
+  src: url('/fonts/Jersey10-Regular.ttf') format('truetype');
+  font-display: block;
+}
+@font-face {
+  font-family: 'VT323';
+  src: url('/fonts/VT323-Regular.ttf') format('truetype');
+  font-display: block;
+}
+
 :root {
   /* Miami anos 80: neon rosa, ciano e roxo sobre noite anil. */
   --c-charcoal: #12061f;
@@ -11,8 +24,9 @@
   --c-white: #f7f1e8;
   --c-outline: #0d0f15;
 
-  --font-display: 'Arial Black', 'Trebuchet MS', system-ui, sans-serif;
-  --font-body: 'Trebuchet MS', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Jersey 10', 'Arial Black', system-ui, sans-serif;
+  --font-body: 'VT323', 'Trebuchet MS', system-ui, sans-serif;
+  --font-vhs: 'VT323', 'Courier New', monospace;
 
   /* Microanimações de 100–250 ms (GDD §8). */
   --t-fast: 110ms;

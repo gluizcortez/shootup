@@ -1,11 +1,14 @@
 import Phaser from 'phaser';
 import type { Terrain } from '@/core/physics/terrain';
 import { ARENA, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
-import { RENDER_ZOOM, VIEW_MARGIN } from '../data/view';
+import { VIEW_MARGIN } from '../data/view';
+import { PIXEL_FONT, VHS_FONT } from './fonts';
 import { NEON } from './palette';
+import { addPixelTexture } from './pixel/bake';
+import { bayer, mix, PixelCanvas } from './pixel/PixelCanvas';
 
-/** Resolução do cenário assado: a mesma do canvas, então fica nítido sem gastar à toa. */
-const S = RENDER_ZOOM;
+/** Cenário em pixel art: 1 texel por unidade do mundo, como os personagens. */
+const S = 1;
 const X0 = -VIEW_MARGIN.side;
 const Y0 = -VIEW_MARGIN.top;
 const BG_W = VIEW_WIDTH + VIEW_MARGIN.side * 2;
@@ -13,8 +16,8 @@ const BG_H = VIEW_HEIGHT + VIEW_MARGIN.top + VIEW_MARGIN.bottom;
 const HORIZON = 352;
 const VANISH_X = VIEW_WIDTH / 2;
 const SUN = { x: VIEW_WIDTH / 2, y: 372, r: 152 };
-const FONT_DISPLAY = '"Arial Black", "Trebuchet MS", system-ui, sans-serif';
-const FONT_SCRIPT = '"Brush Script MT", "Segoe Script", "Comic Sans MS", cursive';
+const FONT_DISPLAY = PIXEL_FONT;
+const FONT_SCRIPT = PIXEL_FONT;
 
 /** Converte coordenadas do mundo para pixels da textura do cenário. */
 const tx = (x: number) => (x - X0) * S;
@@ -97,24 +100,22 @@ export class Stage {
     scene.add.image(X0, Y0, 'vhs_band').setOrigin(0).setScale(1 / S).setDepth(48);
     this.rec = scene.add
       .text(40, -VIEW_MARGIN.top / 2, '▶ PLAY', {
-        fontFamily: '"Courier New", monospace',
-        fontSize: '22px',
-        fontStyle: 'bold',
+        fontFamily: VHS_FONT,
+        fontSize: '24px',
         color: '#F7F1E8',
       })
       .setOrigin(0, 0.5)
       .setDepth(49)
-      .setResolution(2);
+      .setResolution(1);
     this.counter = scene.add
       .text(VIEW_WIDTH - 40, -VIEW_MARGIN.top / 2, 'SP 0:00:00', {
-        fontFamily: '"Courier New", monospace',
-        fontSize: '22px',
-        fontStyle: 'bold',
+        fontFamily: VHS_FONT,
+        fontSize: '24px',
         color: '#F7F1E8',
       })
       .setOrigin(1, 0.5)
       .setDepth(49)
-      .setResolution(2);
+      .setResolution(1);
   }
 
   private sign(
@@ -130,20 +131,19 @@ export class Stage {
     const t = this.scene.add
       .text(x, y, text, {
         fontFamily: font,
-        fontSize: `${size}px`,
-        fontStyle: 'bold',
+        fontSize: `${Math.round(size * 1.3)}px`,
         color,
         align: 'center',
         stroke: '#1a0630',
         strokeThickness: Math.max(3, size / 7),
         lineSpacing: -4,
-        shadow: { color, blur: 14, fill: true, stroke: true, offsetX: 0, offsetY: 0 },
+        shadow: { color, blur: 6, fill: true, stroke: true, offsetX: 0, offsetY: 0 },
       })
       .setOrigin(0.5)
       .setRotation(rotation)
       .setAlpha(alpha)
       .setDepth(-97)
-      .setResolution(2);
+      .setResolution(1);
     t.setData('base', alpha);
     this.signs.push(t);
   }
@@ -190,97 +190,101 @@ export class Stage {
 
   private bakeTextures(): void {
     const tex = this.scene.textures;
-    if (!tex.exists('beam')) {
-      const g = this.scene.make.graphics({ x: 0, y: 0 }, false);
-      const w = 120;
-      const h = 520;
-      // Gradiente na mão: o Canvas do generateTexture ignora fillGradientStyle.
-      for (let y = 0; y < h; y += 4) {
-        const t = y / h;
-        const half = (w / 2) * (1 - t);
-        g.fillStyle(0xffffff, 0.9 * t);
-        g.fillRect((w / 2 - half) * S, y * S, half * 2 * S, 4 * S);
-      }
-      g.generateTexture('beam', w * S, h * S);
-      g.destroy();
-    }
+    if (!tex.exists('beam')) this.bakeBeam();
     if (!tex.exists('vhs_band')) this.bakeVhsBand();
     if (!tex.exists('edge_glow')) this.bakeEdgeGlow();
     if (!tex.exists('miami_bg')) this.bakeBackground();
   }
 
-  private groundPoints(offset = 0): Phaser.Geom.Point[] {
-    const pts: Phaser.Geom.Point[] = [];
-    for (let x = X0; x <= X0 + BG_W; x += 4) {
-      const gx = Math.min(VIEW_WIDTH, Math.max(0, x));
-      pts.push(new Phaser.Geom.Point(tx(x), ty(this.terrain.groundAt(gx) + offset)));
+  private upload(key: string, pc: PixelCanvas): void {
+    addPixelTexture(this.scene, key, pc.width, pc.height, pc.data);
+  }
+
+  /** Holofote: cone em degraus de transparência (pixel art não tem degradê liso). */
+  private bakeBeam(): void {
+    const w = 120;
+    const h = 520;
+    const pc = new PixelCanvas(w, h);
+    for (let y = 0; y < h; y++) {
+      const t = y / h;
+      const half = (w / 2) * (1 - t);
+      const a = Math.ceil(t * 4) / 4;
+      for (let x = Math.round(w / 2 - half); x < Math.round(w / 2 + half); x++) {
+        if (bayer(x, y) < 0.92) pc.pset(x, y, 0xffffff, a * 0.9);
+      }
     }
-    return pts;
+    this.upload('beam', pc);
+  }
+
+  /** Altura do chão (em pixels da textura) em cada coluna. */
+  private groundRow(px: number): number {
+    const x = X0 + px;
+    return Math.round(ty(this.terrain.groundAt(Math.min(VIEW_WIDTH, Math.max(0, x)))));
   }
 
   private bakeVhsBand(): void {
-    const g = this.scene.make.graphics({ x: 0, y: 0 }, false);
-    const h = VIEW_MARGIN.top;
-    vgrad(g, 0, 0, BG_W * S, h * S, 0x07020f, 0x12052a);
-    g.fillStyle(0xffffff, 0.035);
-    for (let y = 0; y < h; y += 3) g.fillRect(0, y * S, BG_W * S, 1 * S);
-    g.fillStyle(NEON.pink, 1);
-    g.fillRect(0, (h - 3) * S, BG_W * S, 3 * S);
-    g.fillStyle(NEON.cyan, 1);
-    g.fillRect(0, (h - 6) * S, BG_W * S, 1.5 * S);
-    g.generateTexture('vhs_band', BG_W * S, h * S);
-    g.destroy();
+    const h = Math.round(VIEW_MARGIN.top);
+    const pc = new PixelCanvas(BG_W, h);
+    pc.vbands(0, 0, BG_W, h, [0x07020f, 0x0b0418, 0x12052a]);
+    // Linhas de varredura da fita.
+    for (let y = 0; y < h; y += 3) pc.hline(0, BG_W, y, 0xffffff, 0.035);
+    pc.rect(0, h - 3, BG_W, 3, NEON.pink);
+    pc.rect(0, h - 6, BG_W, 1, NEON.cyan);
+    this.upload('vhs_band', pc);
   }
 
   private bakeEdgeGlow(): void {
-    const g = this.scene.make.graphics({ x: 0, y: 0 }, false);
-    const top = this.groundPoints();
-    g.lineStyle(16 * S, NEON.cyan, 0.12);
-    g.strokePoints(top, false);
-    g.lineStyle(8 * S, NEON.cyan, 0.25);
-    g.strokePoints(top, false);
-    g.generateTexture('edge_glow', BG_W * S, BG_H * S);
-    g.destroy();
+    const pc = new PixelCanvas(BG_W, BG_H);
+    for (let x = 0; x < BG_W; x++) {
+      const gy = this.groundRow(x);
+      for (let d = -8; d <= 8; d++) {
+        const k = 1 - Math.abs(d) / 9;
+        const a = k > 0.6 ? 0.3 : k > 0.3 ? 0.16 : 0.08;
+        if (bayer(x, gy + d) < 0.85) pc.pset(x, gy + d, NEON.cyan, a);
+      }
+    }
+    this.upload('edge_glow', pc);
   }
 
   private bakeBackground(): void {
-    const g = this.scene.make.graphics({ x: 0, y: 0 }, false);
-    const W = BG_W * S;
-    const H = BG_H * S;
+    const pc = new PixelCanvas(BG_W, BG_H);
+    const horizon = Math.round(ty(HORIZON));
+    const wallTop = Math.round(ty(ARENA.floorY - 34));
 
-    // Céu: anil no alto → roxo → magenta → laranja no horizonte.
-    const bands: Array<[number, number, number]> = [
-      [Y0, 0x0b0322, 0x1d0a4a],
-      [120, 0x1d0a4a, 0x4a1170],
-      [240, 0x4a1170, 0xa4247f],
-      [310, 0xa4247f, 0xf2546b],
-    ];
-    for (let i = 0; i < bands.length; i++) {
-      const [y, c0, c1] = bands[i] as [number, number, number];
-      const y1 = i + 1 < bands.length ? (bands[i + 1] as [number, number, number])[0] : HORIZON;
-      vgrad(g, 0, ty(y), W, (y1 - y) * S + 1, c0, c1);
+    // Céu: anil no alto → roxo → magenta → coral no horizonte, em faixas pontilhadas.
+    pc.vbands(0, 0, BG_W, horizon, [0x0b0322, 0x120530, 0x1a0842, 0x260b52, 0x3a0f63, 0x55136f, 0x7a1a78, 0xa4247f, 0xcf3478, 0xf2546b]);
+
+    // Estrelas fixas (as que piscam são objetos à parte).
+    for (let i = 0; i < 90; i++) {
+      const x = (i * 211 + 37) % BG_W;
+      const y = (i * 97 + 11) % Math.max(1, horizon - 170);
+      pc.pset(x, y, i % 7 === 0 ? 0xffe3f6 : 0x8d6fd0);
+      if (i % 13 === 0) {
+        pc.pset(x - 1, y, 0x6a4ab0);
+        pc.pset(x + 1, y, 0x6a4ab0);
+        pc.pset(x, y - 1, 0x6a4ab0);
+        pc.pset(x, y + 1, 0x6a4ab0);
+      }
     }
 
-    // Sol retrô listrado (fatias com frestas que engrossam para baixo).
-    for (let y = SUN.y - SUN.r; y < Math.min(HORIZON, SUN.y + SUN.r); y += 2) {
-      const k = (y - (SUN.y - SUN.r)) / (SUN.r * 2);
-      const below = y - (SUN.y - SUN.r * 0.25);
-      if (below > 0 && below % 14 < 2 + below / 16) continue;
-      const half = Math.sqrt(Math.max(0, SUN.r * SUN.r - (y - SUN.y) * (y - SUN.y)));
-      g.fillStyle(lerpColor(0xffb35c, 0xff3d8b, Math.min(1, k * 1.25)), 0.72);
-      g.fillRect(tx(SUN.x - half), ty(y), half * 2 * S, 2 * S + 0.5);
-    }
+    this.sun(pc, horizon);
+    this.skyline(pc, horizon);
 
-    // Mar com reflexos do sol.
-    vgrad(g, 0, ty(HORIZON), W, (ARENA.floorY - HORIZON + 10) * S, 0x3a1272, 0x14052e);
-    g.fillStyle(0xff7ab8, 0.55);
-    for (let i = 0; i < 9; i++) {
-      const y = HORIZON + 5 + i * 8;
-      const half = 120 - i * 9 + (i % 2) * 18;
-      g.fillRect(tx(SUN.x - half), ty(y), half * 2 * S, 1.6 * S);
+    // Mar com reflexos do sol em traços quebrados.
+    pc.vbands(0, horizon, BG_W, wallTop - horizon + 2, [0x3a1272, 0x2e0e60, 0x23094c, 0x1a073c]);
+    const sx = tx(SUN.x);
+    for (let i = 0; i < 11; i++) {
+      const y = horizon + 3 + i * 6;
+      const half = 128 - i * 9 + (i % 2) * 14;
+      const color = i < 3 ? 0xffb35c : i < 6 ? 0xff7ab8 : 0xc0479a;
+      for (let x = Math.round(sx - half); x < sx + half; x++) {
+        const seg = Math.floor((x + i * 13) / (7 + (i % 3) * 3));
+        if ((seg * 7 + i) % 4 === 0) continue;
+        pc.pset(x, y, color);
+      }
     }
-    g.lineStyle(2 * S, 0xffb3d9, 0.8);
-    g.lineBetween(0, ty(HORIZON), W, ty(HORIZON));
+    pc.hline(0, BG_W, horizon, 0xffb3d9);
+    pc.hline(0, BG_W, horizon + 1, 0xa4247f);
 
     // Prédios art déco dos dois lados, com neon nas quinas e janelas acesas.
     const buildings: Array<[number, number, number]> = [
@@ -295,164 +299,247 @@ export class Stage {
       [1100, 96, 200],
       [1190, 120, 236],
     ];
-    for (const [x, w, top] of buildings) this.building(g, x, w, top);
-    this.palm(g, 70, ARENA.floorY - 40, 1.05, -0.12);
-    this.palm(g, 380, ARENA.floorY - 60, 0.85, 0.1);
-    this.palm(g, 800, ARENA.floorY - 60, 0.8, -0.08);
-    this.palm(g, 1135, ARENA.floorY - 40, 1.1, 0.14);
+    for (const [x, w, top] of buildings) this.building(pc, x, w, top, horizon);
+    this.palm(pc, 70, ARENA.floorY - 40, 1.05, -0.12);
+    this.palm(pc, 380, ARENA.floorY - 60, 0.85, 0.1);
+    this.palm(pc, 800, ARENA.floorY - 60, 0.8, -0.08);
+    this.palm(pc, 1135, ARENA.floorY - 40, 1.1, 0.14);
 
-    // Muretinha do calçadão atrás do chão, em rosa pastel art déco.
-    g.fillStyle(0x3d1466, 1);
-    g.fillRect(0, ty(ARENA.floorY - 34), W, 40 * S);
-    g.fillStyle(0x5a1f86, 1);
-    for (let x = X0; x < X0 + BG_W; x += 40) g.fillRect(tx(x + 3), ty(ARENA.floorY - 30), 34 * S, 3 * S);
-    g.fillStyle(NEON.pink, 0.7);
-    g.fillRect(0, ty(ARENA.floorY - 36), W, 2 * S);
+    // Muretinha do calçadão em rosa art déco, com frisos e neon no topo.
+    pc.rect(0, wallTop, BG_W, 40, 0x3d1466);
+    pc.rect(0, wallTop + 1, BG_W, 1, 0x5a1f86);
+    for (let x = 0; x < BG_W; x += 40) {
+      pc.rect(x + 3, wallTop + 4, 34, 3, 0x5a1f86);
+      pc.rect(x + 3, wallTop + 7, 34, 1, 0x2c0d4c);
+      pc.rect(x + 19, wallTop + 10, 2, 26, 0x4a1877);
+      pc.rect(x + 21, wallTop + 10, 1, 26, 0x2c0d4c);
+    }
+    pc.rect(0, wallTop - 2, BG_W, 2, NEON.pink);
+    pc.hline(0, BG_W, wallTop - 3, 0xff8fd0);
 
-    // Chão: preenche abaixo do relevo e risca a grade synthwave em perspectiva.
-    const top = this.groundPoints();
-    g.fillStyle(0x16052c, 1);
-    g.fillPoints([...top, new Phaser.Geom.Point(W, H), new Phaser.Geom.Point(0, H)], true);
-    const bottom = Y0 + BG_H;
-    // Linhas horizontais: cada vez mais espaçadas perto da câmera.
-    g.lineStyle(1.6 * S, NEON.pink, 0.55);
-    for (let i = 1; ; i++) {
-      const y = ARENA.floorY - 34 + i * i * 2.2;
-      if (y > bottom) break;
-      this.gridRow(g, y);
-    }
-    // Linhas que fogem para o horizonte, só abaixo do relevo.
-    g.lineStyle(1.4 * S, NEON.violet, 0.6);
-    for (let i = -24; i <= 24; i++) {
-      const xb = VANISH_X + i * 70;
-      this.gridRay(g, xb, bottom);
-    }
-    // Faixa mais escura logo abaixo da borda: dá volume às rampas.
-    g.fillStyle(0x16052c, 0.75);
-    g.fillPoints([...top, ...this.groundPoints(10).reverse()], true);
-    // Tubo de neon contínuo na borda.
-    g.lineStyle(3 * S, NEON.cyan, 1);
-    g.strokePoints(top, false);
-    g.lineStyle(1 * S, 0xe9fdff, 0.9);
-    g.strokePoints(this.groundPoints(-0.8), false);
+    this.ground(pc);
 
     // Paredes da arena: postes de neon art déco.
     for (const x of [ARENA.left - 10, ARENA.right + 10]) {
-      const gy = this.terrain.groundAt(Math.min(VIEW_WIDTH, Math.max(0, x)));
-      g.fillStyle(0x2a0b55, 1);
-      g.fillRect(tx(x - 6), ty(40), 12 * S, (gy - 40) * S);
-      g.fillStyle(NEON.pink, 0.9);
-      g.fillRect(tx(x - 1), ty(46), 2 * S, (gy - 52) * S);
-      g.fillStyle(NEON.cyan, 1);
-      g.fillCircle(tx(x), ty(40), 6 * S);
+      const gy = Math.round(ty(this.terrain.groundAt(Math.min(VIEW_WIDTH, Math.max(0, x)))));
+      const px = Math.round(tx(x));
+      const top = Math.round(ty(40));
+      pc.rect(px - 6, top, 12, gy - top, 0x2a0b55);
+      pc.rect(px - 6, top, 1, gy - top, 0x4a1a7a);
+      pc.rect(px + 5, top, 1, gy - top, 0x1a0738);
+      pc.rect(px - 1, top + 6, 2, gy - top - 12, NEON.pink);
+      pc.rect(px - 2, top + 6, 1, gy - top - 12, 0x8a1a66);
+      pc.rect(px + 1, top + 6, 1, gy - top - 12, 0xff8fd0);
+      pc.ellipse(px, top, 6, 6, 0x0e7c9a);
+      pc.ellipse(px, top, 5, 5, NEON.cyan);
+      pc.ellipse(px - 1, top - 1, 2, 2, 0xe9fdff);
     }
 
-    g.generateTexture('miami_bg', W, H);
-    g.destroy();
+    this.upload('miami_bg', pc);
   }
 
-  private gridRow(g: Phaser.GameObjects.Graphics, y: number): void {
-    let start: number | null = null;
-    for (let x = X0; x <= X0 + BG_W + 4; x += 4) {
-      const below = x <= X0 + BG_W && y > this.terrain.groundAt(Math.min(VIEW_WIDTH, Math.max(0, x))) + 6;
-      if (below && start === null) start = x;
-      if (!below && start !== null) {
-        g.lineBetween(tx(start), ty(y), tx(x - 4), ty(y));
-        start = null;
+  /** Sol retrô listrado, com halo pontilhado em volta. */
+  private sun(pc: PixelCanvas, horizon: number): void {
+    const cx = tx(SUN.x);
+    const cy = ty(SUN.y);
+    const r = SUN.r;
+    const ramp = [0xffe08a, 0xffc46a, 0xffa45c, 0xff7d5e, 0xff5a72, 0xff3d8b];
+    for (let y = Math.floor(cy - r - 12); y < horizon; y++) {
+      for (let x = Math.floor(cx - r - 12); x <= cx + r + 12; x++) {
+        const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+        if (d > r) {
+          // Halo: duas coroas pontilhadas.
+          if (d < r + 6 && bayer(x, y) < 0.5) pc.pset(x, y, 0xff4f8f, 0.35);
+          else if (d < r + 12 && bayer(x, y) < 0.25) pc.pset(x, y, 0xff4f8f, 0.25);
+          continue;
+        }
+        const below = y - (cy - r * 0.25);
+        if (below > 0 && below % 14 < 2 + below / 16) continue;
+        const t = ((y - (cy - r)) / (r * 2)) * 1.25 * (ramp.length - 1);
+        const i = Math.min(ramp.length - 2, Math.floor(t));
+        const f = Math.min(1, t - i);
+        pc.pset(x, y, bayer(x, y) < f ? (ramp[i + 1] as number) : (ramp[i] as number));
       }
     }
   }
 
-  private gridRay(g: Phaser.GameObjects.Graphics, xb: number, bottom: number): void {
-    const steps = 80;
-    let prev: { x: number; y: number } | null = null;
+  /** Silhuetas distantes da cidade, na frente do sol só nas pontas. */
+  private skyline(pc: PixelCanvas, horizon: number): void {
+    const cx = tx(SUN.x);
+    let x = 0;
+    let i = 0;
+    while (x < BG_W) {
+      const w = 18 + ((i * 37) % 26);
+      const h = 18 + ((i * 53) % 52);
+      if (Math.abs(x + w / 2 - cx) > 150) {
+        pc.rect(x, horizon - h, w, h, 0x4a1260);
+        pc.rect(x, horizon - h, w, 1, 0x6a1c74);
+        if (i % 3 === 0) pc.rect(x + Math.floor(w / 2), horizon - h - 8, 1, 8, 0x4a1260);
+        if (i % 3 === 0) pc.pset(x + Math.floor(w / 2), horizon - h - 9, 0xff4f7a);
+      }
+      x += w + ((i * 7) % 5);
+      i++;
+    }
+  }
+
+  private building(pc: PixelCanvas, wx: number, w: number, topY: number, horizon: number): void {
+    const x = Math.round(tx(wx));
+    const top = Math.round(ty(topY));
+    const base = horizon + 4;
+    const body = 0x2b0d4f;
+    pc.rect(x, top, w, base - top, body);
+    // Coroa escalonada art déco.
+    const c1 = Math.round(w * 0.2);
+    const c2 = Math.round(w * 0.38);
+    pc.rect(x + c1, top - 14, w - c1 * 2, 14, body);
+    pc.rect(x + c2, top - 26, w - c2 * 2, 12, body);
+    // Volume: quina iluminada à esquerda, face em sombra à direita.
+    pc.rect(x + w - 10, top, 10, base - top, 0x1f0a3c);
+    pc.rect(x + w - c1 - 6, top - 14, 6, 14, 0x1f0a3c);
+    pc.rect(x + 1, top + 1, 1, base - top, 0x4a1a7a);
+    // Faixas horizontais art déco.
+    for (let y = top + 6; y < base; y += 48) pc.rect(x + 2, y, w - 12, 1, 0x3a1466);
+    // Neon nas quinas: tubo + brilho de 1 pixel em volta.
+    const neon = (wx * 7) % 3 === 0 ? NEON.cyan : NEON.pink;
+    const glow = mix(neon, body, 0.6);
+    pc.rect(x, top, 1, base - top, neon);
+    pc.rect(x + 1, top + 1, 1, base - top, glow);
+    pc.rect(x, top, w, 1, neon);
+    pc.rect(x, top + 1, w, 1, glow);
+    pc.rect(x + c1, top - 14, w - c1 * 2, 1, neon);
+    pc.rect(x + c1, top - 13, w - c1 * 2, 1, glow);
+    // Antena com luz vermelha nos prédios mais altos.
+    if (w > 100) {
+      const ax = x + Math.round(w / 2);
+      pc.rect(ax, top - 44, 1, 18, 0x3a1466);
+      pc.pset(ax, top - 45, 0xff3d5a);
+      pc.pset(ax - 1, top - 45, 0x8a1a3a);
+      pc.pset(ax + 1, top - 45, 0x8a1a3a);
+    }
+    // Janelas (determinísticas pela posição): quentes, ciano ou apagadas.
+    for (let wy = topY + 12; wy < HORIZON + 4 - 12; wy += 16) {
+      for (let wxx = wx + 10; wxx < wx + w - 16; wxx += 14) {
+        const h = Math.abs(Math.sin(wxx * 12.9898 + wy * 78.233) * 43758.5453) % 1;
+        const px = Math.round(tx(wxx));
+        const py = Math.round(ty(wy));
+        if (h < 0.55) {
+          pc.rect(px, py, 5, 7, 0x1a0833);
+          pc.pset(px, py, 0x3a1466);
+          continue;
+        }
+        const lit = h > 0.85 ? 0x6ef0ff : 0xffd27a;
+        const hi = h > 0.85 ? 0xd0ffff : 0xfff0c0;
+        const lo = h > 0.85 ? 0x2a9ac0 : 0xc8883a;
+        pc.rect(px, py, 5, 7, lit);
+        pc.rect(px, py, 5, 1, hi);
+        pc.rect(px, py + 6, 5, 1, lo);
+        pc.rect(px + 2, py + 1, 1, 5, lo); // caixilho
+        pc.rect(px - 1, py + 7, 7, 1, 0x3a1466); // peitoril
+      }
+    }
+  }
+
+  /** Palmeira em silhueta com contraluz rosa do lado do sol. */
+  private palm(pc: PixelCanvas, x: number, baseY: number, scale: number, lean: number): void {
+    const dark = 0x12041f;
+    const ring = 0x1d0832;
+    const rim = 0x6a1c6e;
+    const h = 210 * scale;
+    const towardSun = x < SUN.x ? 1 : -1;
+    let topX = tx(x);
+    let topY = ty(baseY);
+    const steps = Math.round(h);
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const y = HORIZON + (bottom - HORIZON) * t;
-      const x = VANISH_X + (xb - VANISH_X) * t;
-      const gx = Math.min(VIEW_WIDTH, Math.max(0, x));
-      const ok = y > this.terrain.groundAt(gx) + 6 && x >= X0 && x <= X0 + BG_W;
-      if (ok && prev) g.lineBetween(tx(prev.x), ty(prev.y), tx(x), ty(y));
-      prev = ok ? { x, y } : null;
+      const cx = tx(x + Math.sin(t * 1.4) * lean * h);
+      const cy = ty(baseY - t * h);
+      const half = ((12 - t * 5) * scale) / 2;
+      const color = Math.floor(i / 4) % 2 === 0 ? dark : ring;
+      pc.hline(cx - half, cx + half, cy, color);
+      pc.pset(Math.round(cx + towardSun * half), Math.round(cy), rim);
+      topX = cx;
+      topY = cy;
     }
-  }
-
-  private building(g: Phaser.GameObjects.Graphics, x: number, w: number, top: number): void {
-    const base = HORIZON + 4;
-    g.fillStyle(0x2b0d4f, 1);
-    g.fillRect(tx(x), ty(top), w * S, (base - top) * S);
-    // Coroa escalonada art déco.
-    g.fillRect(tx(x + w * 0.2), ty(top - 14), w * 0.6 * S, 14 * S);
-    g.fillRect(tx(x + w * 0.38), ty(top - 26), w * 0.24 * S, 12 * S);
-    g.fillStyle(0x1f0a3c, 1);
-    g.fillRect(tx(x + w - 10), ty(top), 10 * S, (base - top) * S);
-    // Neon nas quinas.
-    const neon = (x * 7) % 3 === 0 ? NEON.cyan : NEON.pink;
-    g.lineStyle(1.6 * S, neon, 0.85);
-    g.lineBetween(tx(x + 1), ty(top), tx(x + 1), ty(base));
-    g.lineBetween(tx(x), ty(top), tx(x + w), ty(top));
-    g.lineBetween(tx(x + w * 0.2), ty(top - 14), tx(x + w * 0.8), ty(top - 14));
-    // Janelas acesas (determinísticas pela posição).
-    for (let wy = top + 12; wy < base - 12; wy += 16) {
-      for (let wx = x + 10; wx < x + w - 16; wx += 14) {
-        const h = Math.abs(Math.sin(wx * 12.9898 + wy * 78.233) * 43758.5453) % 1;
-        if (h < 0.55) continue;
-        g.fillStyle(h > 0.85 ? NEON.cyan : 0xffd27a, h > 0.85 ? 0.75 : 0.6);
-        g.fillRect(tx(wx), ty(wy), 6 * S, 8 * S);
-      }
-    }
-  }
-
-  private palm(g: Phaser.GameObjects.Graphics, x: number, baseY: number, scale: number, lean: number): void {
-    const color = 0x12041f;
-    const h = 210 * scale;
-    let px = x;
-    let py = baseY;
-    g.fillStyle(color, 1);
-    // Tronco curvo em gomos.
-    for (let i = 0; i < 14; i++) {
-      const t = i / 14;
-      const nx = x + Math.sin(t * 1.4) * lean * h;
-      const ny = baseY - t * h;
-      g.fillEllipse(tx(nx), ty(ny), (12 - t * 4) * scale * S, 18 * scale * S);
-      px = nx;
-      py = ny;
-    }
-    // Folhas: arcos de elipses caindo para os lados.
-    for (const [dir, droop] of [
-      [-1, 0.5],
-      [1, 0.5],
-      [-1, 1.1],
-      [1, 1.1],
-      [-0.4, -0.2],
-      [0.5, -0.1],
+    // Folhas: arcos com folíolos pendurados.
+    for (const [dir, droop, len] of [
+      [-1, 0.5, 1],
+      [1, 0.5, 1],
+      [-1, 1.1, 0.9],
+      [1, 1.1, 0.9],
+      [-0.4, -0.2, 0.7],
+      [0.5, -0.1, 0.75],
     ] as const) {
-      for (let j = 1; j <= 7; j++) {
-        const t = j / 7;
-        const fx = px + dir * t * 70 * scale;
-        const fy = py - 6 * scale + (t * t * droop * 50 - t * 12) * scale;
-        g.fillEllipse(tx(fx), ty(fy), (20 - t * 12) * scale * S, (8 - t * 4) * scale * S);
+      let px = topX;
+      let py = topY;
+      const n = 22;
+      for (let j = 1; j <= n; j++) {
+        const t = j / n;
+        const fx = topX + dir * t * 72 * scale * len;
+        const fy = topY - 6 * scale + (t * t * droop * 50 - t * 12) * scale;
+        const thick = t < 0.35 ? 3 : t < 0.7 ? 2 : 1;
+        pc.line(px, py, fx, fy, dark, thick);
+        // Folíolos caindo do talo.
+        if (j % 2 === 0 && t > 0.15) {
+          const ll = (7 - t * 4) * scale;
+          pc.line(fx, fy, fx + dir * 2, fy + ll, dark);
+          if (dir * towardSun > 0) pc.pset(Math.round(fx + dir * 2), Math.round(fy + ll), rim);
+        }
+        px = fx;
+        py = fy;
       }
     }
-    g.fillCircle(tx(px), ty(py), 8 * scale * S);
+    // Cocos.
+    pc.ellipse(topX - 3, topY + 2, 3, 3, ring);
+    pc.ellipse(topX + 3, topY + 3, 3, 3, dark);
+    pc.ellipse(topX, topY - 1, 5, 4, dark);
   }
-}
 
-/** Degradê vertical em faixas finas (funciona no Canvas do generateTexture). */
-function vgrad(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, c0: number, c1: number): void {
-  const step = 3;
-  for (let i = 0; i < h; i += step) {
-    g.fillStyle(lerpColor(c0, c1, i / h), 1);
-    g.fillRect(x, y + i, w, Math.min(step, h - i) + 0.5);
+  /** Chão com grade synthwave em perspectiva e o tubo de neon na borda do relevo. */
+  private ground(pc: PixelCanvas): void {
+    const fill = 0x16052c;
+    const rowColor = mix(fill, NEON.pink, 0.6);
+    const rayColor = mix(fill, NEON.violet, 0.6);
+    const edge = new Int32Array(BG_W);
+    for (let x = 0; x < BG_W; x++) {
+      edge[x] = this.groundRow(x);
+      pc.rect(x, edge[x] as number, 1, BG_H - (edge[x] as number), fill);
+    }
+    const below = (x: number, y: number) => x >= 0 && x < BG_W && y > (edge[x] as number) + 6;
+    // Linhas horizontais: cada vez mais espaçadas perto da câmera.
+    for (let i = 1; ; i++) {
+      const y = Math.round(ty(ARENA.floorY - 34 + i * i * 2.2));
+      if (y >= BG_H) break;
+      for (let x = 0; x < BG_W; x++) if (below(x, y)) pc.pset(x, y, rowColor);
+    }
+    // Linhas que fogem para o horizonte, só abaixo do relevo.
+    const vx = tx(VANISH_X);
+    const hy = ty(HORIZON);
+    for (let i = -24; i <= 24; i++) {
+      const xb = vx + i * 70;
+      for (let y = Math.ceil(hy); y < BG_H; y++) {
+        const t = (y - hy) / (BG_H - hy);
+        const x = Math.round(vx + (xb - vx) * t);
+        const x2 = Math.round(vx + (xb - vx) * ((y + 1 - hy) / (BG_H - hy)));
+        for (let xx = Math.min(x, x2); xx <= Math.max(x, x2); xx++) if (below(xx, y)) pc.pset(xx, y, rayColor);
+      }
+    }
+    // Faixa pontilhada logo abaixo da borda: dá volume às rampas.
+    for (let x = 0; x < BG_W; x++) {
+      const gy = edge[x] as number;
+      for (let d = 0; d < 10; d++) if (bayer(x, gy + d) < 0.75 - d * 0.06) pc.pset(x, gy + d, 0x0e0320);
+    }
+    // Tubo de neon contínuo: 3 pixels de ciano com miolo branco.
+    for (let x = 0; x < BG_W; x++) {
+      const gy = edge[x] as number;
+      const prev = x > 0 ? (edge[x - 1] as number) : gy;
+      const y0 = Math.min(gy, prev);
+      const y1 = Math.max(gy, prev);
+      for (let y = y0; y <= y1; y++) {
+        pc.pset(x, y - 1, 0x1aa8c8);
+        pc.pset(x, y, 0xe9fdff);
+        pc.pset(x, y + 1, NEON.cyan);
+        pc.pset(x, y + 2, 0x1aa8c8);
+      }
+    }
   }
-}
-
-function lerpColor(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff;
-  const ag = (a >> 8) & 0xff;
-  const ab = a & 0xff;
-  const r = Math.round(ar + (((b >> 16) & 0xff) - ar) * t);
-  const gg = Math.round(ag + (((b >> 8) & 0xff) - ag) * t);
-  const bb = Math.round(ab + ((b & 0xff) - ab) * t);
-  return (r << 16) | (gg << 8) | bb;
 }

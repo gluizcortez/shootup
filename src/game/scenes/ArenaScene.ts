@@ -198,7 +198,8 @@ export class ArenaScene extends Phaser.Scene {
   private applyLayout(): void {
     const parent = this.scale.parent as HTMLElement | null;
     const aspect = parent && parent.clientHeight > 0 ? parent.clientWidth / parent.clientHeight : VIEW_WIDTH / VIEW_HEIGHT;
-    const layout = computeView(aspect);
+    const px = parent ? parent.clientWidth * window.devicePixelRatio : undefined;
+    const layout = computeView(aspect, px);
     this.layout = layout;
     if (this.scale.width !== layout.canvasW || this.scale.height !== layout.canvasH) {
       this.scale.setGameSize(layout.canvasW, layout.canvasH);

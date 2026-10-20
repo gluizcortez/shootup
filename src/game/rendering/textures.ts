@@ -1,16 +1,16 @@
 import Phaser from 'phaser';
 import { NEON, PAL } from './palette';
+import { bakePixel } from './pixel/bake';
 
 /**
- * PLACEHOLDERS PROCEDURAIS — TEMPORÁRIOS.
- * Toda a arte do protótipo é desenhada aqui em código para destravar a Fase 0.
- * Será substituída pela pixel art definitiva (GDD §7). Nada aqui vem de outro jogo.
- *
- * As texturas são geradas em TEX_SCALE× e exibidas com escala 1/TEX_SCALE,
- * para ficarem nítidas com o canvas em resolução 2×.
+ * Arte do jogo desenhada em código e convertida em pixel art na hora do boot.
+ * Cada textura é desenhada em DRAW_SCALE× com formas vetoriais e reduzida para
+ * 1 texel = 1 unidade do mundo por `pixelize` (cor dominante, volume com luz do
+ * alto à esquerda, contorno colorido). Nada aqui vem de outro jogo.
  */
-export const TEX_SCALE = 2;
-const S = TEX_SCALE;
+export const TEX_SCALE = 1;
+/** Resolução do rascunho vetorial antes da redução para pixel art. */
+const S = 4;
 const O = PAL.outline;
 
 export class Pen {
@@ -74,7 +74,7 @@ export function make(scene: Phaser.Scene, key: string, w: number, h: number, dra
   if (scene.textures.exists(key)) return;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   draw(new Pen(g));
-  g.generateTexture(key, Math.ceil(w * S), Math.ceil(h * S));
+  bakePixel(scene, key, g, w, h, S);
   g.destroy();
 }
 
@@ -160,37 +160,34 @@ export function generateTextures(scene: Phaser.Scene): void {
     ['pl_head_hoo', true],
   ] as const) {
     make(scene, key, TEX.plHead.w, TEX.plHead.h, (p) => {
+      // Traços alinhados à grade (1 unidade = 1 pixel): o rosto é pequeno e
+      // cada pixel conta, então olhos, boca e cachinho são desenhados à mão.
       p.oRound(10, 18, 7, 7, 2, PAL.skin, 1.2); // pescoço
       p.oEllipse(15, 12.5, 17, 19, PAL.skin); // rosto
-      p.fill(skinShade, 0.7).ellipse(10.5, 13, 7, 15); // sombra da nuca
-      p.oCircle(9.4, 13.5, 2.6, PAL.skin, 1.1); // orelha
-      p.fill(skinShade).circle(9.6, 13.6, 1.1);
-      p.fill(curls).round(11, 6, 3, 9, 1.4); // costeleta
-      // Cachinho rebelde na testa.
-      p.stroke(1.8, O).g.strokeCircle(21 * S, 5.6 * S, 2.3 * S);
-      p.stroke(1.1, curls).g.strokeCircle(21 * S, 5.6 * S, 2.3 * S);
-      p.fill(O).tri(20.5, 7.6, 22.6, 7.6, 22, 10);
+      p.oCircle(9.5, 13.5, 2.5, PAL.skin, 1); // orelha
+      p.fill(skinShade).rect(9, 13, 1, 2);
+      p.fill(curls).rect(11, 7, 2, 7).rect(10, 6, 4, 2); // costeleta
+      // Cachinho rebelde na testa (um "6" de 1 pixel de espessura).
+      p.fill(curls).rect(20, 3, 2, 1).rect(19, 4, 1, 2).rect(22, 4, 1, 2).rect(20, 6, 2, 1).rect(22, 6, 1, 2);
       if (hoo) {
-        // Olhos espremidos ("^ ^") e boca em "HII!".
-        p.stroke(1.3, O).line(17.5, 10.6, 19.4, 9.2).line(19.4, 9.2, 21.6, 10.8);
-        p.stroke(1.1, O).line(17.6, 6.6, 21.4, 7.4);
-        p.fill(O).ellipse(20.8, 17.6, 4.6, 5.2);
-        p.fill(0xb83252).ellipse(20.8, 18.4, 2.8, 2.8);
-        p.fill(PAL.warmWhite).rect(19.2, 15.6, 3.2, 0.9);
+        // Olhos espremidos ("^") e boca aberta no "HII!".
+        p.fill(O).rect(18, 10, 1, 1).rect(19, 9, 2, 1).rect(21, 10, 1, 1);
+        p.fill(O).rect(18, 7, 4, 1);
+        p.fill(O).rect(19, 16, 5, 4);
+        p.fill(0xb83252).rect(20, 18, 3, 1);
+        p.fill(PAL.warmWhite).rect(20, 16, 3, 1);
       } else {
-        // Olhar de galã: pálpebra pesada, cílios e sobrancelha arqueada.
-        p.fill(PAL.warmWhite).ellipse(19.5, 10.5, 4.6, 3.6);
-        p.fill(O).circle(20.4, 10.8, 1.2);
-        p.fill(PAL.skin).rect(17, 8.2, 5.4, 1.9);
-        p.stroke(1.1, O).line(17.2, 10, 22, 9.8).line(21.8, 9.8, 23, 9.2);
-        p.stroke(1, O).line(17, 6.6, 19.6, 6).line(19.6, 6, 22, 6.8);
-        p.fill(O).poly([[18, 17.2], [23, 16.2], [23.4, 17.4], [18.6, 18.4]]); // sorriso de lado
-        p.fill(PAL.warmWhite).poly([[19, 17.2], [22.6, 16.5], [22.7, 17.1], [19.2, 17.7]]);
+        // Olhar de galã: pálpebra pesada, pupila na frente e sobrancelha arqueada.
+        p.fill(O).rect(18, 9, 4, 1).rect(22, 8, 1, 1); // cílios
+        p.fill(PAL.warmWhite).rect(19, 10, 2, 1);
+        p.fill(O).rect(21, 10, 1, 1);
+        p.fill(O).rect(18, 6, 2, 1).rect(20, 5, 2, 1); // sobrancelha
+        p.fill(O).rect(19, 17, 4, 1).rect(23, 16, 1, 1); // sorriso de lado
+        p.fill(skinShade).rect(19, 18, 3, 1);
       }
-      p.fill(O).poly([[22.5, 9.8], [26.8, 14.4], [23, 15]]); // nariz fino e empinado
-      p.fill(0xf0c09a).poly([[23, 10.8], [25.6, 14], [23.4, 14.2]]);
-      p.fill(0xff7aa8, 0.85).circle(16.4, 15.4, 2); // bochecha
-      p.fill(0xffffff, 0.5).circle(18.6, 4.8, 1.2); // brilho na testa
+      p.fill(O).poly([[23, 9], [27, 14], [23, 15]]); // nariz fino e empinado
+      p.fill(PAL.skin).poly([[23, 10.5], [25.5, 14], [23, 14]]);
+      p.fill(0xff7aa8).rect(15, 15, 3, 1).rect(16, 14, 1, 1); // bochecha
     });
   }
   make(scene, 'pl_hat', TEX.plHat.w, TEX.plHat.h, (p) => {

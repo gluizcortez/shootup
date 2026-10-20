@@ -35,9 +35,3 @@ export const TERRAIN: TerrainDef = {
 
 /** Simulação a 120 Hz. */
 export const SIM_STEP = 1 / 120;
-
-/**
- * Largura do canvas em pixels quando a janela tem a proporção da arena.
- * Mantém o custo de preenchimento perto de 1920×1080 em qualquer proporção.
- */
-export const RENDER_WIDTH = 1920;

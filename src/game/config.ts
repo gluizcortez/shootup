@@ -5,7 +5,7 @@ import { BootScene } from './scenes/BootScene';
 
 export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameConfig {
   // A cena reajusta o tamanho a cada mudança da janela (ArenaScene.applyLayout).
-  const layout = computeView(parent.clientWidth / Math.max(1, parent.clientHeight));
+  const layout = computeView(parent.clientWidth / Math.max(1, parent.clientHeight), parent.clientWidth * window.devicePixelRatio);
   return {
     type: Phaser.AUTO,
     parent,
@@ -17,8 +17,9 @@ export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameCon
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     render: {
-      antialias: true,
-      roundPixels: false,
+      pixelArt: true,
+      antialias: false,
+      roundPixels: true,
       powerPreference: 'high-performance',
     },
     audio: { noAudio: true }, // SFX via AudioSystem próprio (WebAudio)

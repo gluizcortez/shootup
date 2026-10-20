@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { PIXEL_FONT } from '../rendering/fonts';
 import { ARENA } from '../data/arena';
 import { CSS, NEON } from '../rendering/palette';
 
@@ -29,14 +30,14 @@ export class SpeechBubble {
     this.bg = scene.add.graphics();
     this.text = scene.add
       .text(0, 0, '', {
-        fontFamily: '"Arial Black", "Trebuchet MS", system-ui, sans-serif',
-        fontSize: '17px',
+        fontFamily: PIXEL_FONT,
+        fontSize: '22px',
         color: CSS.outline,
         align: 'center',
         wordWrap: { width: MAX_TEXT_WIDTH },
       })
       .setOrigin(0.5)
-      .setResolution(2);
+      .setResolution(1);
     this.root = scene.add.container(0, 0, [this.bg, this.text]).setDepth(70).setVisible(false);
   }
 
@@ -63,17 +64,31 @@ export class SpeechBubble {
     this.y = Phaser.Math.Clamp(y, MIN_Y + h / 2, ARENA.floorY - h / 2);
   }
 
-  /** Balão com o rabicho apontando para a origem (0, 0). */
+  /** Balão em pixel art (cantos em degrau, borda de 2 px) com o rabicho apontando para (0, 0). */
   private draw(side: 1 | -1, w: number, h: number): void {
+    w = Math.round(w);
+    h = Math.round(h);
     const left = side > 0 ? TAIL : -TAIL - w;
+    const top = -Math.round(h / 2);
     const g = this.bg.clear();
-    g.fillStyle(NEON.pink, 1).fillRoundedRect(left + 5, -h / 2 + 5, w, h, 12);
-    g.fillStyle(0xffffff, 1).lineStyle(4, 0x0d0f15, 1);
-    g.fillRoundedRect(left, -h / 2, w, h, 12).strokeRoundedRect(left, -h / 2, w, h, 12);
-    const base = side > 0 ? TAIL + 2 : -TAIL - 2;
-    g.fillTriangle(0, 0, base, -9, base, 9).lineBetween(0, 0, base, -9).lineBetween(0, 0, base, 9);
-    g.fillRect(side > 0 ? TAIL - 1 : -TAIL - 5, -7, 6, 14);
-    this.text.setPosition(left + w / 2, 0);
+    const box = (x: number, y: number, bw: number, bh: number, r: number, color: number) => {
+      g.fillStyle(color, 1);
+      g.fillRect(x + r, y, bw - r * 2, bh);
+      g.fillRect(x, y + r, bw, bh - r * 2);
+      if (r > 1) g.fillRect(x + 1, y + 1, bw - 2, bh - 2);
+    };
+    box(left + 4, top + 4, w, h, 3, NEON.pink); // sombra neon
+    box(left, top, w, h, 3, 0x0d0f15); // borda
+    box(left + 2, top + 2, w - 4, h - 4, 2, 0xffffff);
+    g.fillStyle(0xd8dcf0, 1).fillRect(left + 4, top + h - 4, w - 8, 1); // sombreado de baixo
+    // Rabicho em degraus: cada coluna encolhe 1 pixel de cada lado.
+    for (let i = 0; i < TAIL + 3; i++) {
+      const half = Math.round((Math.min(i, TAIL) / TAIL) * 7);
+      const x = side > 0 ? i : -i - 1;
+      if (i < TAIL) g.fillStyle(0x0d0f15, 1).fillRect(x, -half - 2, 1, half * 2 + 4);
+      if (half > 0) g.fillStyle(0xffffff, 1).fillRect(x, -half, 1, half * 2);
+    }
+    this.text.setPosition(Math.round(left + w / 2), 0);
   }
 
   update(dt: number): void {
