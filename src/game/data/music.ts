@@ -1,42 +1,62 @@
 /**
- * Trilha "Auditório Turbo": synth-pop anos 80 de programa de auditório,
- * 100% composta aqui e sintetizada em tempo real (sem arquivos de áudio).
- * Notas em MIDI; cada compasso tem 16 passos (semicolcheias).
- * Progressão clássica Am–F–C–G em frases de 4 compassos; a melodia alterna
- * entre o "chiptune" (A) e o "kazoo" (B), formando um ciclo de 8 compassos.
+ * Trilha sonora: faixas gravadas (MP3 em public/music) geradas com o modelo
+ * aberto ACE-Step 1.5 (licença MIT) a partir das descrições abaixo.
+ * O jogo escolhe a faixa pelo "humor" da run e acelera o andamento
+ * (playbackRate) quando o bicho pega: chefe em campo e último coração.
  */
 
-/** [passo dentro do compasso, nota MIDI, duração em passos] */
+export type TrackId = 'menu' | 'arena' | 'chefe';
+
+export interface TrackDef {
+  readonly id: TrackId;
+  readonly file: string;
+  readonly bpm: number;
+  /** Trecho em loop [início, fim] em segundos, alinhado nos compassos. */
+  readonly loop: readonly [number, number];
+  /** Ganho relativo (as faixas saem do gerador com volumes diferentes). */
+  readonly gain: number;
+  /** Descrição usada para gerar a faixa (documentação/reprodutibilidade). */
+  readonly prompt: string;
+  readonly seed: number;
+}
+
+export const TRACKS: Readonly<Record<TrackId, TrackDef>> = {
+  menu: {
+    id: 'menu',
+    file: 'music/menu.mp3',
+    bpm: 108,
+    loop: [6.099, 32.766],
+    gain: 1,
+    prompt:
+      '80s TV game show theme song, cheesy and funny, bright synth brass fanfare, groovy bass, handclaps, sparkly keyboards, studio audience party vibe, retro television intro music, instrumental',
+    seed: 31,
+  },
+  arena: {
+    id: 'arena',
+    file: 'music/arena.mp3',
+    bpm: 124,
+    loop: [7.757, 54.208],
+    gain: 1,
+    prompt:
+      '80s synthpop arcade action theme, upbeat goofy comedic cartoon energy, punchy gated reverb drums, funky slap bass, bright brass stabs, cheesy catchy synth lead melody, cowbell, orchestra hits, video game soundtrack, instrumental / main theme, memorable catchy melody, driving beat / bridge, playful saxophone solo / main theme reprise, high energy',
+    seed: 11,
+  },
+  chefe: {
+    id: 'chefe',
+    file: 'music/chefe.mp3',
+    bpm: 150,
+    loop: [0.38, 38.78],
+    gain: 1,
+    prompt:
+      '80s hair metal meets synthwave boss fight, fast, epic and ridiculous, double kick drums, shredding guitar solo, dramatic choir and orchestra hits, synth bass arpeggios, big brass fanfare, video game final boss music, instrumental',
+    seed: 22,
+  },
+};
+
+/** [passo, nota MIDI, duração em passos] */
 export type NoteEvent = readonly [step: number, midi: number, len: number];
 
-export const STEPS_PER_BAR = 16;
-export const BARS_PER_PHRASE = 4;
-
-/** Acordes da frase: fundamental do baixo + tríade do arpejo/pad. */
-export const CHORDS: readonly { readonly bass: number; readonly triad: readonly [number, number, number] }[] = [
-  { bass: 33, triad: [57, 60, 64] }, // Am
-  { bass: 29, triad: [53, 57, 60] }, // F
-  { bass: 36, triad: [55, 60, 64] }, // C
-  { bass: 31, triad: [55, 59, 62] }, // G
-];
-
-/** Melodia A: pulinho chiptune que gruda na cabeça. */
-export const MELODY_A: readonly (readonly NoteEvent[])[] = [
-  [[0, 69, 2], [2, 72, 2], [4, 76, 3], [7, 74, 1], [8, 72, 2], [10, 74, 2], [12, 76, 4]],
-  [[0, 77, 2], [2, 76, 1], [3, 74, 1], [4, 72, 4], [10, 69, 2], [12, 72, 4]],
-  [[0, 76, 2], [2, 79, 2], [4, 84, 3], [7, 83, 1], [8, 79, 2], [10, 76, 2], [12, 79, 4]],
-  [[0, 79, 2], [2, 81, 1], [3, 79, 1], [4, 74, 2], [6, 71, 2], [8, 74, 4], [12, 79, 2], [14, 71, 2]],
-];
-
-/** Melodia B: o kazoo responde "na-na-naaa" como plateia empolgada. */
-export const MELODY_B: readonly (readonly NoteEvent[])[] = [
-  [[0, 81, 1], [1, 81, 1], [2, 81, 2], [6, 79, 1], [7, 81, 3], [12, 76, 2], [14, 77, 2]],
-  [[0, 77, 1], [1, 77, 1], [2, 77, 2], [6, 76, 1], [7, 77, 3], [12, 72, 2], [14, 74, 2]],
-  [[0, 76, 1], [1, 76, 1], [2, 76, 2], [6, 74, 1], [7, 76, 3], [12, 79, 2], [14, 84, 2]],
-  [[0, 83, 6], [6, 81, 1], [7, 79, 1], [8, 74, 8]],
-];
-
-/** "Uóóó-uó-uó-uóóóó": trombone triste da derrota. */
+/** "Uóóó-uó-uó-uóóóó": trombone triste da derrota (sintetizado na hora). */
 export const SAD_TROMBONE: readonly NoteEvent[] = [
   [0, 63, 3],
   [3, 62, 3],
@@ -48,26 +68,17 @@ export type MusicModeId = 'menu' | 'normal' | 'danger' | 'boss' | 'bossDanger';
 
 export interface MusicMode {
   readonly id: MusicModeId;
-  readonly bpm: number;
-  /** Bumbo em todos os tempos (senão só no 1 e no 3). */
-  readonly fourOnFloor: boolean;
-  /** Chimbal em semicolcheias (senão colcheias). */
-  readonly hats16: boolean;
-  readonly arp: boolean;
-  /** More cowbell. */
-  readonly cowbell: boolean;
-  /** Orquestra "TÃÃÃ" no começo de cada frase. */
-  readonly orchHit: boolean;
-  /** Troca de tom brega dos anos 80 (semitons), aplicada no início da frase. */
-  readonly transpose: number;
+  readonly track: TrackId;
+  /** Multiplicador de andamento (e de tom: acelerar deixa tudo mais "desenho animado"). */
+  readonly rate: number;
 }
 
 export const MUSIC_MODES: Readonly<Record<MusicModeId, MusicMode>> = {
-  menu: { id: 'menu', bpm: 108, fourOnFloor: false, hats16: false, arp: false, cowbell: false, orchHit: false, transpose: 0 },
-  normal: { id: 'normal', bpm: 118, fourOnFloor: false, hats16: false, arp: false, cowbell: false, orchHit: false, transpose: 0 },
-  danger: { id: 'danger', bpm: 140, fourOnFloor: true, hats16: true, arp: true, cowbell: false, orchHit: false, transpose: 0 },
-  boss: { id: 'boss', bpm: 148, fourOnFloor: true, hats16: true, arp: true, cowbell: true, orchHit: true, transpose: 2 },
-  bossDanger: { id: 'bossDanger', bpm: 160, fourOnFloor: true, hats16: true, arp: true, cowbell: true, orchHit: true, transpose: 3 },
+  menu: { id: 'menu', track: 'menu', rate: 1 },
+  normal: { id: 'normal', track: 'arena', rate: 1 },
+  danger: { id: 'danger', track: 'arena', rate: 1.16 },
+  boss: { id: 'boss', track: 'chefe', rate: 1 },
+  bossDanger: { id: 'bossDanger', track: 'chefe', rate: 1.12 },
 };
 
 export interface MusicContext {
@@ -81,6 +92,11 @@ export function musicModeFor(c: MusicContext): MusicMode {
   if (!c.inRun) return MUSIC_MODES.menu;
   if (c.bossActive) return MUSIC_MODES[c.lowHp ? 'bossDanger' : 'boss'];
   return MUSIC_MODES[c.lowHp ? 'danger' : 'normal'];
+}
+
+/** Andamento efetivo em BPM de um modo. */
+export function effectiveBpm(mode: MusicMode): number {
+  return TRACKS[mode.track].bpm * mode.rate;
 }
 
 export function midiToHz(midi: number): number {

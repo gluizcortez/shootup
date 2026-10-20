@@ -1,63 +1,54 @@
-import {
-  BARS_PER_PHRASE,
-  CHORDS,
-  MELODY_A,
-  MELODY_B,
-  MUSIC_MODES,
-  SAD_TROMBONE,
-  STEPS_PER_BAR,
-  midiToHz,
-  type MusicMode,
-  type NoteEvent,
-} from '../data/music';
+import { SAD_TROMBONE, TRACKS, midiToHz, type MusicMode, type TrackId } from '../data/music';
 
-/** Quanto à frente agendamos notas (cobre quadros lentos sem atrasar a batida). */
-const LOOKAHEAD = 0.14;
-const CYCLE_STEPS = STEPS_PER_BAR * BARS_PER_PHRASE * 2;
-const PHRASE_STEPS = STEPS_PER_BAR * BARS_PER_PHRASE;
 const OPEN_CUTOFF = 18000;
 const MUFFLED_CUTOFF = 650;
+const CROSSFADE = 0.7;
+
+interface Voice {
+  readonly track: TrackId;
+  readonly src: AudioBufferSourceNode;
+  readonly gain: GainNode;
+}
 
 /**
- * Sequenciador da trilha. Roda no relógio do WebAudio (preciso), mas é
- * alimentado pelo update da cena: a cada quadro agenda os passos que caem
- * dentro da janela de lookahead. O BPM desliza até o alvo do modo atual.
+ * Toca as faixas gravadas em loop. Trocar de modo faz crossfade entre faixas
+ * e desliza o playbackRate (andamento). Faixas carregam sob demanda; até
+ * chegarem, o jogo segue em silêncio musical (offline-first: falhar no
+ * download nunca trava a run).
  */
 export class MusicSystem {
   private readonly bus: GainNode;
   private readonly filter: BiquadFilterNode;
+  private readonly buffers = new Map<TrackId, AudioBuffer>();
+  private readonly loading = new Map<TrackId, Promise<void>>();
+  private current: Voice | null = null;
+  private wanted: MusicMode | null = null;
   private playing = false;
-  private step = 0;
-  private nextTime = 0;
-  private bpm = MUSIC_MODES.menu.bpm;
-  private mode: MusicMode = MUSIC_MODES.menu;
-  private transpose = 0;
 
   constructor(
     private readonly ctx: AudioContext,
     out: AudioNode,
-    private readonly noise: AudioBuffer,
+    private readonly baseUrl = '/',
   ) {
     this.filter = ctx.createBiquadFilter();
     this.filter.type = 'lowpass';
     this.filter.frequency.value = OPEN_CUTOFF;
     this.bus = ctx.createGain();
-    this.bus.gain.value = 1;
     this.bus.connect(this.filter).connect(out);
+    for (const id of Object.keys(TRACKS) as TrackId[]) void this.load(id);
   }
 
-  /** Recomeça do primeiro compasso (nova run). */
+  /** Recomeça a trilha (nova run): a faixa volta do início do loop. */
   restart(): void {
     this.playing = true;
-    this.step = 0;
-    this.nextTime = this.ctx.currentTime + 0.05;
-    this.transpose = this.mode.transpose;
-    this.fade(1, 0.05);
+    this.fadeOut(0.05);
+    this.bus.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.bus.gain.setTargetAtTime(1, this.ctx.currentTime, 0.03);
   }
 
   stop(): void {
     this.playing = false;
-    this.fade(0.0001, 0.15);
+    this.fadeOut(0.4);
   }
 
   get isPlaying(): boolean {
@@ -69,260 +60,104 @@ export class MusicSystem {
     this.filter.frequency.setTargetAtTime(muffled ? MUFFLED_CUTOFF : OPEN_CUTOFF, this.ctx.currentTime, 0.12);
   }
 
-  update(mode: MusicMode, dt: number): void {
-    this.mode = mode;
+  update(mode: MusicMode): void {
     if (!this.playing || this.ctx.state !== 'running') return;
-    // Acelera rápido quando a coisa aperta, desacelera devagar quando alivia.
-    const rate = mode.bpm > this.bpm ? 2.5 : 0.8;
-    this.bpm += (mode.bpm - this.bpm) * Math.min(1, dt * rate);
-    const now = this.ctx.currentTime;
-    // Aba escondida / travada: ressincroniza em vez de despejar notas atrasadas.
-    if (this.nextTime < now - 0.05) this.nextTime = now + 0.02;
-    while (this.nextTime < now + LOOKAHEAD) {
-      this.schedule(this.step, this.nextTime);
-      this.nextTime += 60 / this.bpm / 4;
-      this.step = (this.step + 1) % CYCLE_STEPS;
+    const prev = this.wanted;
+    this.wanted = mode;
+    if (!this.current || this.current.track !== mode.track) {
+      this.startTrack(mode);
+    } else if (!prev || prev.rate !== mode.rate) {
+      // Acelera rápido quando a coisa aperta, desacelera devagar quando alivia.
+      const tc = mode.rate > (prev?.rate ?? 1) ? 0.25 : 0.8;
+      this.current.src.playbackRate.setTargetAtTime(mode.rate, this.ctx.currentTime, tc);
     }
   }
 
   /** Derrota: corta a banda e toca o trombone triste. */
   sadTrombone(): void {
     this.stop();
-    const ctx = this.ctx;
-    const t0 = ctx.currentTime + 0.25;
+    const t0 = this.ctx.currentTime + 0.25;
     const stepDur = 0.11;
-    // Passa por fora do bus (que acabou de silenciar), direto no filtro.
-    const out = this.filter;
+    const last = SAD_TROMBONE[SAD_TROMBONE.length - 1]![0];
     for (const [s, midi, len] of SAD_TROMBONE) {
-      const isLast = s === SAD_TROMBONE[SAD_TROMBONE.length - 1]![0];
-      this.kazoo(out, t0 + s * stepDur, midiToHz(midi), len * stepDur, 0.3, isLast ? 5 : 0, 700);
+      this.kazoo(t0 + s * stepDur, midiToHz(midi), len * stepDur, s === last ? 5 : 0);
     }
   }
 
-  private fade(to: number, time: number): void {
-    const g = this.bus.gain;
-    g.cancelScheduledValues(this.ctx.currentTime);
-    g.setTargetAtTime(to, this.ctx.currentTime, time);
+  private load(id: TrackId): Promise<void> {
+    const existing = this.loading.get(id);
+    if (existing) return existing;
+    const p = fetch(this.baseUrl + TRACKS[id].file)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+      .then((data) => this.ctx.decodeAudioData(data))
+      .then((buf) => {
+        this.buffers.set(id, buf);
+        // Chegou a faixa que estava sendo esperada: entra já.
+        if (this.playing && this.wanted?.track === id && !this.current) this.startTrack(this.wanted);
+      })
+      .catch((err: unknown) => console.warn(`[music] faixa ${id} indisponível; seguindo sem ela.`, err));
+    this.loading.set(id, p);
+    return p;
   }
 
-  private schedule(step: number, t: number): void {
-    const m = this.mode;
-    const inBar = step % STEPS_PER_BAR;
-    const bar = Math.floor(step / STEPS_PER_BAR);
-    const chordIdx = bar % BARS_PER_PHRASE;
-    const sectionB = bar >= BARS_PER_PHRASE;
-    // Troca de tom só no início da frase, para não desafinar no meio.
-    if (step % PHRASE_STEPS === 0) this.transpose = m.transpose;
-    const tr = this.transpose;
-    const stepDur = 60 / this.bpm / 4;
-    const chord = CHORDS[chordIdx]!;
-    const out = this.bus;
-
-    // --- Bateria ---
-    const kickHere = m.fourOnFloor ? inBar % 4 === 0 : inBar === 0 || inBar === 8 || inBar === 10;
-    if (kickHere) this.kick(out, t);
-    if (inBar === 4 || inBar === 12) this.snare(out, t);
-    if (m.hats16 || inBar % 2 === 0) this.hat(out, t, inBar === 14 && !m.hats16 ? 0.16 : 0.035, inBar % 4 === 2 ? 0.12 : 0.07);
-    if (m.cowbell && inBar % 4 === 2) this.cowbell(out, t);
-    // Virada de tom-tom no fim de cada frase: o clássico dos anos 80.
-    if (chordIdx === 3 && inBar >= 12) this.tom(out, t, 260 - (inBar - 12) * 40);
-    if (m.orchHit && step % PHRASE_STEPS === 0) this.orchHit(out, t, chord.triad, tr);
-
-    // --- Baixo: oitavas saltitantes em colcheias ---
-    if (inBar % 2 === 0) {
-      const up = inBar % 4 === 2;
-      this.bass(out, t, midiToHz(chord.bass + tr + (up ? 12 : 0)), stepDur * 1.7);
-    }
-
-    // --- Pad: acorde longo de sintetizador no começo do compasso ---
-    if (inBar === 0) for (const n of chord.triad) this.pad(out, t, midiToHz(n + tr), stepDur * STEPS_PER_BAR);
-
-    // --- Arpejo de semicolcheias quando o bicho pega ---
-    if (m.arp) {
-      const seq = [0, 1, 2, 1];
-      const n = chord.triad[seq[inBar % 4]!]! + 12 + (inBar % 8 >= 4 ? 12 : 0);
-      this.blip(out, t, midiToHz(n + tr), stepDur * 0.8);
-    }
-
-    // --- Melodia ---
-    const melody = (sectionB ? MELODY_B : MELODY_A)[chordIdx]!;
-    for (const note of melody) {
-      if (note[0] !== inBar) continue;
-      this.lead(out, t, note, tr, stepDur, sectionB);
-    }
+  private startTrack(mode: MusicMode): void {
+    const buf = this.buffers.get(mode.track);
+    this.fadeOut(CROSSFADE / 2);
+    if (!buf) return;
+    const def = TRACKS[mode.track];
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.loopStart = def.loop[0];
+    src.loopEnd = Math.min(def.loop[1], buf.duration);
+    src.playbackRate.value = mode.rate;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(def.gain, t + CROSSFADE);
+    src.connect(gain).connect(this.bus);
+    src.start(t, def.loop[0]);
+    this.current = { track: mode.track, src, gain };
   }
 
-  private lead(out: AudioNode, t: number, [, midi, len]: NoteEvent, tr: number, stepDur: number, kazoo: boolean): void {
-    const hz = midiToHz(midi + tr);
-    const dur = len * stepDur * 0.92;
-    if (kazoo) this.kazoo(out, t, hz, dur, 0.12, 6, 1400);
-    else this.square(out, t, hz, dur, 0.07);
-  }
-
-  // ---------------------------------------------------------------- vozes
-
-  private env(g: GainNode, t: number, attack: number, dur: number, peak: number): void {
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + attack);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  }
-
-  private osc(type: OscillatorType, hz: number, t: number, dur: number): OscillatorNode {
-    const o = this.ctx.createOscillator();
-    o.type = type;
-    o.frequency.setValueAtTime(hz, t);
-    o.start(t);
-    o.stop(t + dur + 0.03);
-    return o;
-  }
-
-  private kick(out: AudioNode, t: number): void {
-    const o = this.osc('sine', 150, t, 0.3);
-    o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
-    const g = this.ctx.createGain();
-    this.env(g, t, 0.003, 0.28, 0.75);
-    o.connect(g).connect(out);
-  }
-
-  /** Caixa "gated reverb": estalo + cauda de ruído cortada seco. */
-  private snare(out: AudioNode, t: number): void {
-    this.noiseHit(out, t, 0.2, 'bandpass', 1900, 0.7, 0.32);
-    const o = this.osc('triangle', 210, t, 0.1);
-    o.frequency.exponentialRampToValueAtTime(140, t + 0.08);
-    const g = this.ctx.createGain();
-    this.env(g, t, 0.002, 0.09, 0.25);
-    o.connect(g).connect(out);
-  }
-
-  private hat(out: AudioNode, t: number, dur: number, peak: number): void {
-    this.noiseHit(out, t, dur, 'highpass', 8000, 0.8, peak);
-  }
-
-  private cowbell(out: AudioNode, t: number): void {
-    const f = this.ctx.createBiquadFilter();
-    f.type = 'bandpass';
-    f.frequency.value = 800;
-    f.Q.value = 2;
-    const g = this.ctx.createGain();
-    this.env(g, t, 0.002, 0.18, 0.16);
-    f.connect(g).connect(out);
-    this.osc('square', 562, t, 0.18).connect(f);
-    this.osc('square', 845, t, 0.18).connect(f);
-  }
-
-  private tom(out: AudioNode, t: number, hz: number): void {
-    const o = this.osc('sine', hz, t, 0.2);
-    o.frequency.exponentialRampToValueAtTime(hz * 0.55, t + 0.18);
-    const g = this.ctx.createGain();
-    this.env(g, t, 0.003, 0.2, 0.4);
-    o.connect(g).connect(out);
-  }
-
-  /** "TÃÃÃ!": acorde de serra empilhado com ataque seco. */
-  private orchHit(out: AudioNode, t: number, triad: readonly number[], tr: number): void {
-    const f = this.ctx.createBiquadFilter();
-    f.type = 'lowpass';
-    f.frequency.setValueAtTime(5000, t);
-    f.frequency.exponentialRampToValueAtTime(600, t + 0.4);
-    const g = this.ctx.createGain();
-    this.env(g, t, 0.004, 0.45, 0.22);
-    f.connect(g).connect(out);
-    for (const n of triad) {
-      this.osc('sawtooth', midiToHz(n + tr - 12), t, 0.45).connect(f);
-      this.osc('sawtooth', midiToHz(n + tr) * 1.005, t, 0.45).connect(f);
-    }
-    this.noiseHit(out, t, 0.12, 'lowpass', 3000, 0.5, 0.2);
-  }
-
-  private bass(out: AudioNode, t: number, hz: number, dur: number): void {
-    const f = this.ctx.createBiquadFilter();
-    f.type = 'lowpass';
-    f.Q.value = 6;
-    f.frequency.setValueAtTime(1400, t);
-    f.frequency.exponentialRampToValueAtTime(260, t + dur);
-    const g = this.ctx.createGain();
-    this.env(g, t, 0.005, dur, 0.28);
-    this.osc('sawtooth', hz, t, dur).connect(f).connect(g).connect(out);
-  }
-
-  private pad(out: AudioNode, t: number, hz: number, dur: number): void {
-    const f = this.ctx.createBiquadFilter();
-    f.type = 'lowpass';
-    f.frequency.value = 1100;
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.025, t + dur * 0.2);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    f.connect(g).connect(out);
-    this.osc('sawtooth', hz, t, dur).connect(f);
-    this.osc('sawtooth', hz * 1.007, t, dur).connect(f);
-  }
-
-  private blip(out: AudioNode, t: number, hz: number, dur: number): void {
-    const g = this.ctx.createGain();
-    this.env(g, t, 0.003, dur, 0.045);
-    this.osc('triangle', hz, t, dur).connect(g).connect(out);
-  }
-
-  private square(out: AudioNode, t: number, hz: number, dur: number, peak: number): void {
-    const o = this.osc('square', hz, t, dur);
-    // Vibrato atrasado: a nota "canta" só quando segura.
-    if (dur > 0.25) {
-      const lfo = this.osc('sine', 5.5, t, dur);
-      const depth = this.ctx.createGain();
-      depth.gain.setValueAtTime(0, t);
-      depth.gain.linearRampToValueAtTime(hz * 0.012, t + dur);
-      lfo.connect(depth).connect(o.frequency);
-    }
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + 0.01);
-    g.gain.setValueAtTime(peak, t + Math.max(0.011, dur - 0.04));
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(out);
+  private fadeOut(time: number): void {
+    const v = this.current;
+    if (!v) return;
+    this.current = null;
+    const t = this.ctx.currentTime;
+    v.gain.gain.cancelScheduledValues(t);
+    v.gain.gain.setTargetAtTime(0.0001, t, time / 3);
+    v.src.stop(t + time + 0.1);
   }
 
   /** Serra num filtro estreito com vibrato: soa como um kazoo de festa. */
-  private kazoo(out: AudioNode, t: number, hz: number, dur: number, peak: number, vibratoHz: number, formant: number): void {
-    const o = this.osc('sawtooth', hz * 0.97, t, dur);
+  private kazoo(t: number, hz: number, dur: number, vibratoHz: number): void {
+    const ctx = this.ctx;
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(hz * 0.97, t);
     o.frequency.exponentialRampToValueAtTime(hz, t + 0.04);
     if (vibratoHz > 0) {
-      const lfo = this.osc('sine', vibratoHz, t, dur);
-      const depth = this.ctx.createGain();
+      const lfo = ctx.createOscillator();
+      const depth = ctx.createGain();
+      lfo.frequency.value = vibratoHz;
       depth.gain.value = hz * 0.025;
       lfo.connect(depth).connect(o.frequency);
+      lfo.start(t);
+      lfo.stop(t + dur);
     }
-    const f = this.ctx.createBiquadFilter();
+    const f = ctx.createBiquadFilter();
     f.type = 'bandpass';
-    f.frequency.value = formant;
+    f.frequency.value = 700;
     f.Q.value = 2.5;
-    const g = this.ctx.createGain();
+    const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + 0.02);
-    g.gain.setValueAtTime(peak, t + Math.max(0.021, dur - 0.05));
+    g.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+    g.gain.setValueAtTime(0.3, t + Math.max(0.021, dur - 0.05));
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(f).connect(g).connect(out);
-  }
-
-  private noiseHit(
-    out: AudioNode,
-    t: number,
-    dur: number,
-    type: BiquadFilterType,
-    freq: number,
-    q: number,
-    peak: number,
-  ): void {
-    const src = this.ctx.createBufferSource();
-    src.buffer = this.noise;
-    const f = this.ctx.createBiquadFilter();
-    f.type = type;
-    f.frequency.value = freq;
-    f.Q.value = q;
-    const g = this.ctx.createGain();
-    this.env(g, t, 0.002, dur, peak);
-    src.connect(f).connect(g).connect(out);
-    src.start(t, Math.random() * 0.5);
-    src.stop(t + dur + 0.02);
+    // Passa por fora do bus (que acabou de silenciar), direto no filtro.
+    o.connect(f).connect(g).connect(this.filter);
+    o.start(t);
+    o.stop(t + dur + 0.03);
   }
 }

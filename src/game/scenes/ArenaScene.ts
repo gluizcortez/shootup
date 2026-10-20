@@ -318,7 +318,7 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   /** Trilha: chefe em campo e último coração aceleram; pausa e cartas abafam. */
-  private updateMusic(phase: RunPhase, dt: number): void {
+  private updateMusic(phase: RunPhase): void {
     const music = this.audio.music;
     if (!music) return;
     if (phase === 'MENU' && !music.isPlaying) music.restart();
@@ -333,7 +333,7 @@ export class ArenaScene extends Phaser.Scene {
       bossActive: w.enemies.some((e) => e.def.boss && e.state !== 'incoming'),
       lowHp: w.player.alive && w.player.hp <= 1,
     });
-    music.update(mode, dt);
+    music.update(mode);
   }
 
   private acquireView(uid: number, kind: EnemyKind): EnemyVisual {
@@ -374,7 +374,7 @@ export class ArenaScene extends Phaser.Scene {
       }
       view.update(e, alpha, running ? dt : 0, this.reducedMotion);
     }
-    this.updateMusic(phase, dt);
+    this.updateMusic(phase);
     // Vida no fim: coração batendo (o HUD pulsa em vermelho junto).
     if (phase === 'PLAYING' && w.player.alive && w.player.hp <= 1) {
       this.heartbeatTimer -= dt;

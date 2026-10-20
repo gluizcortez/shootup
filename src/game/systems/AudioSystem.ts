@@ -96,7 +96,7 @@ export class AudioSystem {
         this.noise = this.makeNoise(this.ctx);
         this.musicGain = this.ctx.createGain();
         this.musicGain.connect(comp);
-        this.music = new MusicSystem(this.ctx, this.musicGain, this.noise);
+        this.music = new MusicSystem(this.ctx, this.musicGain, import.meta.env.BASE_URL);
         this.applyVolume();
       }
       if (this.ctx.state === 'suspended') void this.ctx.resume();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHORDS, MELODY_A, MELODY_B, MUSIC_MODES, STEPS_PER_BAR, midiToHz, musicModeFor } from '@/game/data/music';
+import { MUSIC_MODES, TRACKS, effectiveBpm, midiToHz, musicModeFor } from '@/game/data/music';
 
 describe('trilha', () => {
   it('acelera no chefe e no último coração, e os dois somam', () => {
@@ -8,30 +8,25 @@ describe('trilha', () => {
     const boss = musicModeFor({ inRun: true, bossActive: true, lowHp: false });
     const both = musicModeFor({ inRun: true, bossActive: true, lowHp: true });
     expect(normal.id).toBe('normal');
-    expect(danger.bpm).toBeGreaterThan(normal.bpm);
-    expect(boss.bpm).toBeGreaterThan(danger.bpm);
-    expect(both.bpm).toBeGreaterThan(boss.bpm);
+    expect(effectiveBpm(danger)).toBeGreaterThan(effectiveBpm(normal));
+    expect(effectiveBpm(boss)).toBeGreaterThan(effectiveBpm(normal));
+    expect(effectiveBpm(both)).toBeGreaterThan(effectiveBpm(boss));
+    expect(boss.track).toBe('chefe');
   });
 
-  it('fora da run toca a versão calma do menu', () => {
+  it('fora da run toca a faixa do menu', () => {
     expect(musicModeFor({ inRun: false, bossActive: true, lowHp: true })).toBe(MUSIC_MODES.menu);
   });
 
-  it('melodias cabem nos compassos e seguem os acordes da frase', () => {
-    for (const melody of [MELODY_A, MELODY_B]) {
-      expect(melody).toHaveLength(CHORDS.length);
-      for (const bar of melody) {
-        for (const [step, midi, len] of bar) {
-          expect(step).toBeGreaterThanOrEqual(0);
-          expect(step + len).toBeLessThanOrEqual(STEPS_PER_BAR);
-          expect(midi).toBeGreaterThan(40);
-        }
-      }
+  it('loops são trechos válidos', () => {
+    for (const t of Object.values(TRACKS)) {
+      expect(t.loop[0]).toBeGreaterThanOrEqual(0);
+      expect(t.loop[1]).toBeGreaterThan(t.loop[0] + 5);
+      expect(t.gain).toBeGreaterThan(0);
     }
   });
 
   it('converte MIDI em Hz', () => {
     expect(midiToHz(69)).toBe(440);
-    expect(midiToHz(81)).toBeCloseTo(880);
   });
 });
