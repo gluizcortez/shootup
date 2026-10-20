@@ -21,6 +21,8 @@ export interface WaveConfig {
   intermission: number;
   firstWaveDelay: number;
   clearBonusPerWave: number;
+  /** Corações recuperados ao limpar uma onda (0.5 = meio coração), sem passar do máximo. */
+  clearHeal: number;
   maxAlive: number;
   /** Ondas de chefe fixas (ex.: 10 → Don Pombone), têm prioridade sobre as outras. */
   bossWaves?: Readonly<Record<number, WaveDef>>;

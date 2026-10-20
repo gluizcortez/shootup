@@ -10,6 +10,7 @@ export const WAVES: WaveConfig = {
   firstWaveDelay: 1.2,
   intermission: 2.2,
   clearBonusPerWave: 15,
+  clearHeal: 0.5,
   maxAlive: 7,
   growth: { hpPerWave: 0.08, speedPerWave: 0.02, maxSpeedMult: 1.35 },
   scripted: [

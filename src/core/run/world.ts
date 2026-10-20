@@ -765,7 +765,11 @@ export class World {
       this.projectiles.releaseTeam('enemy');
       const bonus = this.config.waves.clearBonusPerWave * this.waves.wave;
       this.score += bonus;
-      this.emit({ type: 'waveCleared', wave: this.waves.wave, bonus });
+      // Fim de rodada cura meio coração (o dano continua tirando corações inteiros).
+      const p = this.player;
+      const before = p.hp;
+      if (p.alive) p.hp = Math.min(p.maxHp, p.hp + this.config.waves.clearHeal);
+      this.emit({ type: 'waveCleared', wave: this.waves.wave, bonus, healed: p.hp - before });
       if (this.upgradesEnabled) this.openOffer();
     }
   }

@@ -229,6 +229,30 @@ describe('World — ondas e determinismo', () => {
     expect(events.find((e) => e.type === 'waveCleared')).toMatchObject({ wave: 1 });
   });
 
+  it('ao limpar a onda, o jogador recupera meio coração sem passar do máximo', () => {
+    const untilCleared = (w: World) => {
+      for (let i = 0, n = Math.round(30 / SIM_STEP); i < n; i++) {
+        w.step(aimAtFirstEnemy(w), SIM_STEP);
+        const ev = w.events.find((e) => e.type === 'waveCleared');
+        w.events.length = 0;
+        if (ev) return ev;
+      }
+      return undefined;
+    };
+    const w = new World(WORLD_CONFIG, 77);
+    w.upgradesEnabled = false;
+    invulnerable(w);
+    w.player.hp = w.player.maxHp - 1;
+    expect(untilCleared(w)).toMatchObject({ wave: 1, healed: 0.5 });
+    expect(w.player.hp).toBe(w.player.maxHp - 0.5);
+
+    const full = new World(WORLD_CONFIG, 77);
+    full.upgradesEnabled = false;
+    invulnerable(full);
+    expect(untilCleared(full)).toMatchObject({ healed: 0 });
+    expect(full.player.hp).toBe(full.player.maxHp);
+  });
+
   it('ao limpar a onda, os projéteis inimigos ainda no ar somem', () => {
     const w = new World(WORLD_CONFIG, 77);
     w.upgradesEnabled = false;

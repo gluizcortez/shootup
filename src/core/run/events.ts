@@ -19,7 +19,7 @@ export type GameEvent =
   | { type: 'playerDied'; x: number; y: number }
   | { type: 'comboBroken'; count: number }
   | { type: 'waveStarted'; wave: number; total: number; callout: string }
-  | { type: 'waveCleared'; wave: number; bonus: number }
+  | { type: 'waveCleared'; wave: number; bonus: number; healed: number }
   | { type: 'enemyLanded'; uid: number; kind: EnemyKind; x: number; y: number; speed: number }
   | { type: 'enemyCharge'; uid: number; kind: EnemyKind; x: number; y: number; dir: number }
   | { type: 'enemyStunned'; uid: number; kind: EnemyKind; x: number; y: number }

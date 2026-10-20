@@ -521,7 +521,8 @@ export class ArenaScene extends Phaser.Scene {
       if (ev.type === 'waveStarted') {
         bus.emit('game:callout', { id: Date.now(), title: `WAVE ${ev.wave}`, subtitle: ev.callout });
       } else if (ev.type === 'waveCleared') {
-        bus.emit('game:callout', { id: Date.now(), title: 'WAVE CLEARED!', subtitle: `+${ev.bonus} production bonus` });
+        const heal = ev.healed > 0 ? ' · +½ heart' : '';
+        bus.emit('game:callout', { id: Date.now(), title: 'WAVE CLEARED!', subtitle: `+${ev.bonus} production bonus${heal}` });
       } else if (ev.type === 'playerDied') {
         this.deathTimer = DEATH_SEQUENCE;
         this.audio.music?.sadTrombone();
