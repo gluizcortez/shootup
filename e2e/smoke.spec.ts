@@ -32,11 +32,11 @@ test('carrega, inicia uma run, atira, pausa e reinicia sem erros', async ({ page
 
   await page.keyboard.press('Escape');
   await expect(frame).toHaveAttribute('data-phase', 'PAUSED');
-  await page.getByRole('button', { name: 'CONTINUAR' }).click();
+  await page.getByRole('button', { name: 'RESUME' }).click();
   await expect(frame).toHaveAttribute('data-phase', 'PLAYING');
 
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'REINICIAR' }).click();
+  await page.getByRole('button', { name: 'RESTART' }).click();
   await expect(frame).toHaveAttribute('data-phase', 'PLAYING');
 
   expect(errors).toEqual([]);
@@ -61,6 +61,6 @@ test('menu: placar local abre e volta', async ({ page }) => {
   await page.reload();
   await page.getByTestId('menu-scores').click();
   await expect(page.getByTestId('scores')).toContainText('DON');
-  await page.getByRole('button', { name: 'VOLTAR' }).click();
+  await page.getByRole('button', { name: 'BACK' }).click();
   await expect(page.getByTestId('play')).toBeVisible();
 });

@@ -13,8 +13,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   // ── Comuns ──
   {
     id: 'gatilho_nervoso',
-    name: 'Gatilho Nervoso',
-    description: 'Atira 1% mais rápido.',
+    name: 'Twitchy Trigger',
+    description: 'Fires 1% faster.',
     rarity: 'comum',
     branch: 'balistica',
     tags: ['cadencia'],
@@ -24,8 +24,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'calibre_reforcado',
-    name: 'Calibre Reforçado',
-    description: '+1 de dano por bala.',
+    name: 'Beefed-Up Caliber',
+    description: '+1 damage per bullet.',
     rarity: 'comum',
     branch: 'balistica',
     tags: ['dano'],
@@ -35,8 +35,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'olho_vivo',
-    name: 'Olho Vivo',
-    description: '+1% de chance de crítico.',
+    name: 'Eagle Eye',
+    description: '+1% crit chance.',
     rarity: 'comum',
     branch: 'balistica',
     tags: ['critico'],
@@ -46,8 +46,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'pe_leve',
-    name: 'Pé Leve',
-    description: 'Corre 2% mais rápido e pula um tiquinho mais alto.',
+    name: 'Light Feet',
+    description: 'Runs 2% faster and jumps a teeny bit higher.',
     rarity: 'comum',
     branch: 'sobrevivencia',
     tags: ['movimento'],
@@ -61,8 +61,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   // ── Incomuns ──
   {
     id: 'mira_cirurgica',
-    name: 'Mira Cirúrgica',
-    description: '+2% de chance de crítico.',
+    name: 'Surgical Aim',
+    description: '+2% crit chance.',
     rarity: 'incomum',
     branch: 'balistica',
     tags: ['critico'],
@@ -72,8 +72,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'ponta_oca',
-    name: 'Ponta Oca',
-    description: 'Críticos 5% mais fortes.',
+    name: 'Hollow Point',
+    description: 'Crits hit 5% harder.',
     rarity: 'incomum',
     branch: 'balistica',
     tags: ['critico'],
@@ -83,8 +83,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'bala_viajante',
-    name: 'Bala Viajante',
-    description: 'A bala atravessa +1 inimigo e voa 5% mais rápido.',
+    name: 'Road Trip Bullet',
+    description: 'Bullets pierce +1 enemy and fly 5% faster.',
     rarity: 'incomum',
     branch: 'balistica',
     tags: ['perfuracao'],
@@ -97,8 +97,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'casco_duro',
-    name: 'Casco Duro',
-    description: '+½ coração máximo (vem vazio).',
+    name: 'Tough Hide',
+    description: '+½ max heart (starts empty).',
     rarity: 'incomum',
     branch: 'sobrevivencia',
     tags: ['vida'],
@@ -109,8 +109,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   // ── Raras ──
   {
     id: 'sinuca_mortal',
-    name: 'Sinuca Mortal',
-    description: 'Ao acertar, a bala quica no inimigo e sai voando para um lado qualquer. Se pegar outro, causa 50% do dano.',
+    name: 'Trick Shot',
+    description: 'On hit, the bullet bounces off the enemy in a random direction. If it hits another one, it deals 50% damage.',
     rarity: 'raro',
     branch: 'caos',
     tags: ['ricochete'],
@@ -120,8 +120,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'casco_regenerado',
-    name: 'Casco Regenerado',
-    description: 'Cura 1 coração.',
+    name: 'Second Wind',
+    description: 'Heals 1 heart.',
     rarity: 'raro',
     branch: 'sobrevivencia',
     tags: ['vida'],
@@ -133,8 +133,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   // ── Épicas ──
   {
     id: 'explosivo',
-    name: 'Explosivo',
-    description: 'Inimigos abatidos explodem em 2 balas com 50% do dano. Cada carta extra soma +1 bala. Com 5: DOURADA, 100% do dano.',
+    name: 'Explosive',
+    description: 'Killed enemies burst into 2 bullets with 50% damage. Each extra card adds +1 bullet. At 5: GOLDEN, 100% damage.',
     rarity: 'epico',
     branch: 'caos',
     tags: ['explosao'],
@@ -154,8 +154,8 @@ export const UPGRADE_POOL: readonly UpgradeDef[] = [
   },
   {
     id: 'vampiresco',
-    name: 'Vampiresco',
-    description: 'Acertos causam 1 de sangramento por segundo. Cada carta extra soma +1. Com 5: DOURADA, sangra 2× mais rápido.',
+    name: 'Vampiric',
+    description: 'Hits cause 1 bleed per second. Each extra card adds +1. At 5: GOLDEN, bleeds 2× faster.',
     rarity: 'epico',
     branch: 'caos',
     tags: ['sangramento'],

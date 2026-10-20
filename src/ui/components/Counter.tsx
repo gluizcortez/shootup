@@ -21,7 +21,7 @@ export function Counter({ value, className, duration = 280 }: Props) {
     const from = shown.current;
     const to = value;
     if (from === to) {
-      el.textContent = to.toLocaleString('pt-BR');
+      el.textContent = to.toLocaleString('en-US');
       return;
     }
     const start = performance.now();
@@ -30,7 +30,7 @@ export function Counter({ value, className, duration = 280 }: Props) {
       const t = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - t, 3);
       shown.current = Math.round(from + (to - from) * eased);
-      el.textContent = shown.current.toLocaleString('pt-BR');
+      el.textContent = shown.current.toLocaleString('en-US');
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -43,7 +43,7 @@ export function Counter({ value, className, duration = 280 }: Props) {
 
   return (
     <span ref={ref} className={className}>
-      {value.toLocaleString('pt-BR')}
+      {value.toLocaleString('en-US')}
     </span>
   );
 }

@@ -79,7 +79,7 @@ export class Stage {
 
     // Letreiros de neon nos prédios (piscam, e piscam mais com o combo).
     this.sign(178, 214, 'OCEAN\nDRIVE', NEON.cyanCss, 22, FONT_DISPLAY, -0.02);
-    this.sign(1012, 206, 'Vídeo Replay', NEON.pinkCss, 30, FONT_SCRIPT, -0.06);
+    this.sign(1012, 206, 'Video Replay', NEON.pinkCss, 30, FONT_SCRIPT, -0.06);
     this.sign(1012, 238, 'LOCADORA · 24H', NEON.yellowCss, 11, FONT_DISPLAY, -0.06);
     this.sign(VIEW_WIDTH / 2, HORIZON + 30, 'ShootUp!', NEON.pinkCss, 46, FONT_SCRIPT, -0.04, 0.3);
 

@@ -4,11 +4,11 @@ import type { CardInfo } from '@/shared/types';
 import { CardGlyph } from '../components/CardGlyph';
 import { actions, useGame } from '../store/gameStore';
 
-const RARITY_LABEL: Record<CardInfo['rarity'], string> = { comum: 'COMUM', incomum: 'INCOMUM', raro: 'RARA', epico: 'ÉPICA' };
+const RARITY_LABEL: Record<CardInfo['rarity'], string> = { comum: 'COMMON', incomum: 'UNCOMMON', raro: 'RARE', epico: 'EPIC' };
 const BRANCH_LABEL: Record<CardInfo['branch'], string> = {
-  balistica: 'Balística',
-  caos: 'Caos',
-  sobrevivencia: 'Sobrevivência',
+  balistica: 'Ballistics',
+  caos: 'Chaos',
+  sobrevivencia: 'Survival',
 };
 /** Tempo da animação de escolha antes de devolver o controle ao jogo. */
 const PICK_MS = 420;
@@ -63,7 +63,7 @@ function Card({
     >
       <span className="card-inner">
         <span className="card-key">{index + 1}</span>
-        <span className="card-rarity">{goldNext ? 'VIRA DOURADA!' : RARITY_LABEL[card.rarity]}</span>
+        <span className="card-rarity">{goldNext ? 'GOES GOLDEN!' : RARITY_LABEL[card.rarity]}</span>
         <span className="card-art">
           <CardGlyph card={card} />
         </span>
@@ -72,8 +72,8 @@ function Card({
         <span className="card-foot">
           <span className="card-branch">{BRANCH_LABEL[card.branch]}</span>
           {card.stacks > 0 && (
-            <span className="card-stacks" aria-label={`Nível ${card.stacks} para ${next}`}>
-              NV {card.stacks} → <b>{next}</b>
+            <span className="card-stacks" aria-label={`Level ${card.stacks} to ${next}`}>
+              LV {card.stacks} → <b>{next}</b>
             </span>
           )}
         </span>
@@ -116,15 +116,15 @@ export function CardScreen() {
   return (
     <div className="screen screen--cards" key={offer.id}>
       <div className="cards-head">
-        <div className="cards-kicker">ONDA {offer.wave} LIMPA</div>
-        <h2 className="cards-title">ESCOLHA UMA CARTA</h2>
+        <div className="cards-kicker">WAVE {offer.wave} CLEARED</div>
+        <h2 className="cards-title">PICK A CARD</h2>
       </div>
       <div className="cards-row">
         {offer.cards.map((c, i) => (
           <Card key={c.id} card={c} index={i} picked={picked} onPick={pick} />
         ))}
       </div>
-      <div className="cards-hint">Clique ou aperte 1, 2 ou 3</div>
+      <div className="cards-hint">Click or press 1, 2 or 3</div>
     </div>
   );
 }

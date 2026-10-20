@@ -47,23 +47,23 @@ export function TitleScreen() {
             <b /> ▶ PLAY
           </div>
           <Logo />
-          <p className="title-tagline">estrelando Johnny Replay</p>
+          <p className="title-tagline">starring Johnny Replay</p>
           <div className="menu">
             <TactileButton autoFocus className="menu-play" onClick={actions.start} data-testid="play">
-              JOGAR
+              PLAY
             </TactileButton>
             <div className="menu-row">
               <TactileButton variant="ghost" onClick={() => setView('scores')} data-testid="menu-scores">
-                PLACAR
+                SCORES
               </TactileButton>
               <TactileButton variant="ghost" onClick={() => setView('options')}>
-                OPÇÕES
+                OPTIONS
               </TactileButton>
             </div>
           </div>
           {best && (
             <div className="best">
-              RECORDE <strong>{best.score.toLocaleString('pt-BR')}</strong> · {best.name}
+              BEST <strong>{best.score.toLocaleString('en-US')}</strong> · {best.name}
             </div>
           )}
         </div>
@@ -72,20 +72,20 @@ export function TitleScreen() {
         <div className="panel panel--menu">
           {view === 'scores' && (
             <>
-              <h2 className="panel-title">PLACAR DO ESTÚDIO</h2>
+              <h2 className="panel-title">STUDIO HIGH SCORES</h2>
               <ScoreTable scores={scores} />
-              <p className="note">Placar salvo só neste navegador. O ranking online chega numa fase futura.</p>
+              <p className="note">Scores are saved in this browser only. Online rankings arrive in a future phase.</p>
             </>
           )}
           {view === 'options' && (
             <>
-              <h2 className="panel-title">OPÇÕES</h2>
+              <h2 className="panel-title">OPTIONS</h2>
               <SettingsPanel />
             </>
           )}
           <div className="panel-actions">
             <TactileButton autoFocus onClick={() => setView('main')}>
-              VOLTAR
+              BACK
             </TactileButton>
           </div>
         </div>

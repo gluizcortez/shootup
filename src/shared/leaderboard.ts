@@ -27,7 +27,7 @@ export function sanitizeName(raw: string): string {
     .trim()
     .slice(0, NAME_MAX)
     .trim();
-  return clean || 'ANÔNIMO';
+  return clean || 'ANONYMOUS';
 }
 
 function isEntry(v: unknown): v is ScoreEntry {
