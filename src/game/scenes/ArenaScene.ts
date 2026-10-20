@@ -9,6 +9,7 @@ import { bus } from '@/shared/bus';
 import { FrameStats } from '@/shared/frameStats';
 import { loadSettings, prefersReducedMotion } from '@/shared/settings';
 import type { Settings } from '@/shared/settings';
+import { isLowHp } from '@/shared/types';
 import type { CardInfo, HudSnapshot } from '@/shared/types';
 import { ARENA, SIM_STEP, TERRAIN, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
 import { computeView } from '../data/view';
@@ -436,7 +437,7 @@ export class ArenaScene extends Phaser.Scene {
     const mode = musicModeFor({
       inRun: phase !== 'MENU' && phase !== 'GAME_OVER',
       bossActive: w.enemies.some((e) => e.def.boss && e.state !== 'incoming'),
-      lowHp: w.player.alive && w.player.hp <= 1,
+      lowHp: w.player.alive && isLowHp(w.player.hp, w.player.maxHp),
     });
     music.update(mode);
   }
@@ -492,7 +493,7 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.updateMusic(phase);
     // Vida no fim: coração batendo (o HUD pulsa em vermelho junto).
-    if (phase === 'PLAYING' && w.player.alive && w.player.hp <= 1) {
+    if (phase === 'PLAYING' && w.player.alive && isLowHp(w.player.hp, w.player.maxHp)) {
       this.heartbeatTimer -= dt;
       if (this.heartbeatTimer <= 0) {
         this.heartbeatTimer = HEARTBEAT_EVERY;
@@ -575,7 +576,7 @@ export class ArenaScene extends Phaser.Scene {
       if (ev.type === 'waveStarted') {
         bus.emit('game:callout', { id: Date.now(), title: `WAVE ${ev.wave}`, subtitle: ev.callout });
       } else if (ev.type === 'waveCleared') {
-        const heal = ev.healed > 0 ? ' · +½ heart' : '';
+        const heal = ev.healed > 0 ? ` · +${ev.healed} HP` : '';
         bus.emit('game:callout', { id: Date.now(), title: 'WAVE CLEARED!', subtitle: `+${ev.bonus} production bonus${heal}` });
       } else if (ev.type === 'playerDied') {
         this.deathTimer = DEATH_SEQUENCE;

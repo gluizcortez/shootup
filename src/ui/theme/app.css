@@ -184,36 +184,133 @@ body,
   gap: 1em;
 }
 
-.hud-hearts {
+/* Barra de vida numérica. */
+.hp {
+  position: relative;
+  width: 15em;
+}
+
+.hp-bar {
+  position: relative;
+  height: 1.15em;
+  border-radius: 0.55em;
+  border: 3px solid var(--c-outline);
+  background: var(--c-plum-2);
+  overflow: hidden;
+  box-shadow: 0 3px 0 var(--c-outline), 0 0 0.9em rgb(34 230 255 / 0.25);
+}
+
+.hp-ghost,
+.hp-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+}
+
+.hp-ghost {
+  background: #ffd6ec;
+  transition: transform 420ms var(--ease-out);
+}
+
+.hp-fill {
+  background: linear-gradient(180deg, #8ff6ff, var(--c-turquoise) 55%, #12a8c7);
+  transition: transform var(--t-fast) var(--ease-out);
+}
+
+.hp-shine {
+  position: absolute;
+  left: 0.4em;
+  right: 0.4em;
+  top: 0.15em;
+  height: 0.22em;
+  border-radius: 1em;
+  background: rgb(255 255 255 / 0.45);
+}
+
+.hp-text {
+  position: absolute;
+  left: 0.6em;
+  top: -1.15em;
   display: flex;
-  gap: 0.3em;
+  align-items: baseline;
+  gap: 0.25em;
+  font-family: var(--font-display);
+  color: var(--c-white);
+  -webkit-text-stroke: 0.08em var(--c-outline);
+  paint-order: stroke fill;
+  line-height: 1;
 }
 
-.heart {
-  width: 1.4em;
-  height: 1.3em;
-  transition: transform var(--t-mid) var(--ease-spring);
+.hp-label {
+  font-size: 0.7em;
+  letter-spacing: 0.15em;
+  color: var(--c-turquoise);
 }
 
-.heart path {
-  fill: var(--c-coral);
-  stroke: var(--c-outline);
-  stroke-width: 2.4;
-  stroke-linejoin: round;
-  transition: fill var(--t-fast);
+.hp-now {
+  display: inline-block;
+  font-size: 1.35em;
 }
 
-.heart.empty {
-  transform: scale(0.78);
+.hp-max {
+  font-size: 0.8em;
+  opacity: 0.75;
 }
 
-.heart.empty path,
-.heart.half .heart-bg {
-  fill: var(--c-plum-2);
+.hp--hit .hp-bar {
+  animation: hp-shake 260ms ease-out;
 }
 
-.heart.half .heart-fill {
-  fill: var(--c-coral);
+.hp--hit .hp-now {
+  animation: hp-hurt-text 500ms ease-out;
+}
+
+@keyframes hp-hurt-text {
+  0%,
+  40% {
+    color: var(--c-coral);
+  }
+  100% {
+    color: var(--c-white);
+  }
+}
+
+.hp--heal .hp-fill {
+  animation: hp-glow 450ms ease-out;
+}
+
+.hud--danger .hp-fill {
+  background: linear-gradient(180deg, #ff8ad0, var(--c-coral) 55%, #b0106f);
+}
+
+.hud--danger .hp-now {
+  color: var(--c-coral);
+  animation: pop 0.85s ease-in-out infinite;
+}
+
+@keyframes hp-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-0.3em);
+  }
+  50% {
+    transform: translateX(0.25em);
+  }
+  75% {
+    transform: translateX(-0.12em);
+  }
+}
+
+@keyframes hp-glow {
+  0% {
+    filter: brightness(2);
+  }
+  100% {
+    filter: brightness(1);
+  }
 }
 
 .hud-weapon {
@@ -636,16 +733,14 @@ body,
   }
 }
 
-.hud--danger .heart.full {
-  animation: pop 0.85s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .logo-ch,
   .spotlights i,
   .menu-play,
   .record-burst,
-  .danger-vignette {
+  .danger-vignette,
+  .hp--hit .hp-bar,
+  .hud--danger .hp-now {
     animation: none;
   }
 }

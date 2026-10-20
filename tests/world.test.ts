@@ -187,7 +187,7 @@ describe('World — jogador', () => {
     for (let i = 0; i < 4; i++) w.spawnEnemy('pato_pistoleiro', 0.1 + i * 0.25);
     const events = collect(w, 60, passive);
     const hurts = events.filter((e) => e.type === 'playerHurt');
-    expect(hurts.length).toBe(WORLD_CONFIG.player.maxHp);
+    expect(hurts.length).toBe(Math.ceil(WORLD_CONFIG.player.maxHp / PATO_PISTOLEIRO.bulletDamage));
     expect(events.some((e) => e.type === 'playerDied')).toBe(true);
     expect(w.player.alive).toBe(false);
   });
@@ -229,7 +229,7 @@ describe('World — ondas e determinismo', () => {
     expect(events.find((e) => e.type === 'waveCleared')).toMatchObject({ wave: 1 });
   });
 
-  it('ao limpar a onda, o jogador recupera meio coração sem passar do máximo', () => {
+  it('ao limpar a onda, o jogador recupera 20% da barra sem passar do máximo', () => {
     const untilCleared = (w: World) => {
       for (let i = 0, n = Math.round(30 / SIM_STEP); i < n; i++) {
         w.step(aimAtFirstEnemy(w), SIM_STEP);
@@ -242,9 +242,10 @@ describe('World — ondas e determinismo', () => {
     const w = new World(WORLD_CONFIG, 77);
     w.upgradesEnabled = false;
     invulnerable(w);
-    w.player.hp = w.player.maxHp - 1;
-    expect(untilCleared(w)).toMatchObject({ wave: 1, healed: 0.5 });
-    expect(w.player.hp).toBe(w.player.maxHp - 0.5);
+    const fifth = Math.ceil(w.player.maxHp * 0.2);
+    w.player.hp = 5;
+    expect(untilCleared(w)).toMatchObject({ wave: 1, healed: fifth });
+    expect(w.player.hp).toBe(5 + fifth);
 
     const full = new World(WORLD_CONFIG, 77);
     full.upgradesEnabled = false;

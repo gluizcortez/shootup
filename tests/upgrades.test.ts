@@ -29,6 +29,7 @@ const BASE: Stats = {
   homing: 0,
   splitCount: 0,
   enemyBulletSpeed: 1,
+  lifesteal: 0,
 };
 
 function card(id: string, patch: Partial<UpgradeDef> = {}): UpgradeDef {
@@ -170,23 +171,45 @@ describe('upgrades — no World', () => {
     expect(UPGRADE_POOL.some((c) => c.id === 'tiro_duplo')).toBe(false);
   });
 
-  it('Casco Duro dá 1 coração vazio, sem curar', () => {
+  it('Casco Duro dá +10 de vida máxima e cura esses 10', () => {
     const w = new World(WORLD_CONFIG, 1);
-    w.player.hp = 2;
+    w.player.hp = 20;
     w.offer = [UPGRADE_POOL.find((c) => c.id === 'casco_duro') as UpgradeDef];
     w.pickUpgrade('casco_duro');
-    expect(w.player.maxHp).toBe(WORLD_CONFIG.player.maxHp + 1);
-    expect(w.player.hp).toBe(2);
+    expect(w.player.maxHp).toBe(WORLD_CONFIG.player.maxHp + 10);
+    expect(w.player.hp).toBe(30);
   });
 
-  it('Casco Regenerado cura 2 corações sem passar do máximo', () => {
+  it('Shake de Proteína dá +4 de vida máxima e cura 4', () => {
+    const w = new World(WORLD_CONFIG, 1);
+    w.player.hp = w.player.maxHp;
+    w.offer = [UPGRADE_POOL.find((c) => c.id === 'shake_proteina') as UpgradeDef];
+    w.pickUpgrade('shake_proteina');
+    expect(w.player.maxHp).toBe(WORLD_CONFIG.player.maxHp + 4);
+    expect(w.player.hp).toBe(w.player.maxHp);
+  });
+
+  it('Mordida dos Garotos Perdidos devolve 4% do dano causado como vida inteira', () => {
+    const w = withCard('mordida_garotos_perdidos');
+    const [e] = hoveringPatos(w, [400], 200);
+    e!.hp = 10_000;
+    w.player.hp = 10;
+    // 50 acertos de 10 → 500 de dano × 4% = 20 de vida.
+    for (let i = 0; i < 50; i++) {
+      w.projectiles.spawn('player', e!.x, e!.y + 40, 0, -900, 4, 10, false, 0, 1, 'pistol');
+      for (let k = 0; k < 10; k++) w.step(idle(w), SIM_STEP);
+    }
+    expect(w.player.hp).toBe(30);
+  });
+
+  it('Casco Regenerado cura 50% da vida máxima sem passar do máximo', () => {
     const w = new World(WORLD_CONFIG, 1);
     w.player.hp = 2;
     const def = UPGRADE_POOL.find((c) => c.id === 'casco_regenerado') as UpgradeDef;
     expect(def.rarity).toBe('raro');
     w.offer = [def];
     w.pickUpgrade('casco_regenerado');
-    expect(w.player.hp).toBe(4);
+    expect(w.player.hp).toBe(2 + Math.ceil(WORLD_CONFIG.player.maxHp / 2));
     w.player.hp = w.player.maxHp;
     w.offer = [def];
     w.pickUpgrade('casco_regenerado');

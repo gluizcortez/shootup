@@ -1,30 +1,61 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { isLowHp } from '@/shared/types';
 import { useGame } from '../store/gameStore';
 import { CardGlyph } from './CardGlyph';
 import { Counter } from './Counter';
 
-const HEART = 'M12 20 L3.5 11.5 C0.5 8.5 1.5 2.5 6.5 2.5 C9 2.5 11 4 12 6 C13 4 15 2.5 17.5 2.5 C22.5 2.5 23.5 8.5 20.5 11.5 Z';
+/**
+ * Barra de vida numérica (estilo Seraph's Last Stand): enche em verde-água,
+ * uma faixa "fantasma" mostra o dano recém-sofrido drenando atrás, e o número
+ * rola até o valor novo. Cura acende a barra; dano faz ela tremer.
+ */
+function HealthBar({ hp, max }: { hp: number; max: number }) {
+  const frac = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0;
+  const [ghost, setGhost] = useState(frac);
+  const prev = useRef(hp);
+  const ref = useRef<HTMLDivElement>(null);
 
-/** Corações com metades: vida e máximo andam de ½ em ½. Meio coração de capacidade aparece cortado. */
-function Hearts({ hp, max }: { hp: number; max: number }) {
+  useEffect(() => {
+    const el = ref.current;
+    if (el && hp !== prev.current) {
+      // Reinicia a animação de dano/cura direto no DOM (sem remontar o contador).
+      el.classList.remove('hp--hit', 'hp--heal');
+      void el.offsetWidth;
+      el.classList.add(hp < prev.current ? 'hp--hit' : 'hp--heal');
+      prev.current = hp;
+    }
+  }, [hp]);
+
+  useEffect(() => {
+    if (frac >= ghost) {
+      setGhost(frac);
+      return;
+    }
+    const t = setTimeout(() => setGhost(frac), 380);
+    return () => clearTimeout(t);
+  }, [frac, ghost]);
+
   return (
-    <div className="hud-hearts" aria-label={`Health ${hp} of ${max}`}>
-      {Array.from({ length: Math.ceil(max) }, (_, i) => {
-        const fill = Math.max(0, Math.min(1, hp - i));
-        const capHalf = max - i < 1;
-        const state = fill >= 1 ? 'full' : fill > 0 ? 'half' : 'empty';
-        return (
-          <svg key={i} className={`heart ${state}${capHalf ? ' cap-half' : ''}`} viewBox="0 0 24 22" aria-hidden="true">
-            <clipPath id={`heart-half-${i}`}>
-              <rect x="0" y="0" width="12" height="22" />
-            </clipPath>
-            <g clipPath={capHalf ? `url(#heart-half-${i})` : undefined}>
-              <path className="heart-bg" d={HEART} />
-              {state === 'half' && <path className="heart-fill" d={HEART} clipPath={`url(#heart-half-${i})`} />}
-            </g>
-          </svg>
-        );
-      })}
+    <div
+      ref={ref}
+      className="hp"
+      role="meter"
+      aria-label="Health"
+      aria-valuemin={0}
+      aria-valuemax={max}
+      aria-valuenow={hp}
+      data-testid="hud-hp"
+    >
+      <div className="hp-bar">
+        <div className="hp-ghost" style={{ transform: `scaleX(${ghost})` }} />
+        <div className="hp-fill" style={{ transform: `scaleX(${frac})` }} />
+        <div className="hp-shine" />
+      </div>
+      <div className="hp-text">
+        <span className="hp-label">HP</span>
+        <Counter value={hp} className="hp-now" duration={220} />
+        <span className="hp-max">/{max}</span>
+      </div>
     </div>
   );
 }
@@ -130,7 +161,7 @@ export function Hud() {
   const hp = useGame((s) => s.hud.hp);
   const maxHp = useGame((s) => s.hud.maxHp);
   const weapon = useGame((s) => s.hud.weaponName);
-  const danger = hp > 0 && hp <= 1 && maxHp > 1;
+  const danger = isLowHp(hp, maxHp);
   return (
     <>
       {danger && <div className="danger-vignette" aria-hidden="true" />}
@@ -138,7 +169,7 @@ export function Hud() {
       <WaveBlock />
       <ScoreBlock />
       <div className="hud-bottom-left">
-        <Hearts hp={hp} max={maxHp} />
+        <HealthBar hp={hp} max={maxHp} />
         <div className="hud-weapon">{weapon.toUpperCase()}</div>
       </div>
       <BossBar />

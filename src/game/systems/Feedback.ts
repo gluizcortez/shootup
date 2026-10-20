@@ -335,6 +335,8 @@ export class Feedback {
       case 'playerHurt':
         this.audio.play('hurt');
         this.texts.comic(ev.x, ev.y - 34, Math.random() < 0.5 ? 'OW!' : 'OUCH!', CSS.coral, 22);
+        // O número do dano sempre aparece: é a leitura principal da barra de vida.
+        this.texts.spawn(ev.x + 18, ev.y - 8, `-${ev.damage}`, CSS.coral, 20, 0.8);
         this.shake.add(0.55);
         this.hooks.hitstop(0.08);
         if (this.flashOn) this.flashAlpha = 0.28;
@@ -343,6 +345,14 @@ export class Feedback {
         }
         for (let i = 0, n = this.count(5); i < n; i++) this.star(ev.x, ev.y - 10, PAL.warmWhite);
         return;
+      case 'playerHealed': {
+        const big = ev.source !== 'lifesteal';
+        this.texts.spawn(ev.x - 16, ev.y - 30, `+${ev.amount}`, CSS.turquoise, big ? 22 : 14, big ? 0.9 : 0.55);
+        for (let i = 0, n = this.count(big ? 10 : 2); i < n; i++) {
+          this.spark(ev.x, ev.y, -Math.PI / 2 + (Math.random() - 0.5) * 1.6, big ? 1 : 0.6, PAL.turquoise, big ? 220 : 120);
+        }
+        return;
+      }
       case 'playerDied':
         this.hooks.onPlayerDied();
         this.audio.play('gameOver');

@@ -197,7 +197,7 @@ describe('Terrain', () => {
 });
 
 describe('scaleForWave', () => {
-  const g = { hpPerWave: 0.08, speedPerWave: 0.02, maxSpeedMult: 1.35 };
+  const g = { hpPerWave: 0.08, speedPerWave: 0.02, maxSpeedMult: 1.35, damagePerWave: 0.08 };
 
   it('onda 1 usa os valores base', () => {
     expect(scaleForWave(PATO_PISTOLEIRO, 1, g)).toBe(PATO_PISTOLEIRO);
@@ -211,6 +211,14 @@ describe('scaleForWave', () => {
     const v = scaleForWave(VACA_LOCA, 6, g) as typeof VACA_LOCA;
     expect(v.chargeSpeed).toBeCloseTo(VACA_LOCA.chargeSpeed * 1.1);
     expect(PATO_PISTOLEIRO.maxHp).toBe(12); // a base nunca é alterada
+  });
+
+  it('dano sobe junto, sempre inteiro', () => {
+    const p = scaleForWave(PATO_PISTOLEIRO, 10, g) as typeof PATO_PISTOLEIRO;
+    expect(p.bulletDamage).toBe(Math.round(PATO_PISTOLEIRO.bulletDamage * 1.72));
+    const v = scaleForWave(VACA_LOCA, 10, g);
+    expect(v.contactDamage).toBe(Math.round(VACA_LOCA.contactDamage * 1.72));
+    expect(scaleForWave(PATO_PISTOLEIRO, 10, g).contactDamage).toBe(0); // quem não encosta continua sem dano
   });
 
   it('velocidade tem teto', () => {

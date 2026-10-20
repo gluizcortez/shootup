@@ -1,9 +1,7 @@
 import type { Rng } from '../math/rng';
 import type { Owned, Rarity, StatClamp, StatKey, Stats, UpgradeDef } from './types';
 
-const INTEGER_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['pellets', 'pierce', 'ricochet', 'wallBounce', 'splitCount']);
-/** Vida anda em meios corações. */
-const HALF_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['maxHp']);
+const INTEGER_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['pellets', 'pierce', 'ricochet', 'wallBounce', 'splitCount', 'maxHp']);
 
 /**
  * Calcula os atributos finais. Ordem fixa (documentada e testada):
@@ -11,7 +9,7 @@ const HALF_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['maxHp']);
  *   2. + soma de todos os `add` (value × stacks)
  *   3. × produto de todos os `mul` (value ^ stacks)
  *   4. limite [min, max] do atributo
- *   5. atributos inteiros arredondados para baixo (vida: para baixo em meios)
+ *   5. atributos inteiros arredondados para baixo 
  * Somar antes de multiplicar evita que a ordem de escolha das cartas mude o resultado.
  */
 export function computeStats(
@@ -40,7 +38,6 @@ export function computeStats(
     const c = clamps[k];
     if (c) v = Math.min(c.max, Math.max(c.min, v));
     if (INTEGER_STATS.has(k)) v = Math.floor(v + 1e-9);
-    else if (HALF_STATS.has(k)) v = Math.floor(v * 2 + 1e-9) / 2;
     out[k] = v;
   }
   return out;

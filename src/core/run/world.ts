@@ -146,6 +146,8 @@ export class World {
   effective: Stats;
   /** Habilidades épicas ativas (recalculadas junto com os atributos). */
   private explode: { count: number; damageFrac: number; speedFrac: number; lifetime: number; golden: boolean } | null = null;
+  /** Frações de vida roubada que ainda não somaram 1 ponto. */
+  private leechBank = 0;
   private bleed: { damage: number; duration: number; interval: number; golden: boolean } | null = null;
   /** Globo de Discoteca (épica): lido também pela renderização. */
   disco: {
@@ -523,6 +525,7 @@ export class World {
       const absorbed = Math.min(e.shield, damage);
       e.shield -= absorbed;
       e.hp -= damage - absorbed;
+      this.leech(damage - absorbed);
       if (shielded && e.shield <= 0) this.emit({ type: 'shieldBroken', uid: e.uid, x: e.x, y: e.y });
       e.vx += dirX * p.knockback * d.knockbackScale;
       // Tranco no ar só para quem voa; quem anda no chão continua no chão.
@@ -661,6 +664,7 @@ export class World {
       if (e.bleedTick > 0) continue;
       e.bleedTick += e.bleedInterval;
       e.hp -= e.bleedDamage;
+      this.leech(e.bleedDamage);
       this.emit({ type: 'enemyBled', uid: e.uid, x: e.x, y: e.y - e.def.hh, damage: e.bleedDamage, golden: this.bleed?.golden ?? false });
       if (e.hp <= 0) this.killEnemy(e, false);
     }
@@ -776,6 +780,28 @@ export class World {
     }
   }
 
+  /** Cura inteira, sem passar do máximo. Devolve quanto curou de fato. */
+  private healPlayer(amount: number, source: 'wave' | 'card' | 'lifesteal'): number {
+    const p = this.player;
+    if (!p.alive || amount <= 0) return 0;
+    const before = p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + Math.floor(amount));
+    const healed = p.hp - before;
+    if (healed > 0) this.emit({ type: 'playerHealed', x: p.motor.x, y: p.motor.y, hp: p.hp, amount: healed, source });
+    return healed;
+  }
+
+  /** Roubo de vida: fração do dano causado vai para um cofrinho e sai em pontos inteiros. */
+  private leech(damage: number): void {
+    const ls = this.effective.lifesteal;
+    if (ls <= 0 || damage <= 0 || !this.player.alive) return;
+    this.leechBank += damage * ls;
+    if (this.leechBank < 1) return;
+    const whole = Math.floor(this.leechBank);
+    this.leechBank -= whole;
+    this.healPlayer(whole, 'lifesteal');
+  }
+
   private stepWaves(dt: number): void {
     const res = tickWaves(this.waves, this.config.waves, this.rng, this.enemies.length, dt, (kind, x) =>
       this.spawnEnemy(kind, x),
@@ -787,11 +813,10 @@ export class World {
       this.projectiles.releaseTeam('enemy');
       const bonus = this.config.waves.clearBonusPerWave * this.waves.wave;
       this.score += bonus;
-      // Fim de rodada cura meio coração (o dano continua tirando corações inteiros).
+      // Fim de rodada cura uma fração da barra (20%), arredondada para cima.
       const p = this.player;
-      const before = p.hp;
-      if (p.alive) p.hp = Math.min(p.maxHp, p.hp + this.config.waves.clearHeal);
-      this.emit({ type: 'waveCleared', wave: this.waves.wave, bonus, healed: p.hp - before });
+      const healed = p.alive ? this.healPlayer(Math.ceil(p.maxHp * this.config.waves.clearHealFrac), 'wave') : 0;
+      this.emit({ type: 'waveCleared', wave: this.waves.wave, bonus, healed });
       if (this.upgradesEnabled) this.openOffer();
     }
   }
@@ -815,8 +840,8 @@ export class World {
     this.owned.set(id, stacks);
     this.recomputeStats();
     const p = this.player;
-    // Vida máxima nova vem vazia; só cartas de cura enchem corações.
-    p.hp = Math.min(p.maxHp, p.hp + (card.onPick?.heal ?? 0));
+    const heal = (card.onPick?.heal ?? 0) + Math.ceil(p.maxHp * (card.onPick?.healFrac ?? 0));
+    if (heal > 0) this.healPlayer(heal, 'card');
     this.offer = null;
     this.emit({ type: 'upgradePicked', id, stacks });
     return true;
@@ -846,6 +871,7 @@ export class World {
       homing: 0,
       splitCount: 0,
       enemyBulletSpeed: 1,
+      lifesteal: 0,
     };
   }
 

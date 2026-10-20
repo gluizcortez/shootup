@@ -16,6 +16,10 @@ export interface HudSnapshot {
   boss: { name: string; hp: number; maxHp: number; enraged: boolean } | null;
 }
 
+/** Vida baixa (batimento, música acelerada, vinheta vermelha): 25% da barra ou menos. */
+export const LOW_HP_FRAC = 0.25;
+export const isLowHp = (hp: number, max: number): boolean => hp > 0 && hp <= max * LOW_HP_FRAC;
+
 export interface RunSummary {
   wave: number;
   score: number;

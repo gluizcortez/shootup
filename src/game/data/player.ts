@@ -8,7 +8,8 @@ import type { PlayerConfig } from '@/core/run/world';
 export const PLAYER: PlayerConfig = {
   hw: 12,
   hh: 22,
-  maxHp: 5,
+  /** Vida numérica (barra). Tiros comuns tiram 8 na onda 1. */
+  maxHp: 40,
   invulnTime: 1.0,
   hurtKnockbackX: 320,
   hurtKnockbackY: 330,

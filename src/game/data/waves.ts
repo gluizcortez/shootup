@@ -10,15 +10,16 @@ import type { WaveConfig } from '@/core/run/waves';
  *  8 Hang-Glider Ninja · 9 Crooked Vice Cop · 10 CHEFE Tony Mantega ·
  *  11 The Great Vegasini · 12 Casino Uncle · 13 Macho Mammoth · 14 Mr. But-Wait.
  * A onda 10 é a exceção: entradas cronometradas.
- * Vida e velocidade dos inimigos crescem devagar a cada onda (`growth`).
+ * Vida, dano e velocidade dos inimigos crescem devagar a cada onda (`growth`):
+ * dano base 8 (tiro) / 10 (contato) vira 14 / 17 na onda 10. Limpar a onda cura 20%.
  */
 export const WAVES: WaveConfig = {
   firstWaveDelay: 1.2,
   intermission: 2.2,
   clearBonusPerWave: 15,
-  clearHeal: 0.5,
+  clearHealFrac: 0.2,
   maxAlive: 7,
-  growth: { hpPerWave: 0.08, speedPerWave: 0.02, maxSpeedMult: 1.35 },
+  growth: { hpPerWave: 0.08, speedPerWave: 0.02, maxSpeedMult: 1.35, damagePerWave: 0.08 },
   size: { base: 2, every: 3, max: 30 },
   roster: [
     { kind: 'pato_pistoleiro', from: 1, weight: 3, debutCallout: 'GOONS ON THE BLOCK!' },

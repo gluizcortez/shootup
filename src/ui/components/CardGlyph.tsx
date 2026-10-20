@@ -17,6 +17,8 @@ const GLYPHS: Record<string, string> = {
   explosivo: 'M20 2l4 10 10-4-5 10 10 4-10 4 5 10-10-4-4 10-4-10-10 4 5-10-10-4 10-4-5-10 10 4z',
   vampiresco: 'M4 8h32c0 10-6 16-16 16S4 18 4 8zM10 14l3 10 3-8zM24 16l3 8 3-10zM19 28c-2 4-3 6-3 8a4 4 0 0 0 8 0c0-2-1-4-3-8z',
   casco_duro: 'M20 36 6 22C1 17 3 8 11 8c4 0 7 2 9 6 2-4 5-6 9-6 8 0 10 9 5 14z',
+  shake_proteina: 'M10 10h20l-3 28H13zM12 4h16v4H12zM24 0h3l-2 10h-3zM14 18h12v3H14z',
+  mordida_garotos_perdidos: 'M4 6h32v6c-2 6-6 10-10 12l-2 10-4-9-4 9-2-10C10 22 6 18 4 12zM28 30c-1 3-2 5-2 6a3 3 0 0 0 6 0c0-1-1-3-2-6z',
   cartucho_pirata: 'M4 10h32v20H4zM9 15a3 3 0 1 0 0.01 0zM31 15a3 3 0 1 0 0.01 0zM14 16h12v8H14z',
   bala_laque: 'M14 2h12v6H14zM12 10h16v28H12zM6 4l4 4-2 2-4-4zM34 4l-4 4 2 2 4-4z',
   soco_filme_b: 'M8 14c0-4 4-6 8-6h10c4 0 8 3 8 8v8c0 6-4 10-10 10h-6c-6 0-10-4-10-10zM2 18h4v2H2zM0 24h6v2H0z',

@@ -45,8 +45,8 @@ export interface WaveConfig {
   intermission: number;
   firstWaveDelay: number;
   clearBonusPerWave: number;
-  /** Corações recuperados ao limpar uma onda (0.5 = meio coração), sem passar do máximo. */
-  clearHeal: number;
+  /** Fração da vida máxima recuperada ao limpar uma onda (0.2 = 20%, arredondado para cima). */
+  clearHealFrac: number;
   /** Limite de vivos ao mesmo tempo; só vale para as entradas cronometradas das ondas de chefe. */
   maxAlive: number;
   /** Ondas de chefe fixas (ex.: 10 → Toni Mantega): entradas cronometradas, têm prioridade. */
@@ -64,10 +64,12 @@ export interface WaveGrowth {
   speedPerWave: number;
   /** Teto do multiplicador de velocidade. */
   maxSpeedMult: number;
+  /** Fração de dano extra por onda (balas, contato e ondas de choque), arredondado. */
+  damagePerWave: number;
 }
 
 /**
- * Cópia do inimigo ajustada para a onda: vida e velocidade sobem em linha reta,
+ * Cópia do inimigo ajustada para a onda: vida, dano e velocidade sobem em linha reta,
  * devagar. Sem crescimento (ou na onda 1) devolve o próprio def.
  */
 export function scaleForWave(def: EnemyDef, wave: number, g: WaveGrowth | undefined): EnemyDef {
@@ -76,8 +78,16 @@ export function scaleForWave(def: EnemyDef, wave: number, g: WaveGrowth | undefi
   const hpMult = 1 + g.hpPerWave * steps;
   const speedMult = Math.min(g.maxSpeedMult, 1 + g.speedPerWave * steps);
   const maxHp = def.fixedHp ? def.maxHp : Math.round(def.maxHp * hpMult);
-  const scaled: EnemyDef & { bulletSpeed?: number; chargeSpeed?: number } = { ...def, maxHp };
+  const dmgMult = 1 + g.damagePerWave * steps;
+  const dmg = (v: number): number => (v > 0 ? Math.max(1, Math.round(v * dmgMult)) : 0);
+  const scaled: EnemyDef & { bulletSpeed?: number; chargeSpeed?: number; bulletDamage?: number; shockDamage?: number } = {
+    ...def,
+    maxHp,
+    contactDamage: dmg(def.contactDamage),
+  };
   if ('bulletSpeed' in def) scaled.bulletSpeed = def.bulletSpeed * speedMult;
+  if ('bulletDamage' in def) scaled.bulletDamage = dmg(def.bulletDamage);
+  if ('shockDamage' in def) scaled.shockDamage = dmg(def.shockDamage);
   if (def.behaviour === 'vaca') scaled.chargeSpeed = def.chargeSpeed * speedMult;
   return scaled;
 }

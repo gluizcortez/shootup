@@ -16,6 +16,7 @@ export type GameEvent =
   | { type: 'playerJumped'; x: number; y: number }
   | { type: 'playerLanded'; x: number; y: number; speed: number }
   | { type: 'playerHurt'; x: number; y: number; hp: number; damage: number }
+  | { type: 'playerHealed'; x: number; y: number; hp: number; amount: number; source: 'wave' | 'card' | 'lifesteal' }
   | { type: 'playerDied'; x: number; y: number }
   | { type: 'comboBroken'; count: number }
   | { type: 'waveStarted'; wave: number; total: number; callout: string }

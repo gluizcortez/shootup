@@ -1,7 +1,7 @@
 /**
  * Atributos que as cartas podem alterar. Todos numéricos; os inteiros
- * (projéteis por tiro, perfuração, ricochete, quiques, estilhaços) são
- * arredondados para baixo depois do cálculo, e a vida para baixo em meios corações.
+ * (projéteis por tiro, perfuração, ricochete, quiques, estilhaços, vida
+ * máxima) são arredondados para baixo depois do cálculo.
  */
 export type StatKey =
   | 'fireInterval'
@@ -31,7 +31,9 @@ export type StatKey =
   /** Estilhaços que a bala solta ao acertar. */
   | 'splitCount'
   /** Multiplicador da velocidade das balas inimigas. */
-  | 'enemyBulletSpeed';
+  | 'enemyBulletSpeed'
+  /** Fração do dano causado que volta como vida (roubo de vida). */
+  | 'lifesteal';
 
 export type Stats = Record<StatKey, number>;
 
@@ -61,7 +63,7 @@ export interface UpgradeDef {
   exclusions: readonly string[];
   modifiers: readonly Modifier[];
   /** Efeito imediato ao escolher (ex.: curar). */
-  onPick?: { heal?: number };
+  onPick?: { heal?: number; healFrac?: number };
   /** Habilidade especial (cartas épicas). Fica dourada ao chegar em `goldenAt` stacks. */
   effect?: UpgradeEffect;
 }
