@@ -49,7 +49,7 @@ Deploy: é um site estático do Vite, então a Vercel detecta sozinha (build `np
 
 ## Trilha sonora
 
-Faixas gravadas em `public/music` (menu, arena e chefe), synth-pop anos 80 zoeira geradas com o modelo aberto ACE-Step 1.5 (licença MIT); descrições, seeds e passo a passo em `tools/music/`. O jogo toca cada faixa em loop alinhado nos compassos (`src/game/data/music.ts` + `src/game/systems/MusicSystem.ts`). No último coração a arena acelera 16%; o chefe tem faixa própria, e com o último coração ela acelera 12%. Pausa e cartas abafam a música; a derrota toca um trombone triste. Volume próprio em Opções. Se as faixas não carregarem, o jogo segue sem música.
+Faixas gravadas em `public/music` (menu, arena e chefe), synthwave de Miami anos 80 neon geradas com o modelo aberto ACE-Step 1.5 (licença MIT); descrições, seeds e passo a passo em `tools/music/`. O jogo toca cada faixa em loop alinhado nos compassos (`src/game/data/music.ts` + `src/game/systems/MusicSystem.ts`). No último coração a arena acelera 16%; o chefe tem faixa própria, e com o último coração ela acelera 12%. Pausa e cartas abafam a música; a derrota toca um trombone triste. Volume próprio em Opções. Se as faixas não carregarem, o jogo segue sem música.
 
 ## Como testar a sensação do jogo
 
