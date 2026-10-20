@@ -12,7 +12,7 @@ export const PLAYER: PlayerConfig = {
   invulnTime: 1.0,
   hurtKnockbackX: 320,
   hurtKnockbackY: 330,
-  shoulder: { x: 2, y: -4 },
+  shoulder: { x: 3, y: -19 },
   motor: {
     runSpeed: 300,
     groundAccel: 3400,

@@ -1,13 +1,18 @@
 import Phaser from 'phaser';
 import { loadPixelFonts } from '../rendering/fonts';
+import { preloadSprites } from '../rendering/sprites';
 import { generateTextures } from '../rendering/textures';
 import { generateViceTextures } from '../rendering/texturesVice';
 import { generateVice2Textures } from '../rendering/texturesVice2';
 
-/** Gera toda a pixel art em memória (sem baixar sprites), espera as fontes e segue para a arena. */
+/** Carrega as folhas de sprites, gera o resto da pixel art em memória, espera as fontes e segue para a arena. */
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
+  }
+
+  preload(): void {
+    preloadSprites(this);
   }
 
   create(): void {
