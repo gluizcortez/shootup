@@ -20,6 +20,11 @@ const FEATHER_TINT: Record<EnemyKind, number[]> = {
   // Tio do Cassino "morre" em fichas, cartas e moedas.
   porco_executivo: [0x9be830, NEON.pink, PAL.gold, 0xf7f1e8],
   don_pombone: [PAL.donCoat, 0xd8192e, PAL.gold, NEON.pink],
+  // Maromba explode em óleo de bronzear, bandana e shortinho.
+  maromba_vice: [0xf08a3c, 0xffc38a, NEON.pink, 0x9dff3a],
+  patinador_assassino: [NEON.pink, NEON.cyan, 0xffe14d, 0x9b5cff],
+  // Policial: blazer pastel, camisa turquesa e dinheiro sujo.
+  policial_corrupto: [0xffb8d0, 0x42dec4, 0x7bd389, PAL.gold],
 };
 
 const KILL_SFX: Record<EnemyKind, SfxId> = {
@@ -29,6 +34,9 @@ const KILL_SFX: Record<EnemyKind, SfxId> = {
   pombo_mafioso: 'killPombo',
   porco_executivo: 'killPorco',
   don_pombone: 'killBoss',
+  maromba_vice: 'killVaca',
+  patinador_assassino: 'killPombo',
+  policial_corrupto: 'killGalinha',
 };
 const KILL_PROP: Record<EnemyKind, string> = {
   pato_pistoleiro: 'pato_hat',
@@ -37,6 +45,9 @@ const KILL_PROP: Record<EnemyKind, string> = {
   pombo_mafioso: 'pombo_hat',
   porco_executivo: 'porco_case',
   don_pombone: 'pombone_hat',
+  maromba_vice: 'maromba_tails',
+  patinador_assassino: 'patinador_visor',
+  policial_corrupto: 'policial_donut',
 };
 /** Onomatopeias de gibi no abate, por vilão. */
 const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
@@ -46,6 +57,9 @@ const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
   pombo_mafioso: ['HAI!', 'POOF!', 'ZAP!', 'VANISHED!'],
   porco_executivo: ['JACKPOT!', 'KA-CHING!', 'BUSTED!', 'THE HOUSE LOSES!'],
   don_pombone: ['CAPUT!'],
+  maromba_vice: ['NO PAIN NO GAIN!', 'SKIPPED LEG DAY!', 'DEFLATED!', 'DO YOU EVEN LIFT?'],
+  patinador_assassino: ['WIPEOUT!', 'TOTALLY BOGUS!', 'BAILED!', 'GAG ME!'],
+  policial_corrupto: ['BADGE REVOKED!', 'CASE CLOSED!', 'OFF DUTY!', 'INTERNAL AFFAIRS!'],
 };
 const COMIC_COLORS = [CSS.amber, CSS.coral, CSS.turquoise, CSS.violet];
 
@@ -56,7 +70,12 @@ const TELEGRAPH_SFX: Record<EnemyKind, SfxId> = {
   pombo_mafioso: 'whistle',
   porco_executivo: 'telegraphPato',
   don_pombone: 'wingFlap',
+  maromba_vice: 'stomp',
+  patinador_assassino: 'whistle',
+  policial_corrupto: 'telegraphPato',
 };
+/** Bordões no pouso do Maromba. */
+const MAROMBA_LINES = ['FLEX!', 'BEACH BOD!', "SUN'S OUT, GUNS OUT!", 'LOOK AT THESE!', 'PUMP!'];
 
 export interface FeedbackHooks {
   hitstop(seconds: number): void;
@@ -159,7 +178,12 @@ export class Feedback {
         this.hooks.onEnemyLanded(ev.uid, ev.speed);
         const k = Math.min(1, ev.speed / 800);
         this.audio.play('slam');
-        this.shake.add(0.15 + k * 0.25);
+        this.shake.add(0.15 + k * 0.25 + (ev.kind === 'maromba_vice' ? 0.25 : 0));
+        if (ev.kind === 'maromba_vice') {
+          const line = MAROMBA_LINES[Math.floor(Math.random() * MAROMBA_LINES.length)] as string;
+          this.texts.comic(ev.x, ev.y - 84, line, CSS.coral, 24);
+          this.ring(ev.x, ev.y, NEON.pink);
+        }
         for (let i = 0, n = this.count(6 + k * 8); i < n; i++) {
           this.dust(ev.x + (i % 2 ? 1 : -1) * 18, ev.y, (i % 2 ? 1 : -1) * (80 + Math.random() * 160));
         }
@@ -376,7 +400,7 @@ export class Feedback {
     for (let i = 0, m = this.count(6); i < m; i++) this.star(ev.x, ev.y, i % 2 ? PAL.amber : PAL.warmWhite);
     for (let i = 0, m = this.count(4); i < m; i++) this.puff(ev.x + (Math.random() - 0.5) * 20, ev.y, 1.4, 0.6);
     this.ring(ev.x, ev.y, PAL.warmWhite);
-    if (ev.kind === 'porco_executivo') {
+    if (ev.kind === 'porco_executivo' || ev.kind === 'policial_corrupto') {
       for (let i = 0, m = this.count(16); i < m; i++) this.money(ev.x, ev.y);
     }
     if (ev.kind === 'pato_pistoleiro') {

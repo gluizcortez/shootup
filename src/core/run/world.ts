@@ -9,6 +9,9 @@ import { updateVaca } from '../enemies/vacaLoca';
 import { updatePombo } from '../enemies/pomboMafioso';
 import { updatePorco } from '../enemies/porcoExecutivo';
 import { updatePombone } from '../enemies/donPombone';
+import { updateMaromba } from '../enemies/marombaVice';
+import { updatePatinador } from '../enemies/patinadorAssassino';
+import { updatePolicial } from '../enemies/policialCorrupto';
 import type { Enemy, EnemyContext, EnemyDef, EnemyKind } from '../enemies/types';
 import { Rng } from '../math/rng';
 import { boxesOverlap, sweptCircleHitsBox } from '../physics/collision';
@@ -407,6 +410,9 @@ export class World {
         else if (def.behaviour === 'vaca') updateVaca(e, def, this.ctx, dt);
         else if (def.behaviour === 'pombo') updatePombo(e, def, this.ctx, dt);
         else if (def.behaviour === 'porco') updatePorco(e, def, this.ctx, dt);
+        else if (def.behaviour === 'maromba') updateMaromba(e, def, this.ctx, dt);
+        else if (def.behaviour === 'patinador') updatePatinador(e, def, this.ctx, dt);
+        else if (def.behaviour === 'policial') updatePolicial(e, def, this.ctx, dt);
         else updatePombone(e, def, this.ctx, dt);
       } else {
         e.vx *= 0.9;

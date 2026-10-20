@@ -20,6 +20,7 @@ import { WORLD_CONFIG } from '../data/world';
 import { EnemyView } from '../rendering/EnemyView';
 import type { EnemyVisual } from '../rendering/EnemyView';
 import { VacaView } from '../rendering/VacaView';
+import { MarombaView } from '../rendering/MarombaView';
 import { PlayerView } from '../rendering/PlayerView';
 import { ProjectileRenderer } from '../rendering/ProjectileRenderer';
 import { DiscoBallView } from '../rendering/DiscoBallView';
@@ -83,6 +84,9 @@ export class ArenaScene extends Phaser.Scene {
     pombo_mafioso: [],
     porco_executivo: [],
     don_pombone: [],
+    maromba_vice: [],
+    patinador_assassino: [],
+    policial_corrupto: [],
   };
   private readonly liveViews = new Map<number, EnemyVisual>();
   private trailTimer = 0;
@@ -267,6 +271,15 @@ export class ArenaScene extends Phaser.Scene {
         this.world.debugTainted = true;
         this.world.spawnEnemy('vaca_loca', 0.2);
       });
+      // F9: um de cada vilão novo (Maromba, Patinador e Policial).
+      kb.on('keydown-F9', (e: KeyboardEvent) => {
+        e.preventDefault();
+        if (this.phase.phase !== 'PLAYING') return;
+        this.world.debugTainted = true;
+        this.world.spawnEnemy('maromba_vice', 0.5);
+        this.world.spawnEnemy('patinador_assassino', 0.15);
+        this.world.spawnEnemy('policial_corrupto', 0.85);
+      });
       // F7: pose do crítico do Johnny, para conferir a animação.
       kb.on('keydown-F7', (e: KeyboardEvent) => {
         e.preventDefault();
@@ -402,7 +415,11 @@ export class ArenaScene extends Phaser.Scene {
   private acquireView(uid: number, kind: EnemyKind): EnemyVisual {
     const view =
       this.viewPool[kind].pop() ??
-      (kind === 'vaca_loca' ? new VacaView(this, this.groundAt) : new EnemyView(this, kind, this.groundAt));
+      (kind === 'vaca_loca'
+        ? new VacaView(this, this.groundAt)
+        : kind === 'maromba_vice'
+          ? new MarombaView(this, this.groundAt)
+          : new EnemyView(this, kind, this.groundAt));
     this.liveViews.set(uid, view);
     return view;
   }

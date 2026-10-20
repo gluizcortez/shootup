@@ -7,7 +7,10 @@ export type EnemyKind =
   | 'vaca_loca'
   | 'pombo_mafioso'
   | 'porco_executivo'
-  | 'don_pombone';
+  | 'don_pombone'
+  | 'maromba_vice'
+  | 'patinador_assassino'
+  | 'policial_corrupto';
 
 /**
  * Papel tático (estrutura do Seraph's Last Stand):
@@ -168,8 +171,66 @@ export interface PomboneDef extends RangedDef {
   summonMaxPombos: number;
 }
 
-export type EnemyDef = PatoDef | GalinhaDef | VacaDef | PomboDef | PorcoDef | PomboneDef;
-export type RangedEnemyDef = PatoDef | GalinhaDef | PomboDef | PorcoDef | PomboneDef;
+/**
+ * Maromba Miami Vice (melee): cai do topo feito um piano e, depois de pousar,
+ * fica plantado no chão só mostrando os muques. Não anda nem ataca: é um
+ * obstáculo vivo que machuca quem encosta nele.
+ */
+export interface MarombaDef extends EnemyBaseDef {
+  role: 'melee';
+  behaviour: 'maromba';
+  gravity: number;
+  /** Segundos em cada pose de fisiculturismo (só muda o visual). */
+  poseTime: number;
+}
+
+/**
+ * Patinador Assassino (atirador): patina no ar de patins a jato, bem ágil.
+ * Agacha (telegraph) e atravessa por cima do jogador num "drive-by", soltando
+ * uma fileira de tiros mirados durante a passada. Fica sempre no alto.
+ */
+export interface PatinadorDef extends RangedDef {
+  behaviour: 'patinador';
+  /** Agachamento antes da passada (telegraph). */
+  crouchTime: number;
+  dashSpeed: number;
+  dashAccel: number;
+  /** A passada termina esta distância depois do ponto em que o jogador estava. */
+  dashOvershoot: number;
+  dashFireInterval: number;
+  dashShots: number;
+  dashSpreadDeg: number;
+  recoverTime: number;
+  attackCooldown: number;
+}
+
+/**
+ * Policial de Miami Corrupto (atirador): mira com laser vermelho que segue o
+ * jogador e trava no fim do aviso; então dá dois tiros rápidos ("double tap")
+ * ao longo da linha travada. Fica sempre no alto.
+ */
+export interface PolicialDef extends RangedDef {
+  behaviour: 'policial';
+  aimTime: number;
+  /** Fração final da mira em que o laser já está travado (janela para sair da linha). */
+  aimLockFraction: number;
+  shots: number;
+  shotGap: number;
+  recoverTime: number;
+  shotCooldown: number;
+}
+
+export type EnemyDef =
+  | PatoDef
+  | GalinhaDef
+  | VacaDef
+  | PomboDef
+  | PorcoDef
+  | PomboneDef
+  | MarombaDef
+  | PatinadorDef
+  | PolicialDef;
+export type RangedEnemyDef = PatoDef | GalinhaDef | PomboDef | PorcoDef | PomboneDef | PatinadorDef | PolicialDef;
 
 /** Ataques do chefe (índice em `Enemy.attack`). */
 export const POMBONE_ATTACKS = ['summon', 'vshot', 'sweep'] as const;
@@ -188,7 +249,10 @@ export type EnemyStateName =
   | 'charge'
   | 'dizzy'
   | 'rest'
-  | 'buff';
+  | 'buff'
+  | 'flex'
+  | 'crouch'
+  | 'dash';
 
 export interface Enemy {
   uid: number;

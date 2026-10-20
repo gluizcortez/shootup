@@ -80,11 +80,16 @@ const GENERATED_CALLOUTS = [
   'GOONS ON THE BLOCK!',
   'THE GANG IS HERE!',
   'WALL STREET SENT MORE YUPPIES!',
+  'ROLLER DISCO OF DEATH!',
+  'MIAMI VICE SQUAD ON THE TAKE!',
+  'PUMP UP THE VOLUME!',
 ];
 
 /**
  * Ondas além das roteirizadas: escalada lenta, um bicho a mais a cada poucas ondas.
  * Elenco por faixa (GDD §4): pombos já vêm das roteirizadas, porcos a partir da 9.
+ * Patinadores, Marombas e Policiais seguem crescendo devagar (todos já
+ * estrearam nas roteirizadas).
  */
 export function generateWave(n: number, rng: Rng): WaveDef {
   const spawns: WaveSpawn[] = [];
@@ -95,12 +100,15 @@ export function generateWave(n: number, rng: Rng): WaveDef {
       t += rng.range(gapMin, gapMax);
     }
   };
-  add('pato_pistoleiro', 2 + Math.floor(n / 4), 0, 1.4, 2.4);
+  add('pato_pistoleiro', 2 + Math.floor(n / 6), 0, 1.4, 2.4);
   add('galinha_rambo', Math.floor((n - 2) / 4), 2.5, 4.0, 6.0);
   // Cada entrada de pombo é uma esquadrilha inteira.
   add('pombo_mafioso', n >= 6 ? Math.floor((n - 3) / 4) : 0, 4, 6.0, 8.0);
   add('porco_executivo', n >= 9 ? Math.floor((n - 5) / 4) : 0, 5, 5.0, 7.0);
   add('vaca_loca', Math.floor((n - 1) / 4), 6, 5.0, 7.0);
+  add('patinador_assassino', Math.floor((n - 4) / 4), 3, 4.5, 6.5);
+  add('maromba_vice', Math.floor((n - 2) / 6), 2, 7.0, 9.0);
+  add('policial_corrupto', Math.floor((n - 4) / 4), 4.5, 5.0, 7.0);
   return { spawns, callout: rng.pick(GENERATED_CALLOUTS) };
 }
 

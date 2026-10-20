@@ -1,4 +1,16 @@
-import type { EnemyKind, EnemyDef, GalinhaDef, PatoDef, PomboDef, PomboneDef, PorcoDef, VacaDef } from '@/core/enemies/types';
+import type {
+  EnemyKind,
+  EnemyDef,
+  GalinhaDef,
+  MarombaDef,
+  PatinadorDef,
+  PatoDef,
+  PolicialDef,
+  PomboDef,
+  PomboneDef,
+  PorcoDef,
+  VacaDef,
+} from '@/core/enemies/types';
 
 /**
  * Atiradores no estilo Seraph's Last Stand: descem do topo e PAIRAM no alto,
@@ -218,6 +230,99 @@ export const DON_POMBONE: PomboneDef = {
   summonMaxPombos: 6,
 };
 
+/**
+ * Maromba Miami Vice (melee): cai do topo como um cofre e fica plantado no
+ * chão fazendo poses. Não anda; encostar nele machuca. Vida alta: é um
+ * obstáculo que ocupa espaço até alguém derrubar o monumento.
+ */
+export const MAROMBA_VICE: MarombaDef = {
+  id: 'maromba_vice',
+  behaviour: 'maromba',
+  role: 'melee',
+  name: 'Miami Vice Muscle',
+  maxHp: 52,
+  hw: 20,
+  hh: 30,
+  score: 18,
+  contactDamage: 1,
+  knockbackScale: 0.05,
+  warnTime: 1.0,
+  descendSpeed: 1100,
+  gravity: 2200,
+  poseTime: 1.6,
+};
+
+/** Patinador Assassino: patina no ar e atravessa por cima do jogador num drive-by. */
+export const PATINADOR_ASSASSINO: PatinadorDef = {
+  id: 'patinador_assassino',
+  behaviour: 'patinador',
+  role: 'ranged',
+  name: 'Killer Roller',
+  maxHp: 14,
+  hw: 14,
+  hh: 22,
+  score: 16,
+  contactDamage: 0,
+  knockbackScale: 0.9,
+  warnTime: 0.8,
+  descendSpeed: 300,
+  hoverMinY: 100,
+  hoverMaxY: 200,
+  flySpeed: 220,
+  minOffsetX: 120,
+  maxOffsetX: 360,
+  repositionEvery: 1.1,
+  bulletSpeed: 240,
+  bulletRadius: 5,
+  bulletDamage: 1,
+  bulletLifetime: 4,
+  gunPivot: { x: 4, y: -14 },
+  barrelLength: 23,
+  crouchTime: 0.6,
+  dashSpeed: 520,
+  dashAccel: 1600,
+  dashOvershoot: 200,
+  dashFireInterval: 0.17,
+  dashShots: 4,
+  dashSpreadDeg: 5,
+  recoverTime: 0.6,
+  attackCooldown: 2.6,
+};
+
+/** Policial de Miami Corrupto: mira laser que trava e "double tap". */
+export const POLICIAL_CORRUPTO: PolicialDef = {
+  id: 'policial_corrupto',
+  behaviour: 'policial',
+  role: 'ranged',
+  name: 'Crooked Vice Cop',
+  maxHp: 24,
+  hw: 15,
+  hh: 22,
+  score: 20,
+  contactDamage: 0,
+  knockbackScale: 0.7,
+  warnTime: 0.9,
+  descendSpeed: 240,
+  hoverMinY: 90,
+  hoverMaxY: 190,
+  flySpeed: 110,
+  minOffsetX: 160,
+  maxOffsetX: 380,
+  repositionEvery: 3,
+  bulletSpeed: 420,
+  bulletRadius: 5,
+  bulletDamage: 1,
+  bulletLifetime: 3,
+  gunPivot: { x: 6, y: -13 },
+  barrelLength: 25,
+  aimTime: 1.1,
+  aimLockFraction: 0.35,
+  shots: 2,
+  shotGap: 0.12,
+  recoverTime: 0.5,
+  shotCooldown: 2.6,
+};
+
 export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   pato_pistoleiro: PATO_PISTOLEIRO,
   galinha_rambo: GALINHA_RAMBO,
@@ -225,4 +330,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   pombo_mafioso: POMBO_MAFIOSO,
   porco_executivo: PORCO_EXECUTIVO,
   don_pombone: DON_POMBONE,
+  maromba_vice: MAROMBA_VICE,
+  patinador_assassino: PATINADOR_ASSASSINO,
+  policial_corrupto: POLICIAL_CORRUPTO,
 };

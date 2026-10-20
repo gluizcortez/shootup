@@ -1,9 +1,10 @@
 import type { WaveConfig } from '@/core/run/waves';
 
 /**
- * Ondas do protótipo: os animais descem do topo, poucos de cada vez, e o elenco
- * entra aos poucos. Patos nas 1–2, Vaca Loca estreia na 3, Galinha Rambo na 4,
- * Ninjas de Asa-Delta na 6 e o Tio do Cassino na 9. Onda 10: Toni Mantega.
+ * Ondas do protótipo: os vilões descem do topo, poucos de cada vez, e o elenco
+ * entra aos poucos. Capangas na 1, Patinador Assassino estreia na 2, Rei do
+ * Topete na 3, Exterminador na 4, Maromba Miami Vice na 5, Ninjas de Asa-Delta
+ * na 6, Policial Corrupto na 7 e o Tio do Cassino na 9. Onda 10: Toni Mantega.
  * Vida e velocidade dos inimigos crescem devagar a cada onda (`growth`).
  */
 export const WAVES: WaveConfig = {
@@ -22,11 +23,11 @@ export const WAVES: WaveConfig = {
       ],
     },
     {
-      callout: 'THE GANG IS HERE!',
+      callout: 'ROLLER DISCO OF DEATH!',
       spawns: [
         { kind: 'pato_pistoleiro', delay: 0, x: 0.2 },
         { kind: 'pato_pistoleiro', delay: 1.5, x: 0.8 },
-        { kind: 'pato_pistoleiro', delay: 4, x: 'random' },
+        { kind: 'patinador_assassino', delay: 4, x: 'random' },
       ],
     },
     {
@@ -46,12 +47,13 @@ export const WAVES: WaveConfig = {
       ],
     },
     {
-      callout: 'RATINGS THROUGH THE ROOF!',
+      callout: "SUN'S OUT, GUNS OUT!",
       spawns: [
         { kind: 'pato_pistoleiro', delay: 0, x: 0.15 },
-        { kind: 'pato_pistoleiro', delay: 1.5, x: 0.85 },
-        { kind: 'galinha_rambo', delay: 3, x: 'random' },
-        { kind: 'vaca_loca', delay: 6, x: 'random' },
+        { kind: 'maromba_vice', delay: 1.5, x: 0.5 },
+        { kind: 'patinador_assassino', delay: 3, x: 0.85 },
+        { kind: 'galinha_rambo', delay: 5, x: 'random' },
+        { kind: 'vaca_loca', delay: 7, x: 'random' },
       ],
     },
     {
@@ -61,6 +63,16 @@ export const WAVES: WaveConfig = {
         { kind: 'pombo_mafioso', delay: 2, x: 0.6 },
         { kind: 'pato_pistoleiro', delay: 5, x: 'random' },
         { kind: 'galinha_rambo', delay: 7, x: 'random' },
+      ],
+    },
+    {
+      callout: 'FREEZE, PUNK! THE COPS ARE CROOKED!',
+      spawns: [
+        { kind: 'policial_corrupto', delay: 0, x: 0.8 },
+        { kind: 'pato_pistoleiro', delay: 2, x: 0.2 },
+        { kind: 'patinador_assassino', delay: 4, x: 'random' },
+        { kind: 'maromba_vice', delay: 6, x: 'random' },
+        { kind: 'pato_pistoleiro', delay: 8, x: 'random' },
       ],
     },
   ],

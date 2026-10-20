@@ -13,7 +13,7 @@ export const TEX_SCALE = 2;
 const S = TEX_SCALE;
 const O = PAL.outline;
 
-class Pen {
+export class Pen {
   constructor(readonly g: Phaser.GameObjects.Graphics) {}
   fill(color: number, alpha = 1): this {
     this.g.fillStyle(color, alpha);
@@ -70,7 +70,7 @@ class Pen {
   }
 }
 
-function make(scene: Phaser.Scene, key: string, w: number, h: number, draw: (p: Pen) => void): void {
+export function make(scene: Phaser.Scene, key: string, w: number, h: number, draw: (p: Pen) => void): void {
   if (scene.textures.exists(key)) return;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   draw(new Pen(g));

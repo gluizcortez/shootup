@@ -17,7 +17,7 @@ export class Limb {
     private readonly lenA: number,
     private readonly lenB: number,
     /** -1 dobra a articulação para a frente (joelho), +1 para trás (cotovelo). */
-    private readonly bend: 1 | -1,
+    public bend: 1 | -1,
   ) {}
 
   solve(rx: number, ry: number, tx: number, ty: number): this {
