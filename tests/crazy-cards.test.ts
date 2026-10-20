@@ -50,11 +50,11 @@ const active = (w: World, source?: string) =>
   w.projectiles.items.filter((p) => p.active && p.team === 'player' && (!source || p.sourceId === source));
 
 describe('cartas loucas', () => {
-  it('há 3 comuns, 3 incomuns, 3 raras e 1 épica novas', () => {
+  it('cartas novas têm a raridade combinada', () => {
     const ids: Record<string, string[]> = {
-      comum: ['cartucho_pirata', 'bala_laque', 'soco_filme_b'],
-      incomum: ['bate_volta', 'lado_b', 'trilha_montagem'],
-      raro: ['teleguiada', 'bala_cluster', 'camera_lenta'],
+      comum: ['bala_laque', 'soco_filme_b'],
+      incomum: ['bate_volta', 'lado_b', 'trilha_montagem', 'calibre_magnum', 'gatilho_turbo'],
+      raro: ['teleguiada', 'bala_cluster', 'camera_lenta', 'cartucho_pirata'],
       epico: ['globo_discoteca'],
     };
     for (const [rarity, list] of Object.entries(ids)) {
@@ -62,9 +62,14 @@ describe('cartas loucas', () => {
     }
   });
 
-  it('Cartucho Pirata: 3 cartas = +1 bala por tiro', () => {
-    expect(world({ cartucho_pirata: 2 }).weapon.pelletsPerShot).toBe(1);
-    expect(world({ cartucho_pirata: 3 }).weapon.pelletsPerShot).toBe(2);
+  it('Cartucho Pirata: +1 bala inteira por carta', () => {
+    expect(world({ cartucho_pirata: 1 }).weapon.pelletsPerShot).toBe(2);
+    expect(world({ cartucho_pirata: 2 }).weapon.pelletsPerShot).toBe(3);
+  });
+
+  it('Magnum Caliber dá +5 de dano e Turbo Trigger atira 5% mais rápido', () => {
+    expect(world({ calibre_magnum: 1 }).weapon.damage).toBe(WORLD_CONFIG.weapon.damage + 5);
+    expect(world({ gatilho_turbo: 1 }).weapon.fireInterval).toBeCloseTo(WORLD_CONFIG.weapon.fireInterval * 0.95);
   });
 
   it('Bala com Laquê e Soco de Filme B mexem no tamanho e no empurrão', () => {

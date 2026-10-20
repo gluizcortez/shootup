@@ -4,6 +4,8 @@ import type { CardInfo } from '@/shared/types';
 const GLYPHS: Record<string, string> = {
   tiro_duplo: 'M6 9h18l6 4-6 4H6zM6 21h18l6 4-6 4H6z',
   gatilho_nervoso: 'M20 3 8 21h9l-3 16 14-22h-9z',
+  gatilho_turbo: 'M14 3 2 21h9l-3 16 14-22h-9zM28 3 20 15h6l-2 10 10-14h-6z',
+  calibre_magnum: 'M6 2h10v6H6zM24 2h10v6H24zM5 10h12v28H5zM23 10h12v28H23z',
   bala_viajante: 'M2 17h4v6H2zM10 17h4v6h-4zM18 15h12l8 5-8 5H18z',
   sinuca_mortal: 'M4 32 16 10l8 14L36 6l2 2-14 22-8-14L7 34z',
   mira_cirurgica: 'M20 4a16 16 0 1 0 0.01 0zm0 5a11 11 0 1 1-0.01 0zM19 0h2v12h-2zM19 28h2v12h-2zM0 19h12v2H0zM28 19h12v2H28z',
