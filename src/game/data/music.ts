@@ -11,7 +11,7 @@ export interface TrackDef {
   readonly id: TrackId;
   readonly file: string;
   readonly bpm: number;
-  /** Trecho em loop [início, fim] em segundos, alinhado nos compassos. */
+  /** Trecho em loop [início, fim] em segundos, alinhado nos compassos (o arquivo já vem com a emenda em crossfade). */
   readonly loop: readonly [number, number];
   /** Ganho relativo (as faixas saem do gerador com volumes diferentes). */
   readonly gain: number;
@@ -25,31 +25,31 @@ export const TRACKS: Readonly<Record<TrackId, TrackDef>> = {
     id: 'menu',
     file: 'music/menu.mp3',
     bpm: 108,
-    loop: [6.099, 32.766],
+    loop: [0, 28.889],
     gain: 1,
     prompt:
-      '80s TV game show theme song, cheesy and funny, bright synth brass fanfare, groovy bass, handclaps, sparkly keyboards, studio audience party vibe, retro television intro music, instrumental',
-    seed: 31,
+      'chill but fun 80s Miami night drive, retro synthwave, palm trees and neon signs, warm analog synth pads, groovy bass, gated drums, catchy saxophone melody, video store vibe, title screen music, instrumental',
+    seed: 302,
   },
   arena: {
     id: 'arena',
     file: 'music/arena.mp3',
     bpm: 124,
-    loop: [7.757, 54.208],
+    loop: [0, 40.65],
     gain: 1,
     prompt:
-      '80s synthpop arcade action theme, upbeat goofy comedic cartoon energy, punchy gated reverb drums, funky slap bass, bright brass stabs, cheesy catchy synth lead melody, cowbell, orchestra hits, video game soundtrack, instrumental / main theme, memorable catchy melody, driving beat / bridge, playful saxophone solo / main theme reprise, high energy',
-    seed: 11,
+      '80s Miami action movie car chase, outrun synthwave, neon nights on Ocean Drive, driving arpeggiated synth bass, punchy LinnDrum gated reverb snare, catchy neon synth lead hook, saxophone solo, electric guitar power chords, cheesy over-the-top fun, video game soundtrack, instrumental / main hook, memorable melody / sax solo / main hook reprise, high energy',
+    seed: 101,
   },
   chefe: {
     id: 'chefe',
     file: 'music/chefe.mp3',
     bpm: 150,
-    loop: [0.38, 38.78],
+    loop: [0, 32],
     gain: 1,
     prompt:
-      '80s hair metal meets synthwave boss fight, fast, epic and ridiculous, double kick drums, shredding guitar solo, dramatic choir and orchestra hits, synth bass arpeggios, big brass fanfare, video game final boss music, instrumental',
-    seed: 22,
+      'over the top 80s action hero vs drug lord showdown, synthwave meets hair metal, fast tempo, double kick drums, screaming guitar, gated snare, dramatic choir pads, orchestra hits, neon Miami night, cheesy and epic, video game boss battle, instrumental',
+    seed: 202,
   },
 };
 
