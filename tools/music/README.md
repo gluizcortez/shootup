@@ -7,4 +7,4 @@ As faixas em `public/music` (tema Miami anos 80 neon) foram geradas com o [ACE-S
 3. `python loop.py out/<id>/arquivo.wav <bpm> [início_mín] [fim_máx]` acha um loop alinhado em compassos.
 4. `python bake.py out/<id>/arquivo.wav <início> <fim> public/music/<faixa>.mp3` normaliza o volume e assa o loop com crossfade na emenda; em `music.ts`, `loop` vira `[0, duração impressa]`.
 
-Escolhidas: `m_menu_b` → menu (5,34–34,23 s), `m_arena_a` → arena (17,19–57,84 s), `m_chefe_b` → chefe (6,60–38,60 s).
+Escolhidas: `m_menu_b` → menu (5,34–34,23 s), `m_arena_a` → arena (23,00–57,84 s; o começo era lento), `m_chefe_b` → chefe (6,60–38,60 s).

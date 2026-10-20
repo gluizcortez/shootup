@@ -35,7 +35,7 @@ export const TRACKS: Readonly<Record<TrackId, TrackDef>> = {
     id: 'arena',
     file: 'music/arena.mp3',
     bpm: 124,
-    loop: [0, 40.65],
+    loop: [0, 34.84],
     gain: 1,
     prompt:
       '80s Miami action movie car chase, outrun synthwave, neon nights on Ocean Drive, driving arpeggiated synth bass, punchy LinnDrum gated reverb snare, catchy neon synth lead hook, saxophone solo, electric guitar power chords, cheesy over-the-top fun, video game soundtrack, instrumental / main hook, memorable melody / sax solo / main hook reprise, high energy',
