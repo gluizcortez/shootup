@@ -148,6 +148,10 @@ export class ArenaScene extends Phaser.Scene {
         onCrosshairHit: (crit) => {
           this.hitmarkerT = 0.09;
           this.hitmarker.setTint(crit ? 0xffc857 : 0xffffff);
+          if (crit && this.playerView.onCrit()) {
+            const pl = this.world.player.motor;
+            this.texts.spawn(pl.x, pl.y - 44, 'HII-HII!', '#FF2FA8', 16, 0.7);
+          }
         },
         onCombo: (mult) => {
           this.stage.excitement = Math.min(1, (mult - 1) / 2);
@@ -250,6 +254,11 @@ export class ArenaScene extends Phaser.Scene {
         if (this.phase.phase !== 'PLAYING') return;
         this.world.debugTainted = true;
         this.world.spawnEnemy('don_pombone', 0.5);
+      });
+      // F7: pose do crítico do Johnny, para conferir a animação.
+      kb.on('keydown-F7', (e: KeyboardEvent) => {
+        e.preventDefault();
+        this.playerView.onCrit();
       });
       // F5: abre uma oferta de cartas na hora (testar cartas sem limpar ondas).
       kb.on('keydown-F5', (e: KeyboardEvent) => {

@@ -25,6 +25,9 @@ export class PlayerView {
   /** Os cachos balançam atrasados em relação ao corpo. */
   private readonly hairSpring = new Spring(260, 9);
   private cheer = 0;
+  /** Pose do crítico (mão na virilha, joelhos pra dentro, cabeça pra trás), 1 → 0. */
+  private crit = 0;
+  private critCooldown = 0;
   private readonly legL: Phaser.GameObjects.Image;
   private readonly legR: Phaser.GameObjects.Image;
   private readonly arm: Phaser.GameObjects.Image;
@@ -74,6 +77,18 @@ export class PlayerView {
     this.kick = 1;
   }
 
+  /** Crítico acertou: dispara a pose. Devolve true se é uma pose nova (para o "HII-HII!"). */
+  onCrit(): boolean {
+    if (this.dead) return false;
+    const fresh = this.critCooldown <= 0;
+    this.crit = 1;
+    if (fresh) {
+      this.critCooldown = 0.6;
+      this.root.moveAbove(this.backArm, this.body); // a mão vai pra frente do corpo
+    }
+    return fresh;
+  }
+
   onJump(): void {
     this.squash.set(0);
     this.squash.kick(4.5); // estica
@@ -101,6 +116,9 @@ export class PlayerView {
     this.hairSpring.set(0);
     this.hairSpring.velocity = 0;
     this.kick = 0;
+    this.crit = 0;
+    this.critCooldown = 0;
+    this.root.moveBelow(this.backArm, this.legL);
   }
 
   /**
@@ -184,8 +202,23 @@ export class PlayerView {
     if (!m.grounded || this.cheer > 0) armTarget = Math.PI - 0.35;
     else if (Math.abs(m.vx) > 20) armTarget = Math.PI - 0.7 + Math.sin(this.runPhase * 0.5) * 0.15;
     else armTarget = Math.floor(t * 1.1) % 2 === 0 ? Math.PI - 0.45 : 0.55;
-    this.backArm.rotation += (armTarget - this.backArm.rotation) * Math.min(1, dt * 16);
-    this.backArm.y = -33 + bob;
+    // Crítico: a pose clássica do rei do pop, mão na virilha e joelhos pra dentro.
+    this.critCooldown = Math.max(0, this.critCooldown - dt);
+    let headBack = 0;
+    if (this.crit > 0) {
+      this.crit = Math.max(0, this.crit - dt * 1.4);
+      const k = Math.min(1, this.crit * 3);
+      armTarget = -0.38;
+      this.legL.setRotation(-0.22 * k).setScale(INV, INV * (1 - 0.12 * k));
+      this.legR.setRotation(0.22 * k).setScale(INV, INV * (1 - 0.12 * k));
+      this.body.rotation = 0.14 * k;
+      this.body.y = BODY_Y + 2 * k;
+      headBack = -0.35 * k;
+      if (this.crit === 0) this.root.moveBelow(this.backArm, this.legL);
+    }
+    const critBob = this.body.y - BODY_Y - bob;
+    this.backArm.rotation += (armTarget - this.backArm.rotation) * Math.min(1, dt * (this.crit > 0 ? 30 : 16));
+    this.backArm.y = -33 + bob + critBob;
 
     // Cabelo: mola própria (pulo e pouso) + esticão na queda livre.
     const hd = this.hairSpring.update(dt);
@@ -198,14 +231,14 @@ export class PlayerView {
     const k = this.kick * this.kick;
     this.arm.rotation = local - k * 0.42;
     this.arm.x = this.shoulderX - Math.cos(local) * k * 6;
-    this.arm.y = this.shoulderY - Math.sin(local) * k * 6 + bob;
-    this.head.rotation = local * 0.22;
-    this.head.y = HEAD_Y + bob;
+    this.arm.y = this.shoulderY - Math.sin(local) * k * 6 + bob + critBob;
+    this.head.rotation = local * 0.22 + headBack;
+    this.head.y = HEAD_Y + bob + critBob;
     // Cachos acompanham o rosto girando em torno do pescoço.
     const r = this.head.rotation;
     this.hair.rotation = r;
     this.hair.x = 1 - Math.sin(r) * FACE_DY;
-    this.hair.y = HEAD_Y + bob + Math.cos(r) * FACE_DY;
+    this.hair.y = HEAD_Y + bob + critBob + Math.cos(r) * FACE_DY;
 
     // Piscar durante i-frames.
     if (p.invuln > 0) {
