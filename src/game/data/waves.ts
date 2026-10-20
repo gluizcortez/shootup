@@ -3,7 +3,7 @@ import type { WaveConfig } from '@/core/run/waves';
 /**
  * Ondas do protótipo: os animais descem do topo, poucos de cada vez, e o elenco
  * entra aos poucos. Patos nas 1–2, Vaca Loca estreia na 3, Galinha Rambo na 4,
- * Pombos Mafiosos na 6 e o Porco Executivo na 9. Onda 10: Don Pombone.
+ * Ninjas de Asa-Delta na 6 e o Yuppie Turbo na 9. Onda 10: Toni Mantega.
  * Vida e velocidade dos inimigos crescem devagar a cada onda (`growth`).
  */
 export const WAVES: WaveConfig = {

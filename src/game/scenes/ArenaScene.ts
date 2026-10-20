@@ -244,7 +244,7 @@ export class ArenaScene extends Phaser.Scene {
         this.world.spawnEnemy('pombo_mafioso', 0.7);
         this.world.spawnEnemy('porco_executivo', 0.4);
       });
-      // F6: chama o Don Pombone na hora.
+      // F6: chama o Toni Mantega (chefe) na hora.
       kb.on('keydown-F6', (e: KeyboardEvent) => {
         e.preventDefault();
         if (this.phase.phase !== 'PLAYING') return;
@@ -504,12 +504,12 @@ export class ArenaScene extends Phaser.Scene {
       } else if (ev.type === 'enemyKilled') {
         this.announceCombo(ev.combo);
         if (ev.kind === 'don_pombone') {
-          bus.emit('game:callout', { id: Date.now(), title: 'DON POMBONE DERRUBADO!', subtitle: 'a família está de luto' });
+          bus.emit('game:callout', { id: Date.now(), title: 'TONI MANTEGA DERRUBADO!', subtitle: 'diga tchau pro seu amiguinho' });
         }
       } else if (ev.type === 'comboBroken') {
         this.lastMilestone = 0;
       } else if (ev.type === 'bossEnraged') {
-        bus.emit('game:callout', { id: Date.now(), title: 'O DON FICOU BRAVO!', subtitle: 'agora é pessoal' });
+        bus.emit('game:callout', { id: Date.now(), title: 'O TONI FICOU BRAVO!', subtitle: 'agora é pessoal' });
       } else if (ev.type === 'upgradeOffer') {
         this.openCards(ev.wave);
       }

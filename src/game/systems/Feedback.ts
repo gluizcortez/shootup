@@ -3,7 +3,7 @@ import type { GameEvent } from '@/core/run/events';
 import type { EnemyKind } from '@/core/enemies/types';
 import type { Settings, VfxQuality } from '@/shared/settings';
 import { VIEW_MARGIN } from '../data/view';
-import { CSS, PAL } from '../rendering/palette';
+import { CSS, NEON, PAL } from '../rendering/palette';
 import type { AudioSystem, SfxId } from './AudioSystem';
 import type { FloatingText } from './FloatingText';
 import type { Particles, ParticleSpec } from './Particles';
@@ -11,14 +11,15 @@ import type { ScreenShake } from './ScreenShake';
 
 const QUALITY_MULT: Record<VfxQuality, number> = { low: 0.35, medium: 0.7, high: 1 };
 
+/** Pedaços que voam no abate (confete de figurino), por vilão. */
 const FEATHER_TINT: Record<EnemyKind, number[]> = {
-  pato_pistoleiro: [PAL.duckYellow, 0xfff3b0, 0xf2b705],
-  galinha_rambo: [PAL.chickenWhite, 0xe7e1d6, PAL.comb],
-  vaca_loca: [PAL.cowWhite, PAL.cowSpot, PAL.cowWhite],
-  pombo_mafioso: [PAL.pigeon, PAL.pigeonDark, PAL.pigeonNeck],
-  // Porco "morre" em papelada e dinheiro de mentirinha.
-  porco_executivo: [0xffffff, 0x7bd389, PAL.gold, PAL.pig],
-  don_pombone: [PAL.donCoat, PAL.pigeon, PAL.gold, PAL.pigeonNeck],
+  pato_pistoleiro: [0x7fe0d4, 0xff7ab8, NEON.pink, NEON.cyan],
+  galinha_rambo: [0x26222e, 0x8a8f9c, 0xff2d3d, 0xb8c0cc],
+  vaca_loca: [NEON.pink, NEON.cyan, 0xffd166, 0x9b5cff],
+  pombo_mafioso: [0x1c1a2a, NEON.pink, 0x39ff88],
+  // Yuppie "morre" em papelada e dinheiro de mentirinha.
+  porco_executivo: [0xffffff, 0x7bd389, PAL.gold, 0xffb3d1],
+  don_pombone: [PAL.donCoat, 0xd8192e, PAL.gold, NEON.pink],
 };
 
 const KILL_SFX: Record<EnemyKind, SfxId> = {
@@ -37,13 +38,13 @@ const KILL_PROP: Record<EnemyKind, string> = {
   porco_executivo: 'porco_case',
   don_pombone: 'pombone_hat',
 };
-/** Onomatopeias de gibi no abate, por espécie. */
+/** Onomatopeias de gibi no abate, por vilão. */
 const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
-  pato_pistoleiro: ['QUÁ!', 'POW!', 'BLAM!', 'PLOC!'],
-  galinha_rambo: ['CÓ?!', 'KABUM!', 'CRÁS!', 'BÓÓÓ!'],
-  vaca_loca: ['MUUU!', 'PLOFT!', 'TÓIN!', 'CATAPLOFT!'],
-  pombo_mafioso: ['RRU!', 'PUF!', 'ZÁS!', 'FUI!'],
-  porco_executivo: ['ÓINC!', 'KA-CHING!', 'FALIU!', 'DEMITIDO!'],
+  pato_pistoleiro: ['POW!', 'BLAM!', 'CORTA!', 'PLOC!'],
+  galinha_rambo: ['VOLTAREI!', 'KABUM!', 'CRÁS!', 'HASTA!'],
+  vaca_loca: ['UFA!', 'PLOFT!', 'TÓIN!', 'SEM FÔLEGO!'],
+  pombo_mafioso: ['HAI!', 'PUF!', 'ZÁS!', 'SUMIU!'],
+  porco_executivo: ['KA-CHING!', 'FALIU!', 'DEMITIDO!', 'CRASH!'],
   don_pombone: ['CAPUT!'],
 };
 const COMIC_COLORS = [CSS.amber, CSS.coral, CSS.turquoise, CSS.violet];

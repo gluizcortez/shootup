@@ -7,7 +7,7 @@ import { normalizeAngle, Spring } from './spring';
 const INV = 1 / TEX_SCALE;
 
 interface Rig {
-  /** Atrás do corpo: balões do pato ou jetpack da galinha. */
+  /** Atrás do corpo: paraquedas, jetpack, asa-delta ou rotor. */
   lift: Phaser.GameObjects.Image;
   flame: Phaser.GameObjects.Image | null;
   body: Phaser.GameObjects.Image;
@@ -33,14 +33,14 @@ export interface EnemyVisual {
   update(e: Enemy, alpha: number, dt: number, reducedMotion: boolean): void;
 }
 
-/** Visual de um animal atirador que paira no alto. Reaproveitado via pool por espécie. */
+/** Visual de um vilão atirador que paira no alto. Reaproveitado via pool por tipo. */
 export class EnemyView implements EnemyVisual {
   readonly root: Phaser.GameObjects.Container;
   private readonly rig: Rig;
   private readonly shadow: Phaser.GameObjects.Image;
-  /** Seta de aviso no topo da tela enquanto o animal está para entrar. */
+  /** Seta de aviso no topo da tela enquanto o vilão está para entrar. */
   private readonly marker: Phaser.GameObjects.Image;
-  /** Bolha do escudo do Porco Executivo. */
+  /** Bolha do escudo dado pelo Yuppie Turbo. */
   private readonly shield: Phaser.GameObjects.Image;
   private readonly shieldScale: number;
   /** Escala do visual (o chefe é desenhado na base e ampliado). */
@@ -123,7 +123,7 @@ export class EnemyView implements EnemyVisual {
 
   private buildPombone(scene: Phaser.Scene): Rig {
     const t = TEX.pomboneBody;
-    const lift = scene.add.image(-8, -60, 'pombone_wing').setOrigin(6 / TEX.pomboneWing.w, 0.5).setScale(INV);
+    const lift = scene.add.image(-28, -86, 'pombone_wing').setScale(INV); // rotor da mochila
     const body = scene.add.image(0, 0, 'pombone_body').setOrigin(48 / t.w, 90 / t.h).setScale(INV);
     const prop = scene.add.image(12, -84, 'pombone_hat').setScale(INV).setRotation(-0.12);
     const gun = scene.add
@@ -255,16 +255,15 @@ export class EnemyView implements EnemyVisual {
     const tilt = e.state === 'aim' ? -0.14 : Math.max(-0.25, Math.min(0.25, e.vx * e.facing * 0.0018));
     this.root.rotation += (tilt * e.facing - this.root.rotation) * Math.min(1, dt * 10);
 
-    // Balões balançam; asas batem; hélice gira; chama do jetpack tremula.
+    // Paraquedas balança; asa-delta oscila; rotores giram; chama do jetpack tremula.
     if (this.kind === 'pato_pistoleiro') {
       r.lift.rotation = reducedMotion ? 0 : Math.sin(this.time * 2.2) * 0.08 - e.vx * e.facing * 0.001;
-    } else if (this.kind === 'pombo_mafioso' || this.kind === 'don_pombone') {
-      // Don Pombone anuncia o ataque batendo as asas com força.
-      const boss = this.kind === 'don_pombone';
+    } else if (this.kind === 'pombo_mafioso') {
+      r.lift.rotation = (reducedMotion ? 0 : Math.sin(this.time * 7) * 0.12) - 0.15 - e.vx * e.facing * 0.0008;
+    } else if (this.kind === 'don_pombone') {
+      // Toni Mantega anuncia o ataque acelerando o rotor da mochila.
       const angry = e.state === 'aim';
-      const speed = boss ? (angry ? 26 : 9) : 30;
-      const amp = boss ? (angry ? 0.75 : 0.35) : 0.6;
-      r.lift.rotation = Math.sin(this.time * speed) * amp - 0.2;
+      r.lift.scaleX = INV * Math.cos(this.time * (angry ? 70 : 32));
     } else if (this.kind === 'porco_executivo') {
       r.lift.scaleX = INV * Math.cos(this.time * 45);
     } else if (r.flame) {

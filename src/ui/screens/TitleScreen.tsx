@@ -19,12 +19,12 @@ const TICKER = [
 ]
 
 const CAST: Array<[string, string]> = [
-  ['Pato Pistoleiro', 'faz pose dramática ("!") antes de cada tiro mirado.'],
-  ['Galinha Rambo', 'gira a metralhadora, trava a mira e solta a rajada.'],
-  ['Vaca Loca', 'bípede, pisa forte e investe pelo chão. Pule por cima!'],
-  ['Pombo Mafioso', 'chega em bando de 3 em V e atira junto depois do assobio.'],
-  ['Porco Executivo', 'joga moedas e dá escudo aos colegas. Mate primeiro!'],
-  ['Don Pombone', 'o chefão da onda 10. Bate as asas antes de cada ataque.'],
+  ['Capanga Vice', 'desce de paraquedas neon e faz pose ("!") antes de cada tiro mirado.'],
+  ['Exterminador de Aluguel', 'gira a metralhadora, trava a mira e solta a rajada. Ele voltará.'],
+  ['Aeróbica Turbo', 'professora de aeróbica que atropela pelo chão. Pule por cima!'],
+  ['Ninja de Asa-Delta', 'chega em bando de 3 em V e atira de Uzi junto depois do assobio.'],
+  ['Yuppie Turbo', 'joga moedas e dá escudo aos colegas pelo celular-tijolo. Mate primeiro!'],
+  ['Toni Mantega', 'o chefão da onda 10. Acelera o rotor da mochila antes de cada ataque.'],
 ];
 
 function Logo() {
@@ -130,7 +130,7 @@ export function TitleScreen() {
                   <kbd>3</kbd> escolher carta · <kbd>Esc</kbd> pausa · <kbd>R</kbd> reinicia
                 </li>
               </ul>
-              <h3 className="cast-title">ELENCO DE HOJE</h3>
+              <h3 className="cast-title">ELENCO DA FITA</h3>
               <dl className="cast">
                 {CAST.map(([name, desc]) => (
                   <div key={name}>

@@ -16,7 +16,7 @@ const BELL_Y = -39;
 type Img = Phaser.GameObjects.Image;
 
 /**
- * Vaca Loca bípede: corre em duas patas com os braços (cascos) balançando.
+ * Aeróbica Turbo (id estável `vaca_loca`): corre com os halteres balançando.
  * Poses por estado: pisa forte de punhos erguidos no aviso, sprint
  * inclinado na investida, cambaleia com estrelinhas quando tonta.
  */
@@ -46,7 +46,7 @@ export class VacaView implements EnemyVisual {
     scene: Phaser.Scene,
     private readonly groundAt: (x: number) => number,
   ) {
-    const shade = 0xd9d3cc;
+    const shade = 0xc9b8d6;
     const leg = (x: number, back: boolean) =>
       scene.add.image(x, HIP, 'vaca_leg').setOrigin(0.5, 0.05).setScale(INV).setTint(back ? shade : 0xffffff);
     const arm = (x: number, back: boolean) =>

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PAL } from './palette';
+import { NEON, PAL } from './palette';
 
 /**
  * PLACEHOLDERS PROCEDURAIS — TEMPORÁRIOS.
@@ -223,83 +223,109 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.fill(PAL.skin).rect(4.5, 17.6, 5, 1.6);
   });
 
-  // ── Pato Pistoleiro ──────────────────────────────────────────────────
+  // ── Elenco de vilões: paródias de filmes de ação e da Miami dos anos 80 ──
+  // As chaves de textura seguem os IDs estáveis dos inimigos (pato_*, galinha_*…).
+  const skinB = 0xe0a477;
+  const stubble = 0x4a3a30;
+  const leather = 0x26222e;
+  const leatherHi = 0x3d3848;
+
+  // ── Capanga Vice (id pato_pistoleiro): terno pastel, paraquedas neon ──
   make(scene, 'pato_body', TEX.patoBody.w, TEX.patoBody.h, (p) => {
-    p.oRound(13, 32, 7, 4, 2, PAL.beak, 1); // pés
-    p.oRound(23, 32, 7, 4, 2, PAL.beak, 1);
-    p.oEllipse(20, 24, 30, 20, PAL.duckYellow); // corpo
-    p.fill(0xfff3b0).ellipse(22, 27, 16, 10); // barriga
-    p.fill(O).tri(4, 20, 9, 24, 5, 27); // rabinho
-    p.fill(PAL.duckYellow).tri(5.5, 21, 8.5, 24, 6, 25.5);
-    p.oCircle(27, 12, 9, PAL.duckYellow); // cabeça
-    p.oRound(31, 12, 12, 5, 2.5, PAL.beak, 1.2); // bico
-    p.fill(0xd9790a).rect(32, 14.5, 10, 1);
-    p.fill(PAL.warmWhite).circle(29.5, 9.5, 3.4); // olho arregalado
-    p.fill(O).circle(30.8, 9.8, 1.7);
-    p.fill(O).poly([[25, 5.5], [33, 6], [33, 7], [25, 7.5]]); // sobrancelha durona
-    p.fill(0xf2b705).ellipse(16, 23, 12, 8); // asa
-    p.stroke(1, O).g.strokeEllipse(16 * S, 23 * S, 12 * S, 8 * S);
+    p.oRound(16, 27, 6, 10, 2, 0xf2f0ea, 1); // calça de linho
+    p.oRound(24, 27, 6, 10, 2, 0xf2f0ea, 1);
+    p.oRound(14.5, 35, 8, 3.6, 1.6, 0x8a5a2b, 1); // mocassim sem meia
+    p.oRound(23.5, 35, 8, 3.6, 1.6, 0x8a5a2b, 1);
+    p.oRound(11, 15, 23, 15, 5, 0x7fe0d4); // blazer turquesa pastel
+    p.fill(0x5cc4b8).round(11, 24, 23, 6, 3);
+    p.fill(O).tri(18.5, 15, 29, 15, 23.5, 27);
+    p.fill(0xff7ab8).tri(19.6, 15.6, 27.8, 15.6, 23.5, 25.5); // camiseta rosa
+    p.fill(0xa8f0e8).tri(17, 15, 20, 15, 21, 24).tri(30, 15, 27, 15, 26, 24); // lapelas
+    p.oCircle(27, 10, 8.5, PAL.skin); // cabeça
+    p.oCircle(21, 11, 2.4, PAL.skin, 1); // orelha
+    p.fill(stubble, 0.35).ellipse(29.5, 15, 12, 6); // barba por fazer
+    p.fill(O).round(24.5, 6.6, 11.5, 4.4, 1.6); // Ray-Ban
+    p.fill(0x22e6ff, 0.8).rect(26, 7.4, 3.6, 1.2).rect(31, 7.4, 3.6, 1.2);
+    p.fill(0xe8a87f).circle(35, 11.5, 1.8); // nariz
+    p.fill(O).round(29.5, 14.6, 5, 1.2, 0.6); // sorrisinho de lado
+    p.fill(PAL.gold).circle(21, 13.5, 0.9); // brinco
   });
   make(scene, 'pato_hat', TEX.patoHat.w, TEX.patoHat.h, (p) => {
-    p.oRound(2, 11, 32, 4, 2, PAL.hatBrown, 1.2); // aba
-    p.oRound(9, 2, 18, 11, 4, PAL.hatBrown, 1.2); // copa
-    p.fill(PAL.hatBand).rect(9, 9, 18, 2.5);
-    p.fill(0xb07a42).rect(12, 3.5, 3, 5);
+    // Topete engomado com gel (fica por cima da cabeça).
+    p.fill(O).poly([[6, 16], [8, 8], [16, 3], [27, 2], [33, 6], [30, 10], [24, 9], [26, 16]]);
+    p.fill(0x3a2116).poly([[7.5, 15], [9.5, 8.5], [16.5, 4.4], [26.5, 3.4], [31, 6.2], [28.6, 8.6], [22.5, 8], [24.5, 15]]);
+    p.fill(0x7a4a2c).poly([[12, 7], [20, 4.4], [26, 4.2], [18, 6.4]]);
   });
   make(scene, 'pato_gun', TEX.patoGun.w, TEX.patoGun.h, (p) => {
-    p.oCircle(4, 5, 3, 0xf2b705, 1); // ponta da asa
-    p.oRound(7, 2, 11, 4, 1, PAL.gunMetal, 1); // pistolinha minúscula
-    p.oRound(8, 4.5, 3, 4, 1, PAL.hatBrown, 1);
+    p.oRound(0.5, 3, 6, 4, 2, 0x7fe0d4, 1); // manga
+    p.oCircle(7, 5, 2.6, PAL.skin, 1);
+    p.oRound(8, 2, 11, 4, 1, 0xd6dbe6, 1); // pistolinha cromada
+    p.oRound(8.6, 4.5, 3, 4.4, 1, PAL.gunMetal, 1);
+    p.fill(0xffffff, 0.8).rect(9, 2.6, 9, 0.8);
   });
-
   make(scene, 'pato_balloons', TEX.patoBalloons.w, TEX.patoBalloons.h, (p) => {
-    // Cachinho de balões de festa do programa: o pato voa pendurado neles.
-    p.stroke(1, O).line(10, 20, 22, 46).line(22, 16, 22, 46).line(34, 20, 22, 46);
-    const balloon = (x: number, y: number, color: number) => {
-      p.fill(O).ellipse(x, y, 17, 20).tri(x - 2.5, y + 9, x + 2.5, y + 9, x, y + 12.5);
-      p.fill(color).ellipse(x, y, 14, 17).tri(x - 1.5, y + 8, x + 1.5, y + 8, x, y + 11);
-      p.fill(0xffffff, 0.5).ellipse(x - 3, y - 4, 4, 6);
-    };
-    balloon(10, 12, PAL.coral);
-    balloon(34, 12, PAL.turquoise);
-    balloon(22, 9, PAL.amber);
+    // Paraquedas listrado em neon (desce flutuando e fica pendurado no alto).
+    p.stroke(0.9, O).line(4, 18, 22, 46).line(15, 20, 22, 46).line(29, 20, 22, 46).line(40, 18, 22, 46);
+    p.fill(O).ellipse(22, 16, 44, 30);
+    p.fill(O).rect(0, 16, 44, 4);
+    const stripes = [NEON.pink, 0xffe14d, NEON.cyan, NEON.pink, 0xffe14d, NEON.cyan];
+    for (let i = 0; i < stripes.length; i++) {
+      p.fill(stripes[i] as number).poly([
+        [1.5 + i * 6.8, 17],
+        [22, 2.5],
+        [22, 2.5],
+        [1.5 + (i + 1) * 6.8, 17],
+      ]);
+    }
+    p.fill(0x1a0630, 0.25).rect(1.5, 14, 41, 3);
+    p.fill(0xffffff, 0.45).ellipse(14, 9, 8, 4);
   });
 
-  // ── Galinha Rambo ────────────────────────────────────────────────────
+  // ── Exterminador de Aluguel (id galinha_rambo): ciborgue de academia ──
   make(scene, 'galinha_body', TEX.galinhaBody.w, TEX.galinhaBody.h, (p) => {
-    p.oRound(15, 49, 6, 6, 1, PAL.beak, 1); // pernas
-    p.oRound(26, 49, 6, 6, 1, PAL.beak, 1);
-    p.oEllipse(23, 36, 34, 30, PAL.chickenWhite); // corpo bombado
-    p.fill(0xe7e1d6).ellipse(25, 42, 22, 12);
-    p.fill(O).poly([[5, 28], [11, 30], [8, 40]]); // rabo arrepiado
-    p.fill(PAL.chickenWhite).poly([[6.5, 30], [10, 31], [8.5, 37]]);
-    p.oCircle(27, 17, 10, PAL.chickenWhite); // cabeça
-    p.oRound(20, 3, 5, 7, 2.5, PAL.comb, 1); // crista
-    p.oRound(24, 1, 5, 8, 2.5, PAL.comb, 1);
-    p.oRound(28, 3, 5, 7, 2.5, PAL.comb, 1);
-    p.fill(O).tri(35, 15, 43, 18, 35, 21); // bico
-    p.fill(PAL.beak).tri(36, 16, 41.5, 18, 36, 20);
-    p.oRound(34, 20, 4, 6, 2, PAL.comb, 1); // barbela
-    p.fill(PAL.comb).rect(17, 11, 20, 4.5); // bandana
-    p.fill(O).rect(17, 15.5, 20, 0.8);
-    p.fill(PAL.comb).poly([[17, 12], [9, 9], [11, 14]]); // pontas da bandana
-    p.fill(PAL.comb).poly([[17, 14], [10, 17], [13, 19]]);
-    p.fill(0xfaf0d0).ellipse(16, 34, 14, 12); // bíceps de asa
-    p.stroke(1, O).g.strokeEllipse(16 * S, 34 * S, 14 * S, 12 * S);
+    p.oRound(14, 46, 8, 9, 1.5, 0x1b1820, 1); // coturnos
+    p.oRound(25, 46, 8, 9, 1.5, 0x1b1820, 1);
+    p.oEllipse(23, 36, 34, 28, leather); // colete de couro
+    p.fill(0x8a8f9c).ellipse(27, 37, 16, 18); // regata cinza
+    p.fill(0x6f7480).rect(19, 43, 16, 1.5);
+    p.fill(leatherHi).ellipse(14, 32, 8, 14);
+    p.fill(0xc0c4cc).circle(13, 30, 0.9).circle(13, 35, 0.9).circle(14, 40, 0.9); // tachinhas
+    p.fill(O).rect(10, 47, 28, 3); // cinto de balas
+    p.fill(PAL.brass);
+    for (let x = 12; x < 36; x += 3) p.rect(x, 47.5, 1.6, 2);
+    // Cabeça quadrada de flat-top, queixo de bigorna.
+    p.oRound(17, 6, 20, 22, 4, skinB);
+    p.fill(O).rect(16, 3, 22, 6);
+    p.fill(0x2a1a12).rect(17, 4, 20, 4.5);
+    p.fill(stubble, 0.4).round(24, 20, 13, 8, 3);
+    p.oCircle(17, 16, 2.6, skinB, 1); // orelha
+    // Meia cara de metal (o ciborgue apareceu depois do tiro).
+    p.fill(0xb8c0cc).poly([[31, 9], [37, 9], [37, 22], [32, 19]]);
+    p.stroke(0.8, 0x6b7385).line(32, 13, 37, 13).line(33, 17, 37, 17);
+    p.fill(O).round(28, 23, 9, 2, 1); // boca reta
+    p.fill(0xc8885c).rect(35, 15, 3, 4); // nariz
+    p.oEllipse(14, 34, 15, 13, skinB); // bíceps gigante
+    p.fill(0xf0b88c).ellipse(13, 32, 6, 4);
+    p.fill(0x22e6ff).rect(8.5, 35, 11, 1.6); // tatuagem "MÃE" em neon
   });
   make(scene, 'galinha_glasses', TEX.galinhaGlasses.w, TEX.galinhaGlasses.h, (p) => {
+    // Óculos escuros com uma lente quebrada: atrás, o olho vermelho do ciborgue.
     p.fill(O).round(1, 1, 9, 6, 2).round(11, 1, 9, 6, 2).rect(8, 2, 5, 1.5);
-    p.fill(0x5b6b8c).rect(3, 2, 3, 1.2).rect(13, 2, 3, 1.2);
+    p.fill(0x5b6b8c).rect(3, 2, 3, 1.2);
+    p.fill(0xff2d3d).circle(15.5, 4, 2.2);
+    p.fill(0xffd0d0).circle(15, 3.5, 0.8);
+    p.stroke(0.6, 0x9aa3b5).line(11.5, 1.5, 14, 4).line(20, 6.5, 17, 4);
   });
   for (const [key, offset] of [
     ['galinha_gun_a', 0],
     ['galinha_gun_b', 2],
   ] as const) {
     make(scene, key, TEX.galinhaGun.w, TEX.galinhaGun.h, (p) => {
-      p.oRound(2, 6, 10, 8, 3, PAL.chickenWhite, 1); // asa segurando
+      p.oRound(2, 6, 10, 8, 3, skinB, 1); // punho fechado
+      p.fill(O).rect(4, 8, 6, 0.6).rect(4, 10.5, 6, 0.6);
       p.oRound(8, 3, 24, 12, 3, PAL.gunMetal, 1.2); // corpo da metralhadora
-      p.fill(PAL.coral).rect(12, 5, 4, 8); // faixa de aviso
-      p.fill(PAL.amber).rect(16, 5, 2, 8);
+      p.fill(NEON.pink).rect(12, 5, 4, 8); // faixa neon
+      p.fill(NEON.cyan).rect(16, 5, 2, 8);
       p.oRound(31, 4, 22, 10, 2, 0x2a2f3a, 1.2); // feixe de canos
       p.fill(PAL.gunLight);
       for (let i = 0; i < 3; i++) p.rect(32, 5.2 + ((i * 3 + offset) % 9), 21, 1.2);
@@ -307,137 +333,155 @@ export function generateTextures(scene: Phaser.Scene): void {
       p.oRound(14, 13, 8, 5, 1.5, PAL.brass, 1); // caixa de munição
     });
   }
-
   make(scene, 'galinha_jetpack', TEX.galinhaJetpack.w, TEX.galinhaJetpack.h, (p) => {
-    // Jetpack improvisado: dois botijões com fita adesiva.
-    p.oRound(1, 2, 9, 22, 4, PAL.gunLight, 1.2);
-    p.oRound(11, 2, 9, 22, 4, PAL.gunLight, 1.2);
-    p.fill(PAL.coral).rect(1.5, 10, 18, 3);
+    // Jetpack de garagem: dois extintores e fita adesiva rosa.
+    p.oRound(1, 2, 9, 22, 4, 0xe8283c, 1.2);
+    p.oRound(11, 2, 9, 22, 4, 0xe8283c, 1.2);
+    p.fill(NEON.pink).rect(1.5, 10, 18, 3);
     p.fill(0xffffff, 0.4).rect(3, 4, 2, 14).rect(13, 4, 2, 14);
     p.oRound(2.5, 23, 6, 5, 1, PAL.gunMetal, 1);
     p.oRound(12.5, 23, 6, 5, 1, PAL.gunMetal, 1);
   });
-  // ── Vaca Loca (bípede: corre em duas patas, braços de casco) ─────────
+
+  // ── Aeróbica Turbo (id vaca_loca): professora de aeróbica que atropela ──
   make(scene, 'vaca_body', TEX.vacaBody.w, TEX.vacaBody.h, (p) => {
-    // Rabo com tufo saindo das costas.
-    p.stroke(2, O).line(9, 34, 2, 40);
-    p.oCircle(2.5, 41, 2.4, PAL.cowSpot, 1);
-    p.oRound(7, 19, 26, 27, 11, PAL.cowWhite); // tronco em pé, barrigudo
-    p.fill(PAL.cowSpot).ellipse(13, 27, 9, 11).ellipse(26, 40, 8, 6).ellipse(29, 24, 4, 5);
-    p.fill(PAL.cowPink).ellipse(24, 34, 9, 10); // barriga rosada
-    // Cabeça grande na frente, olhar de doida e sorriso assustador.
-    p.oRound(12, 4, 22, 19, 8, PAL.cowWhite);
-    p.fill(PAL.cowSpot).ellipse(16, 9, 7, 6);
-    p.oEllipse(11, 9, 7, 4, PAL.cowPink, 1); // orelha
-    p.oRound(15, 0, 4, 6, 2, PAL.horn, 1); // chifres
-    p.oRound(26, 0, 4, 6, 2, PAL.horn, 1);
-    p.oRound(28, 11, 15, 11, 5, PAL.cowPink, 1.2); // focinho
-    p.fill(O).circle(36, 14.5, 1.1).circle(40.5, 14.5, 1.1);
-    p.fill(O).round(29, 18, 12, 3.4, 1.7); // sorrisão
-    p.fill(PAL.warmWhite).rect(30.5, 18.4, 9, 1.4);
-    p.fill(PAL.warmWhite).circle(21, 10, 4); // olhos arregalados, desalinhados
-    p.fill(PAL.warmWhite).circle(28, 8.5, 3.2);
-    p.fill(PAL.coral).circle(22, 10.5, 2);
-    p.fill(O).circle(22.4, 10.6, 1.1).circle(28.8, 8, 1.2);
+    // Permanente gigante atrás da cabeça.
+    for (const [x, y, r] of [
+      [14, 8, 7],
+      [10, 15, 6],
+      [20, 4, 6.5],
+      [27, 4, 5.5],
+      [11, 22, 4.5],
+    ] as const) p.fill(O).circle(x, y, r + 1.5);
+    for (const [x, y, r] of [
+      [14, 8, 7],
+      [10, 15, 6],
+      [20, 4, 6.5],
+      [27, 4, 5.5],
+      [11, 22, 4.5],
+    ] as const) p.fill(0xffd166).circle(x, y, r);
+    p.fill(0xffe9a8).circle(18, 3, 2).circle(11, 12, 1.6);
+    // Collant rosa-choque cavado + meia-calça.
+    p.oRound(10, 20, 22, 27, 9, 0xff2fa8);
+    p.fill(0x9b5cff).tri(12, 40, 31, 40, 21.5, 47); // cava roxa
+    p.fill(0xffffff, 0.5).round(14, 23, 4, 14, 2);
+    p.fill(NEON.cyan).rect(10, 34, 22, 2.4); // cinto neon
+    // Cabeça com faixa, cara de quem está no 300º polichinelo.
+    p.oRound(15, 5, 20, 19, 8, PAL.skin);
+    p.fill(O).round(14, 6.5, 22, 5, 2);
+    p.fill(NEON.cyan).round(15, 7.2, 20, 3.4, 1.4);
+    p.fill(NEON.pink).rect(15, 8.4, 20, 1);
+    p.fill(PAL.warmWhite).circle(26, 14, 3.6).circle(32, 13.6, 3); // olhos esbugalhados
+    p.fill(O).circle(27.2, 14.2, 1.6).circle(33, 13.8, 1.3);
+    p.fill(0x7a2b8a).ellipse(29, 11.4, 9, 1.6); // sombra azul-roxa
+    p.fill(O).round(26, 19, 9, 4.6, 2.2); // grito de "VAI, VAI, VAI!"
+    p.fill(PAL.warmWhite).rect(27, 19.4, 7, 1.2);
+    p.fill(0xff5a8a).circle(23, 18, 1.8); // blush exagerado
+    p.fill(0x7fe7ff, 0.9).circle(37, 9, 1).circle(36, 12, 0.8); // gotas de suor
   });
   make(scene, 'vaca_leg', TEX.vacaLeg.w, TEX.vacaLeg.h, (p) => {
-    p.oRound(1.5, 0, 6, 13, 3, PAL.cowWhite, 1);
-    p.fill(PAL.cowSpot).ellipse(4.5, 5, 4, 4);
-    p.oRound(0.5, 12, 8, 5, 1.5, PAL.hoof, 1);
+    p.oRound(2, 0, 5, 9, 2, 0xff9ad0, 1); // meia-calça
+    p.oRound(1, 7, 7, 7, 2, NEON.cyan, 1); // polaina
+    p.fill(0x0fb8d8).rect(1, 9, 7, 1).rect(1, 11.5, 7, 1);
+    p.oRound(0.5, 13, 8.5, 4.4, 1.8, PAL.warmWhite, 1); // tênis de aeróbica
+    p.fill(NEON.pink).rect(1.5, 14.2, 6, 1);
   });
   make(scene, 'vaca_arm', TEX.vacaArm.w, TEX.vacaArm.h, (p) => {
-    // Braço com casco na ponta; pivô no ombro (x = pivotX).
-    p.oRound(1, 1.5, 12, 5, 2.5, PAL.cowWhite, 1);
-    p.oRound(11, 0.5, 5, 7, 2, PAL.hoof, 1);
+    // Braço com munhequeira e halterinho rosa; pivô no ombro.
+    p.oRound(1, 2, 10, 4, 2, PAL.skin, 1);
+    p.fill(NEON.cyan).rect(8, 2, 2.6, 4);
+    p.oRound(11, 0.5, 2.4, 7, 1, NEON.pink, 1);
+    p.oRound(15, 0.5, 2.4, 7, 1, NEON.pink, 1);
+    p.fill(O).rect(13, 3.4, 2.4, 1.2);
   });
   make(scene, 'vaca_bell', TEX.vacaBell.w, TEX.vacaBell.h, (p) => {
-    p.oRound(4, 0, 4, 3, 1, PAL.coral, 1); // coleira
-    p.fill(O).poly([[2, 12], [3, 3], [9, 3], [10, 12]]);
-    p.fill(PAL.brass).poly([[3, 11], [4, 4], [8, 4], [9, 11]]);
-    p.fill(0xfff1c1).rect(4.5, 5, 1.3, 5);
-    p.oCircle(6, 12, 1.4, PAL.gunMetal, 0.8);
+    // Walkman pendurado no pescoço, com fone de ouvido laranja.
+    p.stroke(0.8, O).line(6, 0, 6, 3);
+    p.oRound(2, 3, 8, 9, 1.2, 0x2b6fd6, 1);
+    p.fill(0x9aa3b5).rect(3, 4.5, 6, 3);
+    p.fill(O).circle(4.6, 6, 0.9).circle(7.4, 6, 0.9);
+    p.fill(0xff8a3d).rect(3, 9.5, 6, 1.2);
   });
 
-  // ── Pombo Mafioso: sobretudo, óculos escuros e metralhadora no estojo de violino ──
+  // ── Ninja de Asa-Delta (id pombo_mafioso): esquadrilha de ninjas com Uzi ──
   make(scene, 'pombo_body', TEX.pomboBody.w, TEX.pomboBody.h, (p) => {
-    p.oRound(12, 25, 3, 4, 1, PAL.beak, 0.8); // perninhas
-    p.oRound(18, 25, 3, 4, 1, PAL.beak, 0.8);
-    p.fill(O).poly([[3, 15], [8, 13], [8, 22]]); // rabo
-    p.fill(PAL.pigeonDark).poly([[4.5, 15.5], [7.5, 14.5], [7.5, 20]]);
-    p.oEllipse(16, 18, 20, 16, PAL.trench); // sobretudo
-    p.fill(0xa8864e).rect(7, 18, 18, 2.2); // cinto
-    p.fill(PAL.brass).rect(15, 17.6, 3, 3);
-    p.fill(0xa8864e).tri(14, 10, 21, 10, 17, 18); // lapela
-    p.oCircle(21, 8, 6.5, PAL.pigeon); // cabeça
-    p.fill(PAL.pigeonNeck).ellipse(19, 13.5, 11, 3.5); // pescoço furta-cor
-    p.fill(PAL.pigeonNeck2).ellipse(19, 14.6, 9, 1.6);
-    p.fill(O).round(18, 5.2, 11, 3.6, 1.4); // óculos escuros
-    p.fill(0x5b6b8c).rect(19.5, 5.8, 3, 1);
-    p.fill(O).tri(26, 9, 32.5, 10.8, 26, 12.5); // bico
-    p.fill(0xd9c9b0).tri(26.8, 9.8, 31, 10.8, 26.8, 11.7);
-    p.fill(PAL.warmWhite).circle(29.2, 10.2, 0.6);
+    p.oRound(11, 23, 4, 6, 1.4, 0x15131f, 0.8); // pernas de tabi
+    p.oRound(18, 23, 4, 6, 1.4, 0x15131f, 0.8);
+    p.oEllipse(16, 18, 20, 15, 0x1c1a2a); // gi preto
+    p.fill(0x2e2a44).ellipse(13, 16, 8, 6);
+    p.fill(0x39ff88).rect(7, 19, 18, 2.2); // faixa verde-neon
+    p.oCircle(21, 8, 6.5, 0x1c1a2a); // capuz
+    p.fill(PAL.skin).round(18.5, 6, 9, 3.4, 1.4); // fresta dos olhos
+    p.fill(O).rect(21, 6.8, 1.6, 1.6).rect(25, 6.8, 1.6, 1.6);
+    p.fill(O).rect(19.5, 5.2, 4, 0.8).rect(24, 5.6, 3.6, 0.8); // sobrancelhas bravas
   });
   make(scene, 'pombo_wing', TEX.pomboWing.w, TEX.pomboWing.h, (p) => {
-    p.fill(O).poly([[1, 6], [8, 1], [23, 2], [20, 6], [23, 9], [8, 11]]);
-    p.fill(PAL.pigeon).poly([[3, 6], [9, 2.5], [20, 3.4], [17.5, 6], [20, 8], [9, 9.5]]);
-    p.fill(PAL.pigeonDark).rect(12, 5.4, 7, 1.2);
+    // Asa-delta de brinquedo, em neon (presa nas costas).
+    p.fill(O).poly([[1, 6], [23, 0.5], [21, 6], [23, 11.5]]);
+    p.fill(NEON.pink).poly([[3, 6], [21, 2], [19.4, 6], [21, 10]]);
+    p.fill(0xffe14d).poly([[3, 6], [12, 4], [12, 8]]);
+    p.stroke(0.8, O).line(3, 6, 21, 6);
   });
   make(scene, 'pombo_hat', 18, 9, (p) => {
-    p.oRound(1, 6, 16, 2.5, 1.2, 0x23202b, 1);
-    p.oRound(4, 1, 10, 6, 2.5, 0x23202b, 1);
-    p.fill(PAL.coral).rect(4, 4.5, 10, 1.4);
+    // Pontas da faixa ninja tremulando para trás.
+    p.fill(O).poly([[16, 3], [1, 0.5], [3, 3.8], [16, 5]]).poly([[16, 4.5], [2, 7.4], [5, 8.6], [16, 6]]);
+    p.fill(NEON.pink).poly([[15.5, 3.6], [2.6, 1.6], [3.8, 3.4], [15.5, 4.5]]).poly([[15.5, 5], [3.6, 7.6], [5, 8], [15.5, 5.7]]);
   });
   make(scene, 'pombo_gun', TEX.pomboGun.w, TEX.pomboGun.h, (p) => {
-    p.oCircle(3, 4.5, 2.6, PAL.pigeon, 0.8); // ponta da asa
-    p.fill(O).poly([[5, 1], [14, 0.5], [17, 2], [17, 7], [14, 8.5], [5, 8]]); // estojo de violino
-    p.fill(0x8a5a2b).poly([[6, 2], [13.5, 1.6], [16, 3], [16, 6], [13.5, 7.4], [6, 7]]);
-    p.fill(PAL.brass).rect(9, 4, 2, 1.4);
-    p.oRound(16, 3, 7, 2.6, 0.8, PAL.gunMetal, 0.8); // cano saindo do estojo
+    p.oCircle(3, 4.5, 2.6, 0x1c1a2a, 0.8); // luva preta
+    p.oRound(5, 1.5, 13, 4.5, 1, 0x2a2f3a, 1); // Uzi
+    p.oRound(9, 4.5, 3.4, 4.4, 0.8, 0x2a2f3a, 0.8); // pente
+    p.oRound(17, 2.5, 6, 2.4, 0.6, PAL.gunMetal, 0.8);
+    p.fill(0x39ff88).rect(6, 2.2, 3, 0.8);
   });
 
-  // ── Porco Executivo: terno apertado, gravata, maleta e hélice no chapéu ──
+  // ── Yuppie Turbo (id porco_executivo): Wall Street com celular-tijolo ──
   make(scene, 'porco_body', TEX.porcoBody.w, TEX.porcoBody.h, (p) => {
-    p.oRound(15, 40, 6, 5, 1.5, PAL.hoof, 1); // pés
-    p.oRound(25, 40, 6, 5, 1.5, PAL.hoof, 1);
-    p.stroke(1.6, O).line(5, 27, 1, 24); // rabinho enrolado
-    p.fill(O).circle(2, 22, 2.2);
-    p.fill(PAL.pig).circle(2, 22, 1.2);
-    p.oEllipse(23, 30, 34, 24, PAL.suit); // terno apertadíssimo
-    p.fill(PAL.suitLight).ellipse(19, 26, 14, 8);
-    p.fill(PAL.warmWhite).tri(20, 19, 30, 19, 25, 32); // camisa
-    p.fill(PAL.coral).poly([[24, 20], [26, 20], [27, 30], [25, 33], [23, 30]]); // gravata
-    p.fill(O).circle(18, 33, 1.2).circle(31, 33, 1.2); // botões estourando
-    p.fill(PAL.gold).circle(34, 25, 1.4); // broche de "funcionário do mês"
-    p.oCircle(25, 13, 11, PAL.pig); // cabeção
-    p.fill(O).tri(14, 5, 18, 0, 21, 5); // orelhas
-    p.fill(PAL.pigDark).tri(15.5, 5, 18, 2, 19.5, 5);
-    p.fill(O).tri(29, 4, 33, 0, 35, 6);
-    p.fill(PAL.pigDark).tri(30.5, 4.5, 33, 2, 33.8, 5.5);
-    p.oRound(31, 11, 11, 9, 4.5, PAL.pigDark, 1.2); // focinho
-    p.fill(O).ellipse(34.5, 15.5, 2, 3).ellipse(38.5, 15.5, 2, 3);
-    p.fill(O).round(23, 9, 6, 2, 1); // olhinho presunçoso semicerrado
-    p.fill(PAL.warmWhite).rect(24, 9, 4, 0.8);
-    p.fill(O).rect(22, 6.5, 8, 1.2); // sobrancelha arqueada
-    p.fill(O).round(28, 21, 7, 1.4, 0.7); // sorrisinho
+    p.oRound(15, 40, 7, 5, 1.5, 0x1b1820, 1); // sapato de bico fino
+    p.oRound(25, 40, 7, 5, 1.5, 0x1b1820, 1);
+    p.oRound(16, 32, 5, 9, 1.5, 0x3d4255, 1); // calça risca de giz
+    p.oRound(25, 32, 5, 9, 1.5, 0x3d4255, 1);
+    p.oEllipse(23, 28, 30, 22, 0xffb3d1); // camisa rosa
+    p.fill(0xf598bd).ellipse(23, 33, 26, 8);
+    p.fill(0xe8283c).rect(15, 18, 2.6, 20).rect(29, 18, 2.6, 20); // suspensórios
+    p.fill(PAL.gold).circle(16.3, 30, 1).circle(30.3, 30, 1);
+    p.fill(0xe8283c).poly([[23, 19], [26, 19], [27, 31], [24.5, 34], [22, 31]]); // gravata poderosa
+    p.fill(PAL.warmWhite).tri(20, 17, 29, 17, 24.5, 21); // colarinho
+    p.oCircle(25, 12, 10.5, PAL.skin); // cabeça
+    // Cabelo de gel penteado para trás, sem um fio fora do lugar.
+    p.fill(O).poly([[13, 12], [15, 3], [24, 0], [33, 2], [35, 6], [25, 5], [17, 9], [16, 15]]);
+    p.fill(0x2a1a12).poly([[14.5, 11.5], [16, 4], [24, 1.4], [32, 3], [32.8, 5], [25, 4], [17.4, 8], [16.6, 13]]);
+    p.stroke(0.6, 0x6a4a35).line(18, 5, 28, 2.6).line(17, 7.4, 30, 3.8);
+    p.fill(O).rect(26, 8.6, 6, 1.1); // sobrancelha
+    p.fill(O).round(27, 10.4, 4, 1.6, 0.8); // olho presunçoso
+    p.fill(0xe8a87f).circle(34.5, 13, 2); // nariz
+    p.fill(O).round(26.5, 16.4, 8, 3.6, 1.6); // sorriso de comissão
+    p.fill(PAL.warmWhite).rect(27.5, 16.8, 6, 1.4);
+    p.fill(PAL.gold).rect(30, 16.8, 1.3, 1.4); // dente de ouro
   });
   make(scene, 'porco_hat', 20, 16, (p) => {
-    p.oRound(2, 12, 16, 3, 1.4, 0x1b1d26, 1); // cartola
-    p.oRound(5, 3, 10, 10, 1.5, 0x1b1d26, 1);
-    p.fill(PAL.gold).rect(5, 9.5, 10, 1.6);
-    p.fill(PAL.gunLight).rect(9, 0, 2, 3.5); // mastro da hélice
+    // Boné de hélice (o único brinquedo que a bolsa não levou).
+    p.fill(O).ellipse(10, 12, 18, 9);
+    p.fill(NEON.pink).ellipse(10, 12, 16, 7.4);
+    p.fill(NEON.cyan).poly([[2.4, 12.5], [10, 8.4], [10, 15.6]]);
+    p.fill(0xffe14d).poly([[17.6, 12.5], [10, 8.4], [10, 15.6]]);
+    p.oRound(13, 13.5, 7, 2.4, 1, NEON.pink, 0.8); // aba
+    p.fill(PAL.gunLight).rect(9, 0, 2, 9); // mastro da hélice
   });
   make(scene, 'porco_heli', 40, 6, (p) => {
-    p.oRound(1, 1.5, 38, 3, 1.5, PAL.gunLight, 1);
-    p.fill(PAL.coral).rect(1.5, 2, 4, 2).rect(34.5, 2, 4, 2);
+    p.oRound(1, 1.5, 38, 3, 1.5, 0xe8e2f0, 1);
+    p.fill(NEON.pink).rect(1.5, 2, 4, 2).rect(34.5, 2, 4, 2);
     p.oCircle(20, 3, 2, PAL.gold, 0.8);
   });
   make(scene, 'porco_case', TEX.porcoCase.w, TEX.porcoCase.h, (p) => {
-    p.oRound(1, 4, 9, 6, 3, PAL.suit, 1); // manga
-    p.oCircle(10, 7, 2.6, PAL.pig, 0.8); // mão (casco)
-    p.oRound(12, 2, 13, 11, 2, 0x7a4a24, 1.2); // maleta
-    p.fill(0x5e3519).rect(12.5, 7, 12, 1.2);
-    p.fill(PAL.gold).rect(17, 5.5, 3, 3);
-    p.stroke(1.4, O).line(15.5, 2, 15.5, 0.5).line(15.5, 0.5, 21.5, 0.5).line(21.5, 0.5, 21.5, 2);
+    p.oRound(1, 4, 9, 6, 3, 0xffb3d1, 1); // manga dobrada
+    p.oCircle(10, 7, 2.6, PAL.skin, 0.8);
+    p.oRound(11, 2.5, 8, 12, 1.6, 0x4a4f5e, 1.2); // celular-tijolo
+    p.fill(0x9fe8a8).rect(12.2, 3.8, 5.6, 2.6); // visor verde
+    p.fill(0xd6dbe6);
+    for (let y = 7.4; y < 13; y += 1.9) p.rect(12.4, y, 1.4, 1).rect(14.3, y, 1.4, 1).rect(16.2, y, 1.4, 1);
+    p.oRound(17.5, -0.5, 1.6, 4, 0.6, 0x2a2f3a, 0.6); // antena
+    p.fill(NEON.pink).circle(18.3, 0.2, 0.9);
   });
   make(scene, 'b_coin', 14, 14, (p) => {
     p.fill(O).circle(7, 7, 6.6);
@@ -447,52 +491,65 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.stroke(1.2, 0xb8860b).line(5, 5, 9, 5).line(5, 7, 9, 7).line(5, 9, 9, 9);
   });
 
-  // ── Don Pombone: pombo gigante de sobretudo branco, chapéu e corrente de ouro ──
+  // ── Toni Mantega (id don_pombone): o chefão de terno branco ──────────
   make(scene, 'pombone_body', TEX.pomboneBody.w, TEX.pomboneBody.h, (p) => {
-    p.oRound(36, 80, 8, 11, 3, PAL.beak, 1.5); // pernas finas e ridículas
-    p.oRound(52, 80, 8, 11, 3, PAL.beak, 1.5);
-    p.fill(O).poly([[4, 50], [20, 42], [22, 66]]); // cauda
-    p.fill(PAL.pigeonDark).poly([[8, 50], [18, 46], [19.5, 62]]);
-    p.oEllipse(46, 58, 64, 50, PAL.donCoat, 2); // sobretudo branco
-    p.fill(0xdcd6c8).ellipse(42, 66, 50, 26);
-    p.fill(0xdcd6c8).tri(46, 34, 66, 34, 56, 64); // lapelas
-    p.fill(0x1b1d26).tri(51, 36, 61, 36, 56, 58); // camisa preta
-    p.fill(PAL.donCoat).rect(54.5, 38, 3, 16); // gravata branca
-    p.stroke(2.2, PAL.gold).line(44, 40, 52, 56).line(52, 56, 64, 40); // correntão de ouro
-    p.oCircle(52, 57, 3.4, PAL.gold, 1.2);
-    p.oCircle(40, 44, 4.2, PAL.coral, 1.2); // cravo vermelho na lapela
-    p.fill(0xff8a92).circle(39, 43, 1.6);
-    p.fill(0xbfb9ad).rect(16, 70, 60, 2.5); // cinto
-    p.oCircle(58, 22, 19, PAL.pigeon, 2); // cabeçona
-    p.fill(PAL.pigeonNeck).ellipse(54, 37, 32, 9); // pescoço furta-cor
-    p.fill(PAL.pigeonNeck2).ellipse(54, 39.5, 26, 4);
-    p.fill(O).tri(72, 20, 94, 25, 72, 30); // bico enorme
-    p.fill(0xd9c9b0).tri(74, 21.5, 90, 25, 74, 28.5);
-    p.stroke(1.6, 0xc8a46a).line(80, 28, 92, 33); // palito de dente
-    p.fill(PAL.warmWhite).circle(64, 17, 6); // olho semicerrado de chefão
-    p.fill(O).circle(65.5, 18.5, 3);
-    p.fill(PAL.pigeon).rect(57, 10, 14, 6.5); // pálpebra pesada
-    p.fill(O).poly([[55, 9], [73, 12], [73, 15], [55, 12.5]]); // sobrancelha grossa
-    p.fill(O).circle(60, 30, 1.3).circle(66, 31, 1.3).circle(63, 33, 1.3); // barba por fazer
+    p.oRound(34, 76, 10, 14, 3, PAL.donCoat, 1.5); // calça branca
+    p.oRound(50, 76, 10, 14, 3, PAL.donCoat, 1.5);
+    p.oRound(32, 86, 14, 5.5, 2.5, 0x1b1820, 1.4); // sapato bicolor
+    p.oRound(48, 86, 14, 5.5, 2.5, 0x1b1820, 1.4);
+    p.fill(PAL.warmWhite).rect(34, 86.4, 6, 3).rect(50, 86.4, 6, 3);
+    // Mochila-helicóptero (mastro do rotor sai daqui).
+    p.oRound(12, 30, 16, 32, 5, 0x4a4f5e, 1.6);
+    p.fill(NEON.pink).rect(13, 40, 14, 3);
+    p.fill(0x6b7385).rect(17, 6, 5, 26);
+    p.oEllipse(46, 58, 62, 46, PAL.donCoat, 2); // terno branco
+    p.fill(0xdcd6c8).ellipse(42, 68, 50, 20);
+    p.fill(O).tri(44, 34, 68, 34, 56, 66);
+    p.fill(0xd8192e).tri(46, 35, 66, 35, 56, 63); // camisa vermelha aberta
+    p.fill(0xc98a64).tri(49, 35, 63, 35, 56, 52); // peito cabeludo
+    p.fill(0x3a2116, 0.6).circle(54, 41, 1).circle(58, 43, 1).circle(55, 46, 1).circle(57, 39, 0.9);
+    p.fill(0xeeeae0).tri(44, 34, 50, 34, 49, 60).tri(68, 34, 62, 34, 63, 60); // lapelas
+    p.stroke(2.2, PAL.gold).line(47, 38, 56, 54).line(56, 54, 65, 38); // correntão
+    p.stroke(1.4, PAL.gold).line(49, 38, 56, 49).line(56, 49, 63, 38);
+    p.oCircle(56, 55, 3.6, PAL.gold, 1.2);
+    p.oCircle(40, 44, 3.8, NEON.pink, 1.2); // cravo neon
+    // Cabeção: cabelo engomado preto, cicatriz, charuto.
+    p.oCircle(58, 22, 18, skinB, 2);
+    p.oCircle(42, 22, 4, skinB, 1.2); // orelha
+    p.fill(stubble, 0.45).ellipse(62, 32, 26, 12);
+    p.fill(PAL.warmWhite).circle(64, 17, 5.4);
+    p.fill(O).circle(65.6, 18, 2.8);
+    p.fill(skinB).rect(57.5, 10.5, 13, 6); // pálpebra pesada
+    p.fill(O).poly([[55, 9.5], [74, 11.5], [74, 14.5], [55, 12.6]]); // sobrancelhão
+    p.stroke(1.3, 0xb85a4a).line(66, 23, 72, 30).line(67.5, 25.5, 70, 24.5); // cicatriz
+    p.fill(0xc8885c).ellipse(75, 22, 7, 8); // nariz
+    p.fill(O).round(63, 31, 13, 3.4, 1.6); // careta
+    p.fill(PAL.warmWhite).rect(65, 31.4, 8, 1.2);
+    p.oRound(72, 30.5, 16, 4, 2, 0x7a4a24, 1); // charuto
+    p.fill(0xff8a3d).rect(86.5, 31, 2, 3);
+    p.fill(0x9aa3b5, 0.7).circle(91, 28, 2).circle(93, 24, 1.6);
   });
   make(scene, 'pombone_wing', TEX.pomboneWing.w, TEX.pomboneWing.h, (p) => {
-    p.fill(O).poly([[2, 14], [16, 2], [58, 4], [50, 11], [58, 16], [48, 22], [56, 26], [16, 26]]);
-    p.fill(PAL.pigeon).poly([[5, 14], [17, 5], [52, 6.5], [45, 11], [52, 15], [43, 21], [49, 23.5], [17, 23]]);
-    p.fill(PAL.pigeonDark).rect(24, 10, 18, 2).rect(24, 16, 16, 2);
+    // Pá do rotor da mochila-helicóptero (gira via scaleX na view).
+    p.oRound(1, 11, 58, 6, 3, 0xe8e2f0, 1.4);
+    p.fill(NEON.pink).rect(1.5, 12, 6, 4).rect(52.5, 12, 6, 4);
+    p.oCircle(30, 14, 4, PAL.gold, 1.2);
   });
   make(scene, 'pombone_hat', 52, 24, (p) => {
-    p.oRound(2, 17, 48, 6, 3, PAL.donCoat, 1.5); // aba
-    p.oRound(10, 3, 32, 16, 6, PAL.donCoat, 1.5); // copa
-    p.fill(0x1b1d26).rect(10, 12, 32, 4.5); // faixa
-    p.fill(PAL.coral).poly([[36, 12], [46, 0], [44, 8], [40, 14]]); // pena
+    // Topete engomado preto-azulado, brilhando de gel.
+    p.fill(O).poly([[4, 23], [6, 12], [16, 4], [32, 1], [46, 4], [50, 12], [42, 11], [30, 9], [20, 13], [16, 23]]);
+    p.fill(0x14101c).poly([[6, 21.5], [8, 12.6], [17, 5.6], [32, 2.6], [45, 5.4], [47.4, 10.2], [41, 9.4], [30, 7.6], [19, 11.6], [14.6, 21.5]]);
+    p.fill(0x5b6b9c, 0.8).poly([[18, 7], [32, 4], [40, 5.4], [28, 6.4]]);
   });
   make(scene, 'pombone_gun', TEX.pomboneGun.w, TEX.pomboneGun.h, (p) => {
-    p.oCircle(7, 11, 6, PAL.pigeon, 1.2); // ponta da asa
-    p.oRound(12, 6, 32, 9, 2, PAL.gold, 1.4); // metralhadora de ouro
-    p.oCircle(26, 17, 6, 0xd4a017, 1.2); // tambor
-    p.fill(0xfff1a8).rect(14, 7.5, 28, 1.6);
-    p.oRound(43, 8, 19, 5, 1.5, 0xd4a017, 1.2); // cano
-    p.fill(O).rect(46, 9.5, 14, 1);
+    p.oCircle(7, 11, 5.5, skinB, 1.2); // punho com anel
+    p.fill(PAL.gold).rect(5, 12, 4, 2);
+    p.oRound(12, 5, 34, 9, 2, PAL.gold, 1.4); // fuzil de ouro
+    p.oRound(22, 13, 6, 9, 1.5, 0xd4a017, 1.2); // pente curvo
+    p.fill(0xfff1a8).rect(14, 6.5, 30, 1.6);
+    p.oRound(30, 13, 16, 5, 2, 0x2a2f3a, 1.2); // lança-granadas ("meu amiguinho")
+    p.oRound(45, 7, 17, 4.6, 1.5, 0xd4a017, 1.2); // cano
+    p.fill(O).rect(48, 8.4, 12, 1);
   });
   make(scene, 'fx_shield', 64, 64, (p) => {
     // Bolha do "seguro corporativo" dado pelo Porco Executivo.
