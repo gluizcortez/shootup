@@ -1285,5 +1285,15 @@ kbd {
 
 .boss--enraged .boss-bar-fill {
   background: linear-gradient(180deg, var(--c-amber), #ff7a1a);
-  animation: pop 0.5s ease-in-out infinite alternate;
+  /* Pulsa só o brilho: animar transform sobrescreveria o scaleX da vida. */
+  animation: boss-rage 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes boss-rage {
+  0% {
+    filter: brightness(1.5);
+  }
+  100% {
+    filter: brightness(1);
+  }
 }
