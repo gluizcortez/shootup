@@ -13,7 +13,7 @@ import type { CardInfo, HudSnapshot } from '@/shared/types';
 import { ARENA, SIM_STEP, TERRAIN, VIEW_HEIGHT, VIEW_WIDTH } from '../data/arena';
 import { computeView } from '../data/view';
 import type { ViewLayout } from '../data/view';
-import { VOICE_LINES } from '../data/voices';
+import { VOICE_LINES, type VoiceLineId } from '../data/speech';
 import { Terrain } from '@/core/physics/terrain';
 import { isGolden } from '@/core/upgrades/upgrades';
 import { WORLD_CONFIG } from '../data/world';
@@ -30,6 +30,7 @@ import { AudioSystem } from '../systems/AudioSystem';
 import { musicModeFor } from '../data/music';
 import { Feedback } from '../systems/Feedback';
 import { FloatingText } from '../systems/FloatingText';
+import { SpeechBubble } from '../systems/SpeechBubble';
 import { InputSystem } from '../systems/InputSystem';
 import { Particles } from '../systems/Particles';
 import { ScreenShake } from '../systems/ScreenShake';
@@ -50,6 +51,8 @@ const COMBO_MILESTONES: ReadonlyArray<[number, string]> = [
   [40, 'TOTALLY RADICAL, DUDE!'],
 ];
 const HEARTBEAT_EVERY = 0.85;
+/** Altura em que quem chega do topo já está visível para falar. */
+const SPEECH_MIN_Y = 100;
 
 const PARTICLE_CAPACITY = { low: 160, medium: 360, high: 700 } as const;
 const DEATH_SEQUENCE = 1.3;
@@ -70,6 +73,11 @@ export class ArenaScene extends Phaser.Scene {
   private discoBall!: DiscoBallView;
   private particles!: Particles;
   private texts!: FloatingText;
+  private bubble!: SpeechBubble;
+  /** Quem está falando no balão (segue o personagem enquanto ele existir). */
+  private speakerUid = -1;
+  /** Fala esperando o personagem entrar na tela. */
+  private pendingSpeech: { id: VoiceLineId; uid: number } | null = null;
   private readonly shake = new ScreenShake();
   private readonly audio = new AudioSystem();
   private feedback!: Feedback;
@@ -124,6 +132,7 @@ export class ArenaScene extends Phaser.Scene {
     this.discoBall = new DiscoBallView(this);
     this.particles = new Particles(this, PARTICLE_CAPACITY[this.settings.vfxQuality], this.groundAt);
     this.texts = new FloatingText(this);
+    this.bubble = new SpeechBubble(this);
     this.input2 = new InputSystem(this, { x: VIEW_WIDTH / 2 + 200, y: ARENA.floorY - 30 });
     this.applyLayout();
     this.watchResize();
@@ -366,7 +375,9 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private resetRun(): void {
-    this.audio.stopVoice();
+    this.bubble.hide();
+    this.speakerUid = -1;
+    this.pendingSpeech = null;
     for (const uid of [...this.liveViews.keys()]) this.releaseView(uid);
     this.world = this.newWorld();
     this.particles.clear();
@@ -453,6 +464,11 @@ export class ArenaScene extends Phaser.Scene {
         view.bind(e);
       }
       view.update(e, alpha, running ? dt : 0, this.reducedMotion);
+      if (this.pendingSpeech?.uid === e.uid && e.y > SPEECH_MIN_Y) {
+        this.say(this.pendingSpeech.id, e.uid, e.x, e.y);
+        this.pendingSpeech = null;
+      }
+      if (e.uid === this.speakerUid && this.bubble.active) this.bubble.follow(e.x + e.def.hw * 0.7, e.y - e.def.hh * 0.4);
     }
     this.updateMusic(phase);
     // Vida no fim: coração batendo (o HUD pulsa em vermelho junto).
@@ -484,6 +500,7 @@ export class ArenaScene extends Phaser.Scene {
     if (phase !== 'PAUSED') {
       this.particles.update(dt);
       this.texts.update(dt);
+      this.bubble.update(dt);
       this.shake.update(dt);
       this.feedback.update(dt);
       this.stage.update(dt, this.reducedMotion);
@@ -546,21 +563,28 @@ export class ArenaScene extends Phaser.Scene {
       } else if (ev.type === 'enemyKilled') {
         this.announceCombo(ev.combo);
         if (ev.kind === 'don_pombone') {
-          this.audio.voice('toniDeath');
-          bus.emit('game:callout', { id: Date.now(), title: 'TONY MANTEGA IS DOWN!', subtitle: `“${VOICE_LINES.toniDeath.text}”` });
+          this.say('toniDeath', -1, ev.x + 30, ev.y - 20);
+          bus.emit('game:callout', { id: Date.now(), title: 'TONY MANTEGA IS DOWN!' });
         }
       } else if (ev.type === 'enemyIncoming' && ev.kind === 'don_pombone') {
-        this.audio.voice('toniAppear');
-        bus.emit('game:callout', { id: Date.now(), title: 'TONY MANTEGA', subtitle: `“${VOICE_LINES.toniAppear.text}”` });
+        // Fala quando já desceu o bastante para aparecer na tela.
+        this.pendingSpeech = { id: 'toniAppear', uid: ev.uid };
       } else if (ev.type === 'comboBroken') {
         this.lastMilestone = 0;
       } else if (ev.type === 'bossEnraged') {
-        this.audio.voice('toniRage');
-        bus.emit('game:callout', { id: Date.now(), title: 'TONY IS FURIOUS!', subtitle: `“${VOICE_LINES.toniRage.text}”` });
+        this.say('toniRage', ev.uid, ev.x + 35, ev.y - 20);
+        bus.emit('game:callout', { id: Date.now(), title: 'TONY IS FURIOUS!' });
       } else if (ev.type === 'upgradeOffer') {
         this.openCards(ev.wave);
       }
     }
+  }
+
+  /** Personagem fala num balão de gibi; `uid` -1 deixa o balão parado. */
+  private say(id: VoiceLineId, uid: number, x: number, y: number): void {
+    const line = VOICE_LINES[id];
+    this.speakerUid = uid;
+    this.bubble.say(line.text, x, y, line.seconds);
   }
 
   /** Narrador grita nos marcos de combo, com a plateia vibrando. */
