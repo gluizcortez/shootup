@@ -80,13 +80,20 @@ function make(scene: Phaser.Scene, key: string, w: number, h: number, draw: (p: 
 
 /** Tamanho lógico (sem TEX_SCALE) de cada textura, para posicionar origens. */
 export const TEX = {
-  plBody: { w: 36, h: 28 },
-  plHead: { w: 34, h: 32 },
+  plBody: { w: 30, h: 28 },
+  /** Pescoço (pivô de rotação da cabeça) em (13, 23). */
+  plHead: { w: 28, h: 26, nx: 13, ny: 23 },
+  /** Faixa do chapéu (onde ele assenta na cabeça) em (16, 12). */
+  plHat: { w: 32, h: 15, bx: 16, by: 12 },
+  plThigh: { w: 8, h: 9.5, py: 1.5 },
+  plShin: { w: 8, h: 10, py: 1.5 },
+  /** Tornozelo em (3.5, 2.5). */
+  plShoe: { w: 13, h: 7, ax: 3.5, ay: 2.5 },
+  plUpArm: { w: 7, h: 11, py: 2 },
+  plForearm: { w: 8, h: 16, py: 2 },
   /** O centro do rosto fica em (22, 16) da textura do cabelo. */
   plHair: { w: 40, h: 36, cx: 22, cy: 16 },
-  plLeg: { w: 11, h: 17 },
   plArm: { w: 42, h: 20, pivotX: 5 },
-  plBack: { w: 14, h: 22, pivotY: 3 },
   patoBody: { w: 44, h: 40 },
   patoHat: { w: 36, h: 18 },
   patoGun: { w: 22, h: 10, pivotX: 4 },
@@ -95,9 +102,21 @@ export const TEX = {
   galinhaBody: { w: 48, h: 56 },
   galinhaGlasses: { w: 22, h: 8 },
   galinhaGun: { w: 56, h: 18, pivotX: 10 },
-  vacaBody: { w: 44, h: 52 },
-  vacaLeg: { w: 9, h: 18 },
-  vacaArm: { w: 17, h: 8, pivotX: 3 },
+  vacaCape: { w: 30, h: 32 },
+  /** Quadril em (15, 30). */
+  vacaTorso: { w: 30, h: 32, hx: 15, hy: 30 },
+  /** Pescoço em (10, 21). */
+  vacaHead: { w: 25, h: 22, nx: 10, ny: 21 },
+  /** Base do topete em (8, 13). */
+  vacaPomp: { w: 32, h: 16, bx: 8, by: 13 },
+  vacaThigh: { w: 9, h: 10, py: 1.5 },
+  vacaShin: { w: 12, h: 12.4, py: 1.5 },
+  /** Tornozelo em (3.5, 2). */
+  vacaBoot: { w: 12, h: 6, ax: 3.5, ay: 2 },
+  vacaUpArm: { w: 8, h: 10, py: 3 },
+  vacaForearm: { w: 11, h: 13, py: 1.5 },
+  /** Pega em (4, 10). */
+  vacaMic: { w: 8, h: 14, gx: 4, gy: 10 },
   pomboBody: { w: 34, h: 30 },
   pomboWing: { w: 24, h: 12 },
   pomboGun: { w: 24, h: 9, pivotX: 3 },
@@ -112,13 +131,17 @@ export const TEX = {
 export function generateTextures(scene: Phaser.Scene): void {
   // ── Johnny Replay (protagonista) ─────────────────────────────────────
   // Balconista de videolocadora que se acha o rei da pista de dança dos anos
-  // 80: chapéu fedora, cachinho na testa, jaqueta de lantejoulas com
-  // ombreiras, uma luva brilhante só, calça pega-frango, meia branca
-  // cintilante e mocassim. Anda de moonwalk e atira com um revólver enorme.
+  // 80: fedora, cachinho na testa, jaqueta de lantejoulas com ombreiras, uma
+  // luva brilhante, calça pega-frango, meia branca cintilante e mocassim.
+  // Esqueleto com joelhos e cotovelos (ver limb.ts); o revólver é enorme.
   const sequin = 0xc9cfe0;
-  const sequinDark = 0x8e95b0;
+  const sequinMid = 0xa9b0c8;
+  const sequinDark = 0x7e86a3;
   const curls = 0x1d1420;
   const glove = 0xf7f7ff;
+  const pants = 0x1b1724;
+  const pantsHi = 0x3a3150;
+  const skinShade = 0xe0a477;
   make(scene, 'pl_hair', TEX.plHair.w, TEX.plHair.h, (p) => {
     // Cachos que pendem atrás da orelha (balançam com mola).
     const locks: Array<[number, number, number]> = [
@@ -130,69 +153,124 @@ export function generateTextures(scene: Phaser.Scene): void {
     ];
     for (const [x, y, r] of locks) p.fill(O).circle(x, y, r + 1.4);
     for (const [x, y, r] of locks) p.fill(curls).circle(x, y, r);
-    p.fill(0x5a4466).circle(13, 13.6, 1.6).circle(11.4, 20, 1.3).circle(13, 25.6, 1.1);
+    p.fill(0x5a4466).circle(13, 13.6, 1.6).circle(11.4, 20, 1.3).circle(13, 25.6, 1.1).circle(16.4, 22, 1);
   });
-  make(scene, 'pl_head', TEX.plHead.w, TEX.plHead.h, (p) => {
-    p.oCircle(11, 19, 2.8, PAL.skin, 1.2); // orelha
-    p.oEllipse(18, 18.5, 18, 19, PAL.skin);
-    p.fill(0xe8a87f).circle(11.4, 19, 1.1);
-    // Cachinho rebelde na testa.
-    p.stroke(1.6, O).g.strokeCircle(24 * S, 12.6 * S, 2.3 * S);
-    p.stroke(1, curls).g.strokeCircle(24 * S, 12.6 * S, 2.3 * S);
-    // Olhos fechados de quem está sentindo a batida + sobrancelha marota.
-    p.stroke(1.3, O).line(20, 16.5, 23, 15.6).line(23, 15.6, 25.6, 16.6);
-    p.fill(O).rect(20, 13.2, 5, 1);
-    p.fill(0xe8a87f).ellipse(28.5, 20.5, 4.4, 4.6); // nariz arrebitado
-    p.fill(O).circle(30, 21.8, 0.6);
-    // Boca em "Uuh!" de dançarino.
-    p.fill(O).ellipse(25.5, 25.4, 4.6, 5);
-    p.fill(0xb83252).ellipse(25.5, 25.8, 2.6, 3);
-    p.fill(0xff7aa8).circle(16, 23, 1.8); // bochecha
-    // Fedora preto inclinado com faixa branca.
-    p.fill(O).poly([[4, 11.5], [32, 9], [32.5, 11.4], [4.5, 14]]);
-    p.fill(0x18141f).poly([[5, 12], [31, 9.8], [31.3, 10.8], [5.2, 13.2]]);
-    p.fill(O).round(9.5, 1.5, 18, 10.5, 4);
-    p.fill(0x221c2c).round(10.5, 2.5, 16, 8.8, 3.4);
-    p.fill(0x3a3150).tri(14, 3, 22, 3, 18, 6); // vinco da copa
-    p.fill(PAL.warmWhite).rect(10.5, 8.2, 16, 2.2);
-    p.fill(0xffffff, 0.5).rect(12, 3.4, 4, 1);
+  for (const [key, hoo] of [
+    ['pl_head', false],
+    ['pl_head_hoo', true],
+  ] as const) {
+    make(scene, key, TEX.plHead.w, TEX.plHead.h, (p) => {
+      p.oRound(10, 18, 7, 7, 2, PAL.skin, 1.2); // pescoço
+      p.oEllipse(15, 12.5, 17, 19, PAL.skin); // rosto
+      p.fill(skinShade, 0.7).ellipse(10.5, 13, 7, 15); // sombra da nuca
+      p.oCircle(9.4, 13.5, 2.6, PAL.skin, 1.1); // orelha
+      p.fill(skinShade).circle(9.6, 13.6, 1.1);
+      p.fill(curls).round(11, 6, 3, 9, 1.4); // costeleta
+      // Cachinho rebelde na testa.
+      p.stroke(1.8, O).g.strokeCircle(21 * S, 5.6 * S, 2.3 * S);
+      p.stroke(1.1, curls).g.strokeCircle(21 * S, 5.6 * S, 2.3 * S);
+      p.fill(O).tri(20.5, 7.6, 22.6, 7.6, 22, 10);
+      if (hoo) {
+        // Olhos espremidos ("^ ^") e boca em "HII!".
+        p.stroke(1.3, O).line(17.5, 10.6, 19.4, 9.2).line(19.4, 9.2, 21.6, 10.8);
+        p.stroke(1.1, O).line(17.6, 6.6, 21.4, 7.4);
+        p.fill(O).ellipse(20.8, 17.6, 4.6, 5.2);
+        p.fill(0xb83252).ellipse(20.8, 18.4, 2.8, 2.8);
+        p.fill(PAL.warmWhite).rect(19.2, 15.6, 3.2, 0.9);
+      } else {
+        // Olhar de galã: pálpebra pesada, cílios e sobrancelha arqueada.
+        p.fill(PAL.warmWhite).ellipse(19.5, 10.5, 4.6, 3.6);
+        p.fill(O).circle(20.4, 10.8, 1.2);
+        p.fill(PAL.skin).rect(17, 8.2, 5.4, 1.9);
+        p.stroke(1.1, O).line(17.2, 10, 22, 9.8).line(21.8, 9.8, 23, 9.2);
+        p.stroke(1, O).line(17, 6.6, 19.6, 6).line(19.6, 6, 22, 6.8);
+        p.fill(O).poly([[18, 17.2], [23, 16.2], [23.4, 17.4], [18.6, 18.4]]); // sorriso de lado
+        p.fill(PAL.warmWhite).poly([[19, 17.2], [22.6, 16.5], [22.7, 17.1], [19.2, 17.7]]);
+      }
+      p.fill(O).poly([[22.5, 9.8], [26.8, 14.4], [23, 15]]); // nariz fino e empinado
+      p.fill(0xf0c09a).poly([[23, 10.8], [25.6, 14], [23.4, 14.2]]);
+      p.fill(0xff7aa8, 0.85).circle(16.4, 15.4, 2); // bochecha
+      p.fill(0xffffff, 0.5).circle(18.6, 4.8, 1.2); // brilho na testa
+    });
+  }
+  make(scene, 'pl_hat', TEX.plHat.w, TEX.plHat.h, (p) => {
+    // Fedora preto com faixa branca; aba fina e caída na frente.
+    p.fill(O).poly([[0.5, 11.4], [31.5, 10], [31, 13.6], [2, 14]]);
+    p.fill(0x18141f).poly([[1.6, 11.8], [30.4, 10.8], [30, 12.6], [2.6, 13]]);
+    p.fill(O).round(7, 0.5, 18, 11.5, 5);
+    p.fill(0x221c2c).round(8, 1.5, 16, 9.6, 4.4);
+    p.fill(0x3a3150).tri(12, 2, 20, 2, 16, 5.4); // vinco
+    p.fill(0x2e2740).round(9, 2.5, 4, 6, 2);
+    p.fill(PAL.warmWhite).rect(8, 7.6, 16, 2.4);
+    p.fill(0xd6dbe6).rect(8, 9.2, 16, 0.8);
+    p.fill(0xffffff, 0.55).rect(19, 2.6, 3.4, 1.1);
   });
   make(scene, 'pl_body', TEX.plBody.w, TEX.plBody.h, (p) => {
-    // Jaqueta de lantejoulas prateadas, ombreiras pontudas, camisa preta.
-    p.oRound(8, 4, 20, 22, 5, sequin);
-    p.oRound(3, 2, 11, 7, 3, sequin, 1.2);
-    p.oRound(22, 2, 11, 7, 3, sequin, 1.2);
-    p.fill(sequinDark).round(8, 19, 20, 7, 3.5);
-    p.fill(O).tri(13, 4, 23, 4, 18, 18);
-    p.fill(0x14101c).tri(14, 4.6, 22, 4.6, 18, 16.5); // camisa preta
-    p.fill(PAL.skin).tri(16, 4.6, 20, 4.6, 18, 8.6);
-    p.fill(NEON.pink).rect(3.5, 7, 8, 1.6); // braçadeira neon
-    // Lantejoulas: pontinhos claros e escuros alternados.
-    for (let y = 6; y < 25; y += 2.6) {
-      for (let x = 9.5; x < 27; x += 2.6) {
-        if (x > 13 && x < 23 && y < 17) continue;
-        const odd = (Math.round(x * 3 + y * 7) & 1) === 1;
-        p.fill(odd ? 0xffffff : sequinDark, odd ? 0.85 : 0.7).circle(x, y, 0.65);
+    // Cintura da calça (aparece abaixo da jaqueta).
+    p.oRound(8, 19, 14, 9, 3, pants, 1.2);
+    // Jaqueta de lantejoulas com ombreira pontuda.
+    p.oRound(6, 3, 18, 20, 5, sequin);
+    p.oRound(1.5, 1.5, 11, 6.5, 3, sequin, 1.2);
+    p.fill(sequinMid).round(6, 15, 18, 8, 4);
+    p.fill(sequinDark).round(6, 19, 18, 4, 2);
+    p.fill(O).tri(12, 3, 21, 3, 16.5, 15.5);
+    p.fill(0x14101c).tri(13, 3.6, 20, 3.6, 16.5, 14); // camisa preta
+    p.fill(PAL.skin).tri(15, 3.6, 18.4, 3.6, 16.6, 6.6);
+    p.fill(0xe6e9f4).tri(12, 3, 14.6, 3, 15.2, 14.2).tri(21, 3, 18.6, 3, 18.2, 14.2); // lapelas
+    // Lantejoulas em xadrez: claras, médias e escuras.
+    for (let y = 5; y < 22; y += 2.2) {
+      for (let x = 7; x < 24; x += 2.2) {
+        if (x > 11.5 && x < 21.5 && y < 15.5) continue;
+        const k = (Math.round(x * 3 + y * 7) % 3 + 3) % 3;
+        p.fill(k === 0 ? 0xffffff : k === 1 ? sequinDark : 0x9fe8ff, k === 0 ? 0.9 : 0.7).circle(x, y, 0.6);
       }
     }
-    p.fill(O).rect(9, 23, 18, 3); // cinto
-    p.oRound(15.5, 22.6, 5, 3.6, 0.8, PAL.gold, 0.6);
+    p.fill(0xffffff, 0.22).poly([[7, 10], [11, 4], [13, 4], [8, 14]]); // reflexo diagonal
+    p.fill(NEON.pink).rect(2.5, 5.5, 9, 1.6); // braçadeira neon
+    p.fill(O).rect(8, 21, 14, 2.6); // cinto
+    p.oRound(13.4, 20.6, 4, 3.4, 0.8, PAL.gold, 0.6);
   });
-  make(scene, 'pl_leg', TEX.plLeg.w, TEX.plLeg.h, (p) => {
-    p.oRound(2.6, 0, 6, 10, 2, 0x1b1724, 1); // calça pega-frango
-    p.fill(0x3a3150).rect(4, 1, 1, 8);
-    p.oRound(3.2, 9, 4.6, 4.4, 1, glove, 0.9); // meia branca cintilante
-    p.fill(0x7fe7ff).circle(4.6, 10.6, 0.5).circle(6.6, 11.8, 0.5);
-    p.fill(0xffffff).circle(5.6, 10, 0.55);
-    p.oRound(1.5, 12.6, 9.5, 3.6, 1.8, 0x0d0b12, 1); // mocassim brilhando
-    p.fill(0xffffff, 0.6).rect(4, 13.2, 4, 0.8);
+  make(scene, 'pl_thigh', TEX.plThigh.w, TEX.plThigh.h, (p) => {
+    p.oRound(1, 0, 6, 9, 2.6, pants, 1);
+    p.fill(pantsHi).rect(4.6, 1.5, 0.9, 6);
+  });
+  make(scene, 'pl_shin', TEX.plShin.w, TEX.plShin.h, (p) => {
+    p.oRound(1.6, 3.6, 4.8, 6, 1.4, glove, 0.9); // meia branca cintilante
+    p.fill(0x7fe7ff).circle(3, 5.6, 0.5).circle(5, 7.8, 0.5);
+    p.fill(0xffffff).circle(4.4, 5, 0.6);
+    p.oRound(1, 0, 6, 5, 2.2, pants, 1); // barra pega-frango
+    p.fill(pantsHi).rect(4.4, 1, 0.9, 3);
+  });
+  make(scene, 'pl_shoe', TEX.plShoe.w, TEX.plShoe.h, (p) => {
+    // Mocassim preto envernizado; tornozelo em (3.5, 2.5), bico para a frente.
+    p.fill(O).poly([[0.5, 2.5], [6, 0.8], [10.5, 2], [12.8, 4.2], [12.4, 6.4], [0.6, 6.4]]);
+    p.fill(0x0d0b12).poly([[1.4, 3], [6, 1.8], [10.2, 2.9], [11.8, 4.5], [11.4, 5.4], [1.4, 5.4]]);
+    p.fill(0xffffff, 0.7).poly([[6, 2.4], [9.6, 3.2], [8.6, 3.6], [5.6, 3]]);
+    p.fill(0x6b7385).rect(1, 5.6, 11.6, 0.8); // sola
+  });
+  make(scene, 'pl_uparm', TEX.plUpArm.w, TEX.plUpArm.h, (p) => {
+    p.oRound(1, 0, 5, 10, 2.4, sequin, 1);
+    p.fill(0xffffff, 0.9).circle(2.6, 3, 0.6).circle(4.4, 6.4, 0.6);
+    p.fill(sequinDark, 0.8).circle(4.2, 2.4, 0.5).circle(2.6, 8, 0.5);
+  });
+  make(scene, 'pl_forearm', TEX.plForearm.w, TEX.plForearm.h, (p) => {
+    p.oRound(1.2, 0, 5.6, 8, 2.4, sequin, 1);
+    p.fill(0xffffff, 0.9).circle(3, 3, 0.6).circle(5, 5.6, 0.6);
+    p.fill(PAL.warmWhite).rect(1.4, 7, 5.2, 1.6); // punho da camisa
+    p.oRound(1, 8.4, 6, 5, 2.2, glove, 1); // luva brilhante
+    p.oRound(3, 12, 2.4, 4, 1.1, glove, 0.8); // dedo indicador esticado
+    p.fill(0x7fe7ff).circle(2.6, 10, 0.55).circle(5.2, 11.4, 0.55);
+    p.fill(0xffffff).circle(4.2, 9.6, 0.6);
   });
   make(scene, 'pl_arm', TEX.plArm.w, TEX.plArm.h, (p) => {
-    // Pivô no ombro (x=5). Manga de lantejoula + luva brilhante + revólver gigante.
-    p.oCircle(5, 10, 3.6, sequin, 1);
-    p.oRound(5, 8, 10, 4.4, 2, sequin, 1);
-    p.fill(0xffffff, 0.85).circle(7, 9.4, 0.6).circle(11, 10.6, 0.6);
-    p.oRound(13.5, 7.5, 5, 6, 1.6, glove, 1); // a luva brilhante
+    // Pivô no ombro (x=5). Manga de lantejoula + luva + revólver gigante.
+    p.oCircle(5, 9, 4.6, sequin, 1.1); // ombreira da frente
+    p.fill(0xffffff, 0.9).circle(4, 7, 0.7);
+    p.oRound(5, 7.6, 10, 4.6, 2.2, sequin, 1);
+    p.fill(0xffffff, 0.85).circle(8, 9, 0.6).circle(11.6, 10.4, 0.6);
+    p.fill(sequinDark, 0.8).circle(10, 8.6, 0.5);
+    p.fill(PAL.warmWhite).rect(13.2, 7.6, 1.6, 4.6);
+    p.oRound(13.5, 7.5, 5, 6, 1.6, glove, 1);
     p.fill(0x7fe7ff).circle(15, 9, 0.6).circle(17, 11.4, 0.6);
     p.oRound(15, 10, 6, 8, 1.6, 0x8a5a2b, 1.2); // cabo de madeira
     p.fill(0xb07a42).rect(16.5, 11, 1.2, 5.5);
@@ -203,14 +281,6 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.oRound(37.5, 1.6, 2.2, 2.6, 0.6, 0xc4cad6, 0.8); // massa de mira
     p.fill(O).rect(39.6, 4.4, 1.4, 3.8); // boca do cano
     p.fill(NEON.pink).rect(26, 8.4, 11, 0.7);
-  });
-  make(scene, 'pl_back', TEX.plBack.w, TEX.plBack.h, (p) => {
-    // Braço livre de discoteca: manga brilhante e dedo apontando pro céu.
-    p.oRound(4.5, 1, 5, 12, 2.2, sequin, 1);
-    p.fill(0xffffff, 0.85).circle(6, 4, 0.6).circle(8, 8, 0.6);
-    p.oRound(4, 12, 6, 5, 2, glove, 1); // punho de luva
-    p.oRound(5.6, 15.5, 2.6, 6, 1.2, glove, 0.9); // dedo indicador
-    p.fill(0x7fe7ff).circle(6, 14, 0.5);
   });
 
   // ── Elenco de vilões: paródias de filmes de ação e da Miami dos anos 80 ──
@@ -334,51 +404,120 @@ export function generateTextures(scene: Phaser.Scene): void {
   });
 
   // ── Rei do Topete (id vaca_loca): imitador do rei do rock que atropela ──
-  make(scene, 'vaca_body', TEX.vacaBody.w, TEX.vacaBody.h, (p) => {
-    const suit = 0xfbf8ff;
-    p.g.translateCanvas(0, 5 * S); // folga em cima para o topete
-
-    // Macacão branco de lantejoula com gola alta.
-    p.oRound(10, 20, 22, 27, 8, suit);
-    p.fill(0xe0dcef).round(10, 38, 22, 9, 4);
-    p.fill(O).tri(16, 20, 28, 20, 22, 33);
-    p.fill(PAL.skin).tri(17.4, 20.6, 26.6, 20.6, 22, 31); // peito à mostra
-    p.fill(0x3a2116, 0.6).circle(21, 25, 0.8).circle(23, 27, 0.8).circle(22, 23.5, 0.7);
-    p.oRound(12, 15, 7, 8, 2, suit, 1.2).oRound(25, 15, 7, 8, 2, suit, 1.2); // gola alta
-    for (const [x, y] of [[13, 26], [30, 26], [13, 32], [30, 32], [16, 43], [27, 43], [21.5, 45]] as const) {
-      p.fill(PAL.gold).circle(x, y, 1.1);
-      p.fill(0xff2d3d).circle(x, y, 0.5);
-    }
-    p.oRound(10, 35, 22, 5, 1.6, PAL.gold, 1); // cinturão de campeão
-    p.oRound(17.5, 34, 7, 7, 2, 0xffe14d, 1);
-    p.fill(0xff2d3d).circle(21, 37.5, 1.6);
-    // Cabeça: topete gigante, costeletas, óculos dourados e beicinho.
-    p.oRound(15, 6, 20, 17, 7, PAL.skin);
-    p.fill(O).poly([[11, 13], [12, 3], [20, -1], [33, -1.5], [40, 3], [36, 7], [28, 5], [18, 8], [16, 16]]);
-    p.fill(0x0f0b18).poly([[12.4, 12.5], [13.4, 4], [20.4, 0.4], [32.6, 0], [37.6, 3.2], [35, 5.6], [28, 3.8], [18.4, 6.8], [15.4, 14]]);
-    p.fill(0x4b5a9c, 0.85).poly([[20, 1.6], [31, 1], [35, 2.6], [27, 2.4]]); // brilho de brilhantina
-    p.fill(0x0f0b18).round(15, 11, 3.6, 10, 1.4); // costeleta
-    p.fill(O).round(23, 10.6, 13, 5, 2); // óculos dourados
-    p.fill(PAL.gold).round(23.8, 11.2, 5.4, 3.6, 1.4).round(30, 11.2, 5.4, 3.6, 1.4);
-    p.fill(0xfff1a8).rect(24.6, 11.8, 2, 1);
-    p.fill(0xe8a87f).circle(35.5, 16, 2); // nariz
-    p.fill(O).poly([[27, 19.5], [33, 19], [33.5, 21], [29, 21.6]]); // beicinho torto de lado
-    p.fill(0xd65a7a).poly([[28, 20], [32.4, 19.7], [32.6, 20.6], [29.2, 21]]);
+  // Macacão branco de Las Vegas cravejado de strass, capa com forro vermelho,
+  // calça boca de sino, bota branca, topete separado (balança com mola),
+  // costeletas, óculos dourados e microfone cromado. Esqueleto com IK.
+  const suit = 0xfbf8ff;
+  const suitShade = 0xdcd6ec;
+  const ruby = 0xff2d3d;
+  const pomade = 0x0f0b18;
+  const gem = (p: Pen, x: number, y: number, r = 1.1, core: number = ruby) => {
+    p.fill(PAL.gold).circle(x, y, r);
+    p.fill(core).circle(x, y, r * 0.5);
+    p.fill(0xffffff, 0.9).circle(x - r * 0.35, y - r * 0.35, r * 0.25);
+  };
+  make(scene, 'vaca_cape', TEX.vacaCape.w, TEX.vacaCape.h, (p) => {
+    // Capa presa nos ombros (topo) que se abre em leque; forro vermelho na borda.
+    p.fill(O).poly([[9, 0], [21, 0], [29, 31], [1, 31]]);
+    p.fill(ruby).poly([[10, 1], [20, 1], [27.6, 30], [2.4, 30]]);
+    p.fill(suit).poly([[11, 1], [20, 1], [25, 30], [6, 30]]);
+    p.fill(suitShade).poly([[11, 1], [14, 1], [11, 30], [6, 30]]);
+    p.fill(PAL.gold).rect(6, 27.6, 19.2, 2.4); // barra dourada
+    for (const [x, y] of [[15, 7], [13, 15], [19, 13], [16, 22], [21, 21], [11, 24]] as const) gem(p, x, y, 1.2, 0x22e6ff);
+    // Águia dourada estilizada no meio da capa.
+    p.fill(PAL.gold).poly([[11, 17], [16, 15], [21, 17], [17.5, 18.4], [16, 21], [14.5, 18.4]]);
   });
-  make(scene, 'vaca_leg', TEX.vacaLeg.w, TEX.vacaLeg.h, (p) => {
-    // Boca de sino branca com lantejoulas + bota branca.
-    p.fill(O).poly([[1.5, 0], [7.5, 0], [9, 13], [0, 13]]);
-    p.fill(0xfbf8ff).poly([[2.4, 0.6], [6.6, 0.6], [8, 12.4], [1, 12.4]]);
-    p.fill(PAL.gold).circle(4.5, 5, 0.8).circle(3, 10, 0.8).circle(6.4, 10.4, 0.8);
-    p.oRound(0.5, 12.6, 8.5, 4.4, 1.8, 0xeeeaf6, 1);
+  make(scene, 'vaca_torso', TEX.vacaTorso.w, TEX.vacaTorso.h, (p) => {
+    // Quadril em (15, 30); ombros no alto. Gola alta e decote até o umbigo.
+    p.oRound(5, 6, 20, 25, 7, suit);
+    p.fill(suitShade).round(5, 22, 20, 9, 4).rect(5, 8, 3, 18);
+    p.fill(O).tri(11.5, 6, 21.5, 6, 16.5, 20);
+    p.fill(PAL.skin).tri(12.8, 6.6, 20.2, 6.6, 16.5, 18.4); // peito à mostra
+    p.fill(0x3a2116, 0.6).circle(15.6, 10, 0.7).circle(17.4, 12.4, 0.7).circle(16.4, 8.4, 0.6).circle(15.4, 14, 0.6);
+    p.fill(PAL.gold).rect(16, 9.6, 0.7, 4).circle(16.3, 14.6, 1.2); // correntinha com medalha
+    p.oRound(6.5, 0, 7, 9, 2, suit, 1.2).oRound(19, 0, 7, 9, 2, suit, 1.2); // gola alta
+    p.fill(PAL.gold).rect(7, 1, 6, 1).rect(19.5, 1, 6, 1);
+    for (const [x, y] of [[8, 12], [24, 12], [8.6, 18], [23.6, 18], [11, 4.6], [22, 4.6]] as const) gem(p, x, y);
+    p.oRound(4.6, 21, 21, 5, 1.6, PAL.gold, 1); // cinturão de campeão
+    p.oRound(12, 19.8, 9, 7.4, 2.4, 0xffe14d, 1);
+    gem(p, 16.5, 23.5, 2, ruby);
+    for (const x of [7, 9.6, 23.4, 26]) p.fill(PAL.gold).rect(x - 0.4, 26, 0.8, 3.4); // correntinhas do cinto
+    p.fill(0xffffff, 0.75).rect(21.6, 9, 1.2, 9); // brilho do cetim
   });
-  make(scene, 'vaca_arm', TEX.vacaArm.w, TEX.vacaArm.h, (p) => {
-    // Manga com franja dourada e dedo apontando ("uh-huh"); pivô no ombro.
-    p.oRound(1, 1.5, 10, 5, 2.4, 0xfbf8ff, 1);
-    p.fill(PAL.gold).rect(3, 6, 1, 1.6).rect(5.5, 6, 1, 1.6).rect(8, 6, 1, 1.6);
-    p.oCircle(12, 4, 2.6, PAL.skin, 0.9);
-    p.oRound(13, 2.8, 4, 1.8, 0.8, PAL.skin, 0.7);
-    p.fill(PAL.gold).circle(11.4, 5.4, 0.8); // anelzão
+  const head = (key: string, uh: boolean) =>
+    make(scene, key, TEX.vacaHead.w, TEX.vacaHead.h, (p) => {
+      // Pescoço em (10, 21). Topete é peça separada (vaca_pomp).
+      p.oRound(3.5, 3, 17, 17, 7, PAL.skin);
+      p.fill(0xe8a87f, 0.6).circle(9, 15.5, 2.6); // bochecha
+      p.fill(pomade).poly([[3, 3], [10, 1.6], [14, 3.4], [7, 5.4], [6, 13], [3.4, 12]]); // cabelo de trás
+      p.fill(pomade).round(5, 8, 3.6, 10.6, 1.6); // costeleta enorme
+      p.fill(pomade).tri(5, 18.4, 8.6, 18.4, 7.4, 20.4);
+      p.fill(O).round(11, 7.6, 12, 4.8, 2); // óculos dourados
+      p.fill(PAL.gold).round(11.7, 8.2, 5, 3.6, 1.4).round(17.4, 8.2, 5, 3.6, 1.4);
+      p.fill(0xfff1a8).rect(12.4, 8.8, 2, 1).rect(18, 8.8, 2, 1);
+      p.fill(O).rect(14.4, 6.4, 6, 1); // sobrancelha arqueada
+      p.oCircle(22.4, 12.6, 1.8, 0xe8a87f, 0.8); // nariz
+      if (uh) {
+        // "Uh-huh!": lábio torto lá em cima e boca aberta.
+        p.fill(O).poly([[15, 15.6], [21.6, 14.2], [22, 17.6], [17, 18.6]]);
+        p.fill(0x7a1830).poly([[16, 16], [21, 15], [21.2, 17], [17.4, 17.8]]);
+        p.fill(0xffffff).rect(18, 15.2, 3, 0.9);
+      } else {
+        p.fill(O).poly([[15.4, 16.6], [21.6, 15.4], [22, 17.2], [17.4, 18]]); // beicinho torto
+        p.fill(0xd65a7a).poly([[16.4, 16.8], [21, 16], [21.2, 16.8], [17.6, 17.4]]);
+      }
+    });
+  head('vaca_head', false);
+  head('vaca_head_uh', true);
+  make(scene, 'vaca_pomp', TEX.vacaPomp.w, TEX.vacaPomp.h, (p) => {
+    // Topete monumental com brilhantina; base em (8, 13) assenta na testa.
+    p.fill(O).poly([[2, 14], [2, 6], [8, 1], [19, -0.2], [28, 1.4], [30.5, 5.6], [26, 8.6], [20, 7], [13, 10.4], [10, 15]]);
+    p.fill(pomade).poly([[3.4, 13.2], [3.6, 6.6], [8.6, 2.4], [19, 1.2], [27.2, 2.6], [29, 5.4], [25.6, 7.2], [19.6, 5.6], [12.4, 9], [9.4, 13.4]]);
+    p.fill(0x4b5a9c, 0.9).poly([[9, 3.6], [19, 2.4], [25, 3.4], [17, 4.2], [10.6, 6]]); // reflexo azul
+    p.fill(0x9fb0ff, 0.8).poly([[12, 3.4], [18, 2.8], [16, 3.6]]);
+    p.fill(pomade).poly([[26, 6.6], [29.4, 9.6], [27.6, 11.6], [27.4, 8.6]]); // mechinha rebelde
+  });
+  make(scene, 'vaca_thigh', TEX.vacaThigh.w, TEX.vacaThigh.h, (p) => {
+    p.oRound(1, 0, 7, 10, 3, suit, 1);
+    p.fill(PAL.gold).rect(5.6, 1, 1, 8);
+  });
+  make(scene, 'vaca_shin', TEX.vacaShin.w, TEX.vacaShin.h, (p) => {
+    // Boca de sino que abre em leque, com gomo vermelho e strass.
+    p.fill(O).poly([[2.4, 0], [9.6, 0], [12, 12.4], [0, 12.4]]);
+    p.fill(suit).poly([[3.2, 0.7], [8.8, 0.7], [11, 11.6], [1, 11.6]]);
+    p.fill(ruby).poly([[5.4, 5], [6.6, 5], [8, 11.6], [4, 11.6]]);
+    p.fill(PAL.gold).rect(1, 10.6, 10, 1);
+    gem(p, 6, 3, 0.9, 0x22e6ff);
+    gem(p, 2.8, 9, 0.8);
+    gem(p, 9.2, 9, 0.8);
+  });
+  make(scene, 'vaca_boot', TEX.vacaBoot.w, TEX.vacaBoot.h, (p) => {
+    // Bota branca de bico fino e salto dourado; tornozelo em (3.5, 2).
+    p.fill(O).poly([[0.4, 1], [5, 0.4], [9, 2.4], [11.6, 4.4], [11, 5.6], [0.4, 5.6]]);
+    p.fill(suit).poly([[1.2, 1.6], [5, 1.2], [8.6, 3], [10.6, 4.6], [1.2, 4.6]]);
+    p.fill(PAL.gold).rect(0.6, 4.4, 3, 1.2);
+    p.fill(0xffffff).rect(5, 2, 2.4, 0.8);
+  });
+  make(scene, 'vaca_uparm', TEX.vacaUpArm.w, TEX.vacaUpArm.h, (p) => {
+    p.oCircle(4, 3, 3.4, suit, 1); // ombro
+    p.oRound(1, 1, 6, 9, 2.6, suit, 1);
+    gem(p, 4, 5, 0.8, 0x22e6ff);
+  });
+  make(scene, 'vaca_forearm', TEX.vacaForearm.w, TEX.vacaForearm.h, (p) => {
+    // Manga boca de sino com franja dourada; mão com anelzão.
+    p.fill(O).poly([[3, 0], [8, 0], [10.6, 8], [0.4, 8]]);
+    p.fill(suit).poly([[3.6, 0.6], [7.4, 0.6], [9.8, 7.4], [1.2, 7.4]]);
+    for (const x of [1.4, 3.4, 5.4, 7.4, 9.2]) p.fill(PAL.gold).rect(x, 7.4, 0.9, 2.4);
+    p.oCircle(5.5, 10, 2.6, PAL.skin, 0.9);
+    p.oRound(4.6, 11, 1.9, 2.8, 0.8, PAL.skin, 0.6); // dedo
+    gem(p, 4, 9.2, 0.9);
+  });
+  make(scene, 'vaca_mic', TEX.vacaMic.w, TEX.vacaMic.h, (p) => {
+    // Microfone cromado retrô; pega em (4, 10), cabeça para cima.
+    p.oRound(2.6, 6, 2.8, 8, 1, 0x9aa3b8, 0.9);
+    p.oRound(0.6, 0.4, 6.8, 7, 3, 0xcfd6e6, 1);
+    p.fill(0x6b7385).rect(1.2, 2.4, 5.6, 0.7).rect(1.2, 4, 5.6, 0.7);
+    p.fill(0xffffff).rect(1.8, 1.2, 1.2, 4.6);
   });
   make(scene, 'vaca_bell', TEX.vacaBell.w, TEX.vacaBell.h, (p) => {
     // Lenço de seda vermelho no pescoço (pronto para jogar na plateia).

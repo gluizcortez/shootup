@@ -259,6 +259,13 @@ export class ArenaScene extends Phaser.Scene {
         this.world.debugTainted = true;
         this.world.spawnEnemy('don_pombone', 0.5);
       });
+      // F8: só um Rei do Topete, para conferir a dancinha e o deslize.
+      kb.on('keydown-F8', (e: KeyboardEvent) => {
+        e.preventDefault();
+        if (this.phase.phase !== 'PLAYING') return;
+        this.world.debugTainted = true;
+        this.world.spawnEnemy('vaca_loca', 0.2);
+      });
       // F7: pose do crítico do Johnny, para conferir a animação.
       kb.on('keydown-F7', (e: KeyboardEvent) => {
         e.preventDefault();
