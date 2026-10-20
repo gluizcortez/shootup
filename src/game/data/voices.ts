@@ -1,5 +1,5 @@
 /**
- * Falas gravadas (voz sintetizada por IA, Kokoro TTS, com sotaque de gângster
+ * Falas gravadas (voz sintetizada por IA: Chatterbox guiado por Kokoro, com sotaque de gângster
  * cubano exagerado). Arquivos em public/voice; gerados por tools/voice.
  */
 export type VoiceLineId = 'toniAppear' | 'toniRage' | 'toniDeath';
