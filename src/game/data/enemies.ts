@@ -79,7 +79,7 @@ export const VACA_LOCA: VacaDef = {
   id: 'vaca_loca',
   behaviour: 'vaca',
   role: 'melee',
-  name: 'Aeróbica Turbo',
+  name: 'Rei do Topete',
   maxHp: 44,
   hw: 15,
   hh: 29,

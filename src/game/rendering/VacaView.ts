@@ -16,7 +16,7 @@ const BELL_Y = -39;
 type Img = Phaser.GameObjects.Image;
 
 /**
- * Aeróbica Turbo (id estável `vaca_loca`): corre com os halteres balançando.
+ * Rei do Topete (id estável `vaca_loca`): imitador do rei do rock que atropela.
  * Poses por estado: pisa forte de punhos erguidos no aviso, sprint
  * inclinado na investida, cambaleia com estrelinhas quando tonta.
  */
@@ -64,7 +64,7 @@ export class VacaView implements EnemyVisual {
       .setOrigin(20 / TEX.vacaBody.w, 1)
       .setScale(INV);
     this.bell = scene.add.image(8, BELL_Y, 'vaca_bell').setOrigin(0.5, 0).setScale(INV);
-    this.excl = scene.add.image(6, -72, 'fx_excl').setScale(INV).setVisible(false);
+    this.excl = scene.add.image(6, -78, 'fx_excl').setScale(INV).setVisible(false);
     this.shieldImg = scene.add.image(0, -29, 'fx_shield').setScale(0.5).setVisible(false);
     this.stars = [0, 1, 2].map(() => scene.add.image(0, 0, 'px_star').setTint(PAL.amber).setScale(1.1).setVisible(false));
     this.root = scene.add
@@ -151,6 +151,7 @@ export class VacaView implements EnemyVisual {
     let armB = 1.2; // braços caídos ao lado do corpo (apontando para baixo)
     let armF = 1.2;
     let liftFront = 0;
+    let hip = 0;
 
     switch (e.state) {
       case 'charge': {
@@ -160,21 +161,26 @@ export class VacaView implements EnemyVisual {
         legB = s * 0.95;
         legF = -s * 0.95;
         armB = 0.5 - s * 1.1;
-        armF = 0.5 + s * 1.1;
+        armF = -0.15; // dedo apontado pra frente, como quem diz "lá vou eu"
+
         bob = reducedMotion ? 0 : -Math.abs(Math.cos(this.cycle)) * 4;
         tilt = 0.28;
         break;
       }
       case 'stomp': {
-        // Pisa forte com a pata da frente, punhos (cascos) erguidos e tremendo de raiva.
+        // Arma a investida com a dancinha do rei: joelho tremendo na ponta do pé,
+        // quadril rebolando e o dedo apontando pro alto e pro chão ("uh-huh!").
         this.telegraphT += dt;
-        const k = Math.sin(this.telegraphT * 22);
-        liftFront = k > 0 ? k * 6 : 0;
-        legF = k > 0 ? -k * 0.5 : 0;
-        const shake = reducedMotion ? 0 : Math.sin(this.time * 40) * 0.12;
-        armB = -1.9 + shake;
-        armF = -1.6 - shake;
-        tilt = -0.05;
+        const wobble = reducedMotion ? 0 : Math.sin(this.telegraphT * 30);
+        legB = 0.38;
+        legF = -0.3 + wobble * 0.32;
+        liftFront = 2 + Math.max(0, wobble) * 2;
+        hip = reducedMotion ? 0 : Math.sin(this.telegraphT * 15) * 0.12;
+        const up = Math.floor(this.telegraphT * 3) % 2 === 0;
+        armF = up ? -1.25 : 0.9;
+        armB = 0.55; // mão na cintura
+        bob = reducedMotion ? 0 : -Math.abs(Math.sin(this.telegraphT * 15)) * 1.5;
+        tilt = -0.06;
         break;
       }
       case 'dizzy':
@@ -209,6 +215,7 @@ export class VacaView implements EnemyVisual {
     this.armFront.rotation = armF;
     this.armBack.y = this.armFront.y = SHOULDER_Y + bob;
     this.body.y = BODY_BOTTOM + bob;
+    this.body.rotation = hip;
     this.bell.y = BELL_Y + bob;
     const swing = e.state === 'charge' ? 0.6 : 0.15;
     this.bell.rotation = reducedMotion ? 0 : Math.sin(this.time * (e.state === 'charge' ? 18 : 4)) * swing;
@@ -218,7 +225,7 @@ export class VacaView implements EnemyVisual {
       const t = Math.min(1, this.telegraphT / this.telegraphDur);
       const pop = t < 0.15 ? (t / 0.15) * 1.3 : 1.3 - Math.min(0.3, (t - 0.15) * 2);
       this.excl.setVisible(true).setScale(pop * INV);
-      this.excl.y = -72 - Math.sin(this.time * 20) * 1.5;
+      this.excl.y = -78 - Math.sin(this.time * 20) * 1.5;
     } else if (this.excl.visible) {
       this.excl.setVisible(false);
       this.telegraphDur = 0;

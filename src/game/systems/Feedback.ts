@@ -15,7 +15,7 @@ const QUALITY_MULT: Record<VfxQuality, number> = { low: 0.35, medium: 0.7, high:
 const FEATHER_TINT: Record<EnemyKind, number[]> = {
   pato_pistoleiro: [0x7fe0d4, 0xff7ab8, NEON.pink, NEON.cyan],
   galinha_rambo: [0x26222e, 0x8a8f9c, 0xff2d3d, 0xb8c0cc],
-  vaca_loca: [NEON.pink, NEON.cyan, 0xffd166, 0x9b5cff],
+  vaca_loca: [0xfbf8ff, PAL.gold, 0xff2d3d, 0x0f0b18],
   pombo_mafioso: [0x1c1a2a, NEON.pink, 0x39ff88],
   // Yuppie "morre" em papelada e dinheiro de mentirinha.
   porco_executivo: [0xffffff, 0x7bd389, PAL.gold, 0xffb3d1],
@@ -42,7 +42,7 @@ const KILL_PROP: Record<EnemyKind, string> = {
 const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
   pato_pistoleiro: ['POW!', 'BLAM!', 'CORTA!', 'PLOC!'],
   galinha_rambo: ['VOLTAREI!', 'KABUM!', 'CRÁS!', 'HASTA!'],
-  vaca_loca: ['UFA!', 'PLOFT!', 'TÓIN!', 'SEM FÔLEGO!'],
+  vaca_loca: ['OBRIGADO, OBRIGADO!', 'O REI SAIU!', 'PLOFT!', 'TÓIN!'],
   pombo_mafioso: ['HAI!', 'PUF!', 'ZÁS!', 'SUMIU!'],
   porco_executivo: ['KA-CHING!', 'FALIU!', 'DEMITIDO!', 'CRASH!'],
   don_pombone: ['CAPUT!'],

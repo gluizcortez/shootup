@@ -95,7 +95,7 @@ export const TEX = {
   galinhaBody: { w: 48, h: 56 },
   galinhaGlasses: { w: 22, h: 8 },
   galinhaGun: { w: 56, h: 18, pivotX: 10 },
-  vacaBody: { w: 44, h: 47 },
+  vacaBody: { w: 44, h: 52 },
   vacaLeg: { w: 9, h: 18 },
   vacaArm: { w: 17, h: 8, pivotX: 3 },
   pomboBody: { w: 34, h: 30 },
@@ -111,100 +111,89 @@ export const TEX = {
 
 export function generateTextures(scene: Phaser.Scene): void {
   // ── Johnny Replay (protagonista) ─────────────────────────────────────
-  // Balconista de videolocadora que jura ser astro de ação: mullet, bigodão,
-  // aviador espelhado, bandana, regata branca, jaqueta vermelha sem mangas,
-  // braços de palito e uma arma grande demais para ele.
-  const jacket = 0xe8283c;
-  const jacketDark = 0xa8172b;
-  const hair = 0x3a2116;
-  const hairLight = 0x6a3d25;
-  const bandana = 0xff2d3d;
+  // Balconista de videolocadora que se acha o rei da pista de dança dos anos
+  // 80: chapéu fedora, cachinho na testa, jaqueta de lantejoulas com
+  // ombreiras, uma luva brilhante só, calça pega-frango, meia branca
+  // cintilante e mocassim. Anda de moonwalk e atira com um revólver enorme.
+  const sequin = 0xc9cfe0;
+  const sequinDark = 0x8e95b0;
+  const curls = 0x1d1420;
+  const glove = 0xf7f7ff;
   make(scene, 'pl_hair', TEX.plHair.w, TEX.plHair.h, (p) => {
-    // Mullet: curto e espetado em cima, comprido atrás (balança com mola).
-    const back: Array<[number, number, number]> = [
-      [13, 14, 7.5],
-      [11, 21, 5.5],
-      [10.5, 27, 4.8],
-      [12, 31.5, 3.6],
+    // Cachos que pendem atrás da orelha (balançam com mola).
+    const locks: Array<[number, number, number]> = [
+      [14, 15, 5],
+      [12, 21, 4.4],
+      [13.5, 26.5, 3.8],
+      [11, 30, 3],
+      [17, 23, 3.4],
     ];
-    const top: Array<[number, number, number]> = [
-      [22, 8.5, 8.5],
-      [15, 9.5, 6.5],
-      [28, 9, 5.5],
-    ];
-    for (const [x, y, r] of [...back, ...top]) p.fill(O).circle(x, y, r + 1.5);
-    p.fill(O).tri(18, 3, 22, -0.5, 24, 3).tri(24, 2.5, 30, 0.5, 29, 5).tri(12, 6, 13, 0.5, 18, 4);
-    for (const [x, y, r] of [...back, ...top]) p.fill(hair).circle(x, y, r);
-    p.fill(hair).tri(19, 3.5, 22, 1, 23.5, 4).tri(24.5, 3.5, 29, 2, 28.5, 5.5).tri(13, 6.5, 13.6, 2, 17.5, 4.6);
-    p.fill(hairLight).circle(20, 6, 2.4).circle(13, 13, 1.8).circle(10.5, 22, 1.5).circle(10.5, 28, 1.2);
-    // Pontas da bandana voando atrás.
-    p.fill(O).poly([[14, 10], [2, 7], [3.5, 11.5], [13.5, 14]]).poly([[14, 12], [4, 16], [6.5, 18.5], [14, 15]]);
-    p.fill(bandana).poly([[13.5, 10.8], [3.6, 8.4], [4.6, 10.8], [13.4, 13]]).poly([[13.6, 13], [5.6, 16.4], [6.9, 17.4], [13.6, 14.5]]);
+    for (const [x, y, r] of locks) p.fill(O).circle(x, y, r + 1.4);
+    for (const [x, y, r] of locks) p.fill(curls).circle(x, y, r);
+    p.fill(0x5a4466).circle(13, 13.6, 1.6).circle(11.4, 20, 1.3).circle(13, 25.6, 1.1);
   });
   make(scene, 'pl_head', TEX.plHead.w, TEX.plHead.h, (p) => {
-    p.oCircle(10.5, 19, 3, PAL.skin, 1.2); // orelha
-    p.oEllipse(17, 18.5, 19, 21, PAL.skin); // rosto comprido de quem nunca malhou
-    p.fill(0xe8a87f).circle(11, 19, 1.2);
-    p.fill(0xe0a27c).ellipse(19, 27, 9, 3); // queixo fraquinho
-    // Bandana vermelha na testa.
-    p.fill(O).round(7, 6.6, 21, 5.4, 2);
-    p.fill(bandana).round(8, 7.4, 19, 3.8, 1.5);
-    p.fill(0xff8a8a).rect(9, 8, 17, 0.9);
-    p.fill(0xffffff, 0.8).circle(12, 9.6, 0.5).circle(17, 9.4, 0.5).circle(22, 9.6, 0.5);
-    // Aviador espelhado (reflete um pôr do sol neon).
-    p.fill(O).poly([[16.5, 13], [28, 13], [27.5, 18], [24, 20.5], [19, 19.5], [16.5, 16]]);
-    p.fill(O).poly([[11.5, 13.6], [15.6, 13.6], [15.2, 17.6], [12.4, 18]]);
-    p.fill(0xff4fa3).poly([[17.6, 14], [27, 14], [26.8, 16], [17.6, 16]]);
-    p.fill(0xffb347).poly([[17.6, 16], [26.8, 16], [26.4, 17.4], [18, 17.4]]);
-    p.fill(0x22e6ff).poly([[18, 17.4], [26.4, 17.4], [23.6, 19.4], [19.4, 18.8]]);
-    p.fill(0xff4fa3, 0.8).poly([[12.4, 14.4], [15, 14.4], [14.8, 16.8], [12.8, 17]]);
-    p.fill(0xffffff, 0.95).tri(19, 14.4, 21.5, 14.4, 19, 16.4);
-    p.fill(O).rect(26, 13.6, 4.5, 1.2); // haste
-    // Nariz.
-    p.fill(O).ellipse(27.5, 21.5, 6, 6);
-    p.fill(0xf0b08a).ellipse(27.5, 21.5, 4.2, 4.2);
-    // Bigodão exagerado, caindo nas pontas.
-    p.fill(O).poly([[19, 23.4], [31, 23.4], [32.5, 28.5], [29.5, 26.5], [21, 26.5], [18, 29]]);
-    p.fill(hair).poly([[19.8, 24.2], [30.2, 24.2], [31.3, 26.9], [29.3, 25.6], [21.2, 25.6], [19.2, 27.4]]);
-    p.fill(hairLight).rect(22, 24.6, 6, 0.8);
-    // Boca de durão (que não convence).
-    p.fill(O).rect(22.5, 27.6, 5, 1.1);
+    p.oCircle(11, 19, 2.8, PAL.skin, 1.2); // orelha
+    p.oEllipse(18, 18.5, 18, 19, PAL.skin);
+    p.fill(0xe8a87f).circle(11.4, 19, 1.1);
+    // Cachinho rebelde na testa.
+    p.stroke(1.6, O).g.strokeCircle(24 * S, 12.6 * S, 2.3 * S);
+    p.stroke(1, curls).g.strokeCircle(24 * S, 12.6 * S, 2.3 * S);
+    // Olhos fechados de quem está sentindo a batida + sobrancelha marota.
+    p.stroke(1.3, O).line(20, 16.5, 23, 15.6).line(23, 15.6, 25.6, 16.6);
+    p.fill(O).rect(20, 13.2, 5, 1);
+    p.fill(0xe8a87f).ellipse(28.5, 20.5, 4.4, 4.6); // nariz arrebitado
+    p.fill(O).circle(30, 21.8, 0.6);
+    // Boca em "Uuh!" de dançarino.
+    p.fill(O).ellipse(25.5, 25.4, 4.6, 5);
+    p.fill(0xb83252).ellipse(25.5, 25.8, 2.6, 3);
+    p.fill(0xff7aa8).circle(16, 23, 1.8); // bochecha
+    // Fedora preto inclinado com faixa branca.
+    p.fill(O).poly([[4, 11.5], [32, 9], [32.5, 11.4], [4.5, 14]]);
+    p.fill(0x18141f).poly([[5, 12], [31, 9.8], [31.3, 10.8], [5.2, 13.2]]);
+    p.fill(O).round(9.5, 1.5, 18, 10.5, 4);
+    p.fill(0x221c2c).round(10.5, 2.5, 16, 8.8, 3.4);
+    p.fill(0x3a3150).tri(14, 3, 22, 3, 18, 6); // vinco da copa
+    p.fill(PAL.warmWhite).rect(10.5, 8.2, 16, 2.2);
+    p.fill(0xffffff, 0.5).rect(12, 3.4, 4, 1);
   });
   make(scene, 'pl_body', TEX.plBody.w, TEX.plBody.h, (p) => {
-    // Tronco magrelo: regata branca canelada com o umbigo à mostra.
-    p.oRound(11, 4, 14, 22, 4, PAL.warmWhite);
-    p.fill(0xd9d3c8);
-    for (let x = 13; x < 24; x += 2.4) p.rect(x, 6, 0.6, 18);
-    p.fill(PAL.skin).tri(14, 4, 22, 4, 18, 9); // decote
-    p.fill(0xf0c6a0).circle(18, 21.5, 0.8);
-    // Jaqueta vermelha sem mangas, gola levantada, aberta.
-    p.fill(O).round(8.5, 3, 7.5, 24, 3).round(20, 3, 7.5, 24, 3);
-    p.fill(jacket).round(9.5, 4, 5.5, 22, 2.4).round(21, 4, 5.5, 22, 2.4);
-    p.fill(jacketDark).rect(9.5, 19, 5.5, 2).rect(21, 19, 5.5, 2);
-    p.fill(O).tri(9, 4, 14.5, 4, 10, -0.5).tri(27, 4, 21.5, 4, 26, -0.5); // gola em pé
-    p.fill(jacket).tri(10, 3.5, 13.5, 3.5, 10.6, 0.8).tri(26, 3.5, 22.5, 3.5, 25.4, 0.8);
-    p.fill(0xb8bcc8).rect(15, 6, 0.8, 18).rect(20.2, 6, 0.8, 18); // zíperes
-    // Cinto com fivela de águia dourada.
-    p.fill(O).rect(10.5, 22.5, 15, 3.5);
-    p.fill(0x5a3a22).rect(11, 23, 14, 2.5);
-    p.oRound(15.5, 22.4, 5, 3.6, 0.8, PAL.gold, 0.6);
-    // Bottom de broche: "ASTRO".
-    p.oCircle(24, 9, 1.6, 0x22e6ff, 0.6);
+    // Jaqueta de lantejoulas prateadas, ombreiras pontudas, camisa preta.
+    p.oRound(8, 4, 20, 22, 5, sequin);
+    p.oRound(3, 2, 11, 7, 3, sequin, 1.2);
+    p.oRound(22, 2, 11, 7, 3, sequin, 1.2);
+    p.fill(sequinDark).round(8, 19, 20, 7, 3.5);
+    p.fill(O).tri(13, 4, 23, 4, 18, 18);
+    p.fill(0x14101c).tri(14, 4.6, 22, 4.6, 18, 16.5); // camisa preta
+    p.fill(PAL.skin).tri(16, 4.6, 20, 4.6, 18, 8.6);
+    p.fill(NEON.pink).rect(3.5, 7, 8, 1.6); // braçadeira neon
+    // Lantejoulas: pontinhos claros e escuros alternados.
+    for (let y = 6; y < 25; y += 2.6) {
+      for (let x = 9.5; x < 27; x += 2.6) {
+        if (x > 13 && x < 23 && y < 17) continue;
+        const odd = (Math.round(x * 3 + y * 7) & 1) === 1;
+        p.fill(odd ? 0xffffff : sequinDark, odd ? 0.85 : 0.7).circle(x, y, 0.65);
+      }
+    }
+    p.fill(O).rect(9, 23, 18, 3); // cinto
+    p.oRound(15.5, 22.6, 5, 3.6, 0.8, PAL.gold, 0.6);
   });
   make(scene, 'pl_leg', TEX.plLeg.w, TEX.plLeg.h, (p) => {
-    p.oRound(3, 0, 5.5, 12, 2, 0xc9a87a, 1); // calça cáqui
-    p.fill(0xa8875c).rect(3, 7, 5.5, 1);
-    p.oRound(2, 10, 8, 4, 1.2, PAL.warmWhite, 1); // cano alto
-    p.fill(bandana).rect(2, 11, 8, 1);
-    p.oRound(1.5, 12.5, 9.5, 3.8, 1.8, PAL.warmWhite, 1); // tênis
-    p.fill(0x22e6ff).tri(4, 13.2, 9.5, 13.4, 6.5, 15);
-    p.fill(0x9aa3b5).rect(1.5, 15.4, 9.5, 1);
+    p.oRound(2.6, 0, 6, 10, 2, 0x1b1724, 1); // calça pega-frango
+    p.fill(0x3a3150).rect(4, 1, 1, 8);
+    p.oRound(3.2, 9, 4.6, 4.4, 1, glove, 0.9); // meia branca cintilante
+    p.fill(0x7fe7ff).circle(4.6, 10.6, 0.5).circle(6.6, 11.8, 0.5);
+    p.fill(0xffffff).circle(5.6, 10, 0.55);
+    p.oRound(1.5, 12.6, 9.5, 3.6, 1.8, 0x0d0b12, 1); // mocassim brilhando
+    p.fill(0xffffff, 0.6).rect(4, 13.2, 4, 0.8);
   });
   make(scene, 'pl_arm', TEX.plArm.w, TEX.plArm.h, (p) => {
-    // Pivô no ombro (x=5). Braço de palito + luva sem dedos + revólver gigante.
-    p.oCircle(5, 10, 3, PAL.skin, 1);
-    p.oRound(5, 8.6, 10, 3, 1.4, PAL.skin, 1);
-    p.oRound(13.5, 7.5, 5, 6, 1.6, 0x4a2c1c, 1); // luva
+    // Pivô no ombro (x=5). Manga de lantejoula + luva brilhante + revólver gigante.
+    p.oCircle(5, 10, 3.6, sequin, 1);
+    p.oRound(5, 8, 10, 4.4, 2, sequin, 1);
+    p.fill(0xffffff, 0.85).circle(7, 9.4, 0.6).circle(11, 10.6, 0.6);
+    p.oRound(13.5, 7.5, 5, 6, 1.6, glove, 1); // a luva brilhante
+    p.fill(0x7fe7ff).circle(15, 9, 0.6).circle(17, 11.4, 0.6);
     p.oRound(15, 10, 6, 8, 1.6, 0x8a5a2b, 1.2); // cabo de madeira
     p.fill(0xb07a42).rect(16.5, 11, 1.2, 5.5);
     p.oRound(16, 3, 11, 9, 2.6, 0xc4cad6, 1.3); // tambor enorme
@@ -213,14 +202,15 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.fill(0xffffff, 0.75).rect(17, 3.8, 22, 1.1);
     p.oRound(37.5, 1.6, 2.2, 2.6, 0.6, 0xc4cad6, 0.8); // massa de mira
     p.fill(O).rect(39.6, 4.4, 1.4, 3.8); // boca do cano
-    p.fill(0xff4fa3).rect(26, 8.4, 11, 0.7); // filete neon (customizado, claro)
+    p.fill(NEON.pink).rect(26, 8.4, 11, 0.7);
   });
   make(scene, 'pl_back', TEX.plBack.w, TEX.plBack.h, (p) => {
-    // Braço livre: palito com luva, faz "muque" (sem muque nenhum).
-    p.oRound(5, 1, 4, 13, 1.8, PAL.skin, 1);
-    p.fill(0xf7cfa8).ellipse(7.6, 8, 2.4, 3.2); // bíceps de ervilha
-    p.oRound(3.5, 13, 7, 7, 2.6, 0x4a2c1c, 1); // punho de luva
-    p.fill(PAL.skin).rect(4.5, 17.6, 5, 1.6);
+    // Braço livre de discoteca: manga brilhante e dedo apontando pro céu.
+    p.oRound(4.5, 1, 5, 12, 2.2, sequin, 1);
+    p.fill(0xffffff, 0.85).circle(6, 4, 0.6).circle(8, 8, 0.6);
+    p.oRound(4, 12, 6, 5, 2, glove, 1); // punho de luva
+    p.oRound(5.6, 15.5, 2.6, 6, 1.2, glove, 0.9); // dedo indicador
+    p.fill(0x7fe7ff).circle(6, 14, 0.5);
   });
 
   // ── Elenco de vilões: paródias de filmes de ação e da Miami dos anos 80 ──
@@ -343,64 +333,58 @@ export function generateTextures(scene: Phaser.Scene): void {
     p.oRound(12.5, 23, 6, 5, 1, PAL.gunMetal, 1);
   });
 
-  // ── Aeróbica Turbo (id vaca_loca): professora de aeróbica que atropela ──
+  // ── Rei do Topete (id vaca_loca): imitador do rei do rock que atropela ──
   make(scene, 'vaca_body', TEX.vacaBody.w, TEX.vacaBody.h, (p) => {
-    // Permanente gigante atrás da cabeça.
-    for (const [x, y, r] of [
-      [14, 8, 7],
-      [10, 15, 6],
-      [20, 4, 6.5],
-      [27, 4, 5.5],
-      [11, 22, 4.5],
-    ] as const) p.fill(O).circle(x, y, r + 1.5);
-    for (const [x, y, r] of [
-      [14, 8, 7],
-      [10, 15, 6],
-      [20, 4, 6.5],
-      [27, 4, 5.5],
-      [11, 22, 4.5],
-    ] as const) p.fill(0xffd166).circle(x, y, r);
-    p.fill(0xffe9a8).circle(18, 3, 2).circle(11, 12, 1.6);
-    // Collant rosa-choque cavado + meia-calça.
-    p.oRound(10, 20, 22, 27, 9, 0xff2fa8);
-    p.fill(0x9b5cff).tri(12, 40, 31, 40, 21.5, 47); // cava roxa
-    p.fill(0xffffff, 0.5).round(14, 23, 4, 14, 2);
-    p.fill(NEON.cyan).rect(10, 34, 22, 2.4); // cinto neon
-    // Cabeça com faixa, cara de quem está no 300º polichinelo.
-    p.oRound(15, 5, 20, 19, 8, PAL.skin);
-    p.fill(O).round(14, 6.5, 22, 5, 2);
-    p.fill(NEON.cyan).round(15, 7.2, 20, 3.4, 1.4);
-    p.fill(NEON.pink).rect(15, 8.4, 20, 1);
-    p.fill(PAL.warmWhite).circle(26, 14, 3.6).circle(32, 13.6, 3); // olhos esbugalhados
-    p.fill(O).circle(27.2, 14.2, 1.6).circle(33, 13.8, 1.3);
-    p.fill(0x7a2b8a).ellipse(29, 11.4, 9, 1.6); // sombra azul-roxa
-    p.fill(O).round(26, 19, 9, 4.6, 2.2); // grito de "VAI, VAI, VAI!"
-    p.fill(PAL.warmWhite).rect(27, 19.4, 7, 1.2);
-    p.fill(0xff5a8a).circle(23, 18, 1.8); // blush exagerado
-    p.fill(0x7fe7ff, 0.9).circle(37, 9, 1).circle(36, 12, 0.8); // gotas de suor
+    const suit = 0xfbf8ff;
+    p.g.translateCanvas(0, 5 * S); // folga em cima para o topete
+
+    // Macacão branco de lantejoula com gola alta.
+    p.oRound(10, 20, 22, 27, 8, suit);
+    p.fill(0xe0dcef).round(10, 38, 22, 9, 4);
+    p.fill(O).tri(16, 20, 28, 20, 22, 33);
+    p.fill(PAL.skin).tri(17.4, 20.6, 26.6, 20.6, 22, 31); // peito à mostra
+    p.fill(0x3a2116, 0.6).circle(21, 25, 0.8).circle(23, 27, 0.8).circle(22, 23.5, 0.7);
+    p.oRound(12, 15, 7, 8, 2, suit, 1.2).oRound(25, 15, 7, 8, 2, suit, 1.2); // gola alta
+    for (const [x, y] of [[13, 26], [30, 26], [13, 32], [30, 32], [16, 43], [27, 43], [21.5, 45]] as const) {
+      p.fill(PAL.gold).circle(x, y, 1.1);
+      p.fill(0xff2d3d).circle(x, y, 0.5);
+    }
+    p.oRound(10, 35, 22, 5, 1.6, PAL.gold, 1); // cinturão de campeão
+    p.oRound(17.5, 34, 7, 7, 2, 0xffe14d, 1);
+    p.fill(0xff2d3d).circle(21, 37.5, 1.6);
+    // Cabeça: topete gigante, costeletas, óculos dourados e beicinho.
+    p.oRound(15, 6, 20, 17, 7, PAL.skin);
+    p.fill(O).poly([[11, 13], [12, 3], [20, -1], [33, -1.5], [40, 3], [36, 7], [28, 5], [18, 8], [16, 16]]);
+    p.fill(0x0f0b18).poly([[12.4, 12.5], [13.4, 4], [20.4, 0.4], [32.6, 0], [37.6, 3.2], [35, 5.6], [28, 3.8], [18.4, 6.8], [15.4, 14]]);
+    p.fill(0x4b5a9c, 0.85).poly([[20, 1.6], [31, 1], [35, 2.6], [27, 2.4]]); // brilho de brilhantina
+    p.fill(0x0f0b18).round(15, 11, 3.6, 10, 1.4); // costeleta
+    p.fill(O).round(23, 10.6, 13, 5, 2); // óculos dourados
+    p.fill(PAL.gold).round(23.8, 11.2, 5.4, 3.6, 1.4).round(30, 11.2, 5.4, 3.6, 1.4);
+    p.fill(0xfff1a8).rect(24.6, 11.8, 2, 1);
+    p.fill(0xe8a87f).circle(35.5, 16, 2); // nariz
+    p.fill(O).poly([[27, 19.5], [33, 19], [33.5, 21], [29, 21.6]]); // beicinho torto de lado
+    p.fill(0xd65a7a).poly([[28, 20], [32.4, 19.7], [32.6, 20.6], [29.2, 21]]);
   });
   make(scene, 'vaca_leg', TEX.vacaLeg.w, TEX.vacaLeg.h, (p) => {
-    p.oRound(2, 0, 5, 9, 2, 0xff9ad0, 1); // meia-calça
-    p.oRound(1, 7, 7, 7, 2, NEON.cyan, 1); // polaina
-    p.fill(0x0fb8d8).rect(1, 9, 7, 1).rect(1, 11.5, 7, 1);
-    p.oRound(0.5, 13, 8.5, 4.4, 1.8, PAL.warmWhite, 1); // tênis de aeróbica
-    p.fill(NEON.pink).rect(1.5, 14.2, 6, 1);
+    // Boca de sino branca com lantejoulas + bota branca.
+    p.fill(O).poly([[1.5, 0], [7.5, 0], [9, 13], [0, 13]]);
+    p.fill(0xfbf8ff).poly([[2.4, 0.6], [6.6, 0.6], [8, 12.4], [1, 12.4]]);
+    p.fill(PAL.gold).circle(4.5, 5, 0.8).circle(3, 10, 0.8).circle(6.4, 10.4, 0.8);
+    p.oRound(0.5, 12.6, 8.5, 4.4, 1.8, 0xeeeaf6, 1);
   });
   make(scene, 'vaca_arm', TEX.vacaArm.w, TEX.vacaArm.h, (p) => {
-    // Braço com munhequeira e halterinho rosa; pivô no ombro.
-    p.oRound(1, 2, 10, 4, 2, PAL.skin, 1);
-    p.fill(NEON.cyan).rect(8, 2, 2.6, 4);
-    p.oRound(11, 0.5, 2.4, 7, 1, NEON.pink, 1);
-    p.oRound(15, 0.5, 2.4, 7, 1, NEON.pink, 1);
-    p.fill(O).rect(13, 3.4, 2.4, 1.2);
+    // Manga com franja dourada e dedo apontando ("uh-huh"); pivô no ombro.
+    p.oRound(1, 1.5, 10, 5, 2.4, 0xfbf8ff, 1);
+    p.fill(PAL.gold).rect(3, 6, 1, 1.6).rect(5.5, 6, 1, 1.6).rect(8, 6, 1, 1.6);
+    p.oCircle(12, 4, 2.6, PAL.skin, 0.9);
+    p.oRound(13, 2.8, 4, 1.8, 0.8, PAL.skin, 0.7);
+    p.fill(PAL.gold).circle(11.4, 5.4, 0.8); // anelzão
   });
   make(scene, 'vaca_bell', TEX.vacaBell.w, TEX.vacaBell.h, (p) => {
-    // Walkman pendurado no pescoço, com fone de ouvido laranja.
-    p.stroke(0.8, O).line(6, 0, 6, 3);
-    p.oRound(2, 3, 8, 9, 1.2, 0x2b6fd6, 1);
-    p.fill(0x9aa3b5).rect(3, 4.5, 6, 3);
-    p.fill(O).circle(4.6, 6, 0.9).circle(7.4, 6, 0.9);
-    p.fill(0xff8a3d).rect(3, 9.5, 6, 1.2);
+    // Lenço de seda vermelho no pescoço (pronto para jogar na plateia).
+    p.fill(O).poly([[2, 0], [10, 0], [8, 6], [9.5, 12.5], [6, 9], [2.5, 12.5], [4, 6]]);
+    p.fill(0xff2d3d).poly([[3, 0.8], [9, 0.8], [7.2, 6], [8.2, 11], [6, 8.2], [3.8, 11], [4.8, 6]]);
+    p.fill(0xff8a92).rect(4, 1.4, 4, 1);
   });
 
   // ── Ninja de Asa-Delta (id pombo_mafioso): esquadrilha de ninjas com Uzi ──

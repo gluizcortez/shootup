@@ -10,7 +10,7 @@ const LOGO = 'ShootUp!';
 
 /** Piadas do rodapé do programa, trocando sozinhas. */
 const TICKER = [
-  'Estrelando Johnny Replay, balconista de videolocadora e astro de ação autodeclarado.',
+  'Estrelando Johnny Replay, balconista de videolocadora e rei autodeclarado da pista de dança.',
   'Seja gentil, rebobine a fita.',
   'Nenhum dublê foi contratado. O orçamento acabou no bigode.',
   'Johnny nunca foi à academia. A arma também nunca foi à academia: ela já nasceu grande.',
@@ -21,7 +21,7 @@ const TICKER = [
 const CAST: Array<[string, string]> = [
   ['Capanga Vice', 'desce de paraquedas neon e faz pose ("!") antes de cada tiro mirado.'],
   ['Exterminador de Aluguel', 'gira a metralhadora, trava a mira e solta a rajada. Ele voltará.'],
-  ['Aeróbica Turbo', 'professora de aeróbica que atropela pelo chão. Pule por cima!'],
+  ['Rei do Topete', 'imitador do rei do rock: rebola o joelho e investe pelo chão. Pule por cima!'],
   ['Ninja de Asa-Delta', 'chega em bando de 3 em V e atira de Uzi junto depois do assobio.'],
   ['Yuppie Turbo', 'joga moedas e dá escudo aos colegas pelo celular-tijolo. Mate primeiro!'],
   ['Toni Mantega', 'o chefão da onda 10. Acelera o rotor da mochila antes de cada ataque.'],
