@@ -31,6 +31,7 @@ import v_ninja  # noqa: E402
 import v_roller  # noqa: E402
 import v_showbiz  # noqa: E402
 import v_terminator  # noqa: E402
+import stage  # noqa: E402
 
 CHARACTERS = {'johnny': johnny}
 # Elenco: cada quadro substitui a textura de mesmo nome desenhada em código.
@@ -109,3 +110,7 @@ if __name__ == '__main__':
             build(cid, mod)
     if not only or 'cast' in only:
         build_cast()
+    if not only or 'stage' in only:
+        stage.backdrop().save(os.path.join(OUT, 'stage.png'), optimize=True)
+        stage.blimp().save(os.path.join(OUT, 'stage_blimp.png'), optimize=True)
+        print('stage: fundo + dirigível')

@@ -6,6 +6,7 @@ import { PIXEL_FONT, VHS_FONT } from './fonts';
 import { NEON } from './palette';
 import { addPixelTexture } from './pixel/bake';
 import { bayer, mix, PixelCanvas } from './pixel/PixelCanvas';
+import { STAGE_BG, STAGE_BLIMP } from './sprites';
 
 /** Cenário em pixel art: 1 texel por unidade do mundo, como os personagens. */
 const S = 1;
@@ -35,8 +36,11 @@ export class Stage {
   private readonly beams: Phaser.GameObjects.Image[] = [];
   private readonly stars: Phaser.GameObjects.Image[] = [];
   private readonly edgeGlow: Phaser.GameObjects.Image;
+  /** Dirigível com painel de LED cruzando o céu bem devagar (só com o fundo pintado). */
+  private readonly blimp: Phaser.GameObjects.Image | null = null;
   private readonly rec: Phaser.GameObjects.Text;
   private readonly counter: Phaser.GameObjects.Text;
+  private readonly painted: boolean;
   private flickerTimer = 0;
   private time = 0;
   private shownSecond = -1;
@@ -47,8 +51,18 @@ export class Stage {
     private readonly scene: Phaser.Scene,
     private readonly terrain: Terrain,
   ) {
+    // Fundo pintado (tools/sprites/stage.py) quando carregou; senão o desenhado em código.
+    this.painted = scene.textures.exists(STAGE_BG);
     this.bakeTextures();
-    scene.add.image(X0, Y0, 'miami_bg').setOrigin(0).setScale(1 / S).setDepth(-100);
+    if (this.painted) {
+      scene.add.image(X0, Y0, STAGE_BG).setOrigin(0).setDepth(-100);
+      scene.add.image(X0, Y0, 'miami_ground').setOrigin(0).setDepth(-96);
+      if (scene.textures.exists(STAGE_BLIMP)) {
+        this.blimp = scene.add.image(VIEW_WIDTH * 0.3, 64, STAGE_BLIMP).setDepth(-99).setAlpha(0.9);
+      }
+    } else {
+      scene.add.image(X0, Y0, 'miami_bg').setOrigin(0).setScale(1 / S).setDepth(-100);
+    }
 
     // Holofotes de estreia varrendo o céu por trás dos prédios.
     for (const [x, tint, phase] of [
@@ -70,7 +84,7 @@ export class Stage {
     // Estrelas piscando no alto.
     for (let i = 0; i < 28; i++) {
       const x = X0 + ((i * 397) % BG_W);
-      const y = Y0 + 8 + ((i * 131) % (HORIZON - 150 - Y0));
+      const y = Y0 + 8 + ((i * 131) % (this.painted ? 120 - Y0 : HORIZON - 150 - Y0));
       const star = scene.add
         .image(x, y, 'px_dot')
         .setScale(0.18 + (i % 3) * 0.08)
@@ -81,10 +95,12 @@ export class Stage {
     }
 
     // Letreiros de neon nos prédios (piscam, e piscam mais com o combo).
-    this.sign(178, 214, 'OCEAN\nDRIVE', NEON.cyanCss, 22, FONT_DISPLAY, -0.02);
-    this.sign(1012, 206, 'Video Replay', NEON.pinkCss, 30, FONT_SCRIPT, -0.06);
-    this.sign(1012, 238, 'LOCADORA · 24H', NEON.yellowCss, 11, FONT_DISPLAY, -0.06);
-    this.sign(VIEW_WIDTH / 2, HORIZON + 30, 'ShootUp!', NEON.pinkCss, 46, FONT_SCRIPT, -0.04, 0.3);
+    const p = this.painted;
+    this.sign(p ? 210 : 178, p ? 236 : 214, 'OCEAN\nDRIVE', NEON.cyanCss, 22, FONT_DISPLAY, -0.02);
+    this.sign(p ? 1017 : 1012, p ? 190 : 206, 'Video Replay', NEON.pinkCss, 30, FONT_SCRIPT, -0.06);
+    this.sign(p ? 1017 : 1012, p ? 220 : 238, 'LOCADORA · 24H', NEON.yellowCss, 11, FONT_DISPLAY, -0.06);
+    // No fundo pintado o nome do jogo vai no dirigível; o letreiro no mar só sujaria a praia.
+    if (!p) this.sign(VIEW_WIDTH / 2, HORIZON + 30, 'ShootUp!', NEON.pinkCss, 46, FONT_SCRIPT, -0.04, 0.3);
 
     // Brilho do tubo de neon que contorna o chão; pulsa com o combo.
     this.edgeGlow = scene.add
@@ -169,6 +185,11 @@ export class Stage {
         s.setAlpha(off && !reducedMotion ? base * 0.35 : base);
       }
     }
+    if (this.blimp) {
+      this.blimp.x += dt * 7;
+      if (this.blimp.x > X0 + BG_W + 70) this.blimp.x = X0 - 70;
+      this.blimp.y = 64 + (reducedMotion ? 0 : Math.sin(this.time * 0.6) * 2);
+    }
     this.edgeGlow.setAlpha(0.35 + ex * 0.6 + (reducedMotion ? 0 : Math.sin(this.time * (2 + ex * 8)) * 0.1));
 
     if (!reducedMotion) {
@@ -193,7 +214,9 @@ export class Stage {
     if (!tex.exists('beam')) this.bakeBeam();
     if (!tex.exists('vhs_band')) this.bakeVhsBand();
     if (!tex.exists('edge_glow')) this.bakeEdgeGlow();
-    if (!tex.exists('miami_bg')) this.bakeBackground();
+    if (this.painted) {
+      if (!tex.exists('miami_ground')) this.bakeGround();
+    } else if (!tex.exists('miami_bg')) this.bakeBackground();
   }
 
   private upload(key: string, pc: PixelCanvas): void {
@@ -318,8 +341,20 @@ export class Stage {
     pc.hline(0, BG_W, wallTop - 3, 0xff8fd0);
 
     this.ground(pc);
+    this.posts(pc);
+    this.upload('miami_bg', pc);
+  }
 
-    // Paredes da arena: postes de neon art déco.
+  /** Só o chão e os postes, por cima do fundo pintado. */
+  private bakeGround(): void {
+    const pc = new PixelCanvas(BG_W, BG_H);
+    this.ground(pc);
+    this.posts(pc);
+    this.upload('miami_ground', pc);
+  }
+
+  /** Paredes da arena: postes de neon art déco. */
+  private posts(pc: PixelCanvas): void {
     for (const x of [ARENA.left - 10, ARENA.right + 10]) {
       const gy = Math.round(ty(this.terrain.groundAt(Math.min(VIEW_WIDTH, Math.max(0, x)))));
       const px = Math.round(tx(x));
@@ -334,8 +369,6 @@ export class Stage {
       pc.ellipse(px, top, 5, 5, NEON.cyan);
       pc.ellipse(px - 1, top - 1, 2, 2, 0xe9fdff);
     }
-
-    this.upload('miami_bg', pc);
   }
 
   /** Sol retrô listrado, com halo pontilhado em volta. */

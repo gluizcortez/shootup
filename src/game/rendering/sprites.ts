@@ -17,11 +17,17 @@ export interface SpriteMeta {
   anchors: Record<string, { shoulder?: [number, number] } | undefined>;
 }
 
+/** Fundo de Ocean Drive pintado em tools/sprites/stage.py (1296×800, origem no canto da margem). */
+export const STAGE_BG = 'stage_bg';
+export const STAGE_BLIMP = 'stage_blimp';
+
 export function preloadSprites(scene: Phaser.Scene): void {
   scene.load.setPath(`${import.meta.env.BASE_URL}sprites/`);
   scene.load.atlas(JOHNNY_ATLAS, 'johnny.png', 'johnny.json');
   scene.load.json(JOHNNY_META, 'johnny.meta.json');
   scene.load.atlas(CAST_ATLAS, 'cast.png', 'cast.json');
+  scene.load.image(STAGE_BG, 'stage.png');
+  scene.load.image(STAGE_BLIMP, 'stage_blimp.png');
   scene.load.setPath('');
 }
 
