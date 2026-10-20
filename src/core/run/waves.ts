@@ -15,17 +15,44 @@ export interface WaveDef {
   callout: string;
 }
 
+/**
+ * Elenco das ondas comuns: quem pode aparecer a partir de qual onda e com que
+ * frequência. Na onda de estreia o vilão vem garantido.
+ */
+export interface RosterEntry {
+  kind: EnemyKind;
+  /** Primeira onda em que aparece (estreia garantida nela). */
+  from: number;
+  /** Peso do sorteio para preencher as vagas da onda. */
+  weight: number;
+  /** Teto deste vilão numa mesma onda (melee e esquadrilhas não lotam a arena). */
+  maxPerWave?: number;
+  /** Frase do narrador na onda de estreia. */
+  debutCallout?: string;
+}
+
+/** Tamanho da onda comum: `base + perWave × (onda − 1)`, arredondado para baixo, até `max`. */
+export interface WaveSize {
+  base: number;
+  perWave: number;
+  max: number;
+}
+
 export interface WaveConfig {
-  /** Ondas roteirizadas; depois delas, `generateWave` assume. */
-  scripted: WaveDef[];
+  /** Ondas comuns: X vilões (ver `size`) sorteados do elenco, TODOS entrando juntos. */
+  roster: readonly RosterEntry[];
+  size: WaveSize;
   intermission: number;
   firstWaveDelay: number;
   clearBonusPerWave: number;
   /** Corações recuperados ao limpar uma onda (0.5 = meio coração), sem passar do máximo. */
   clearHeal: number;
+  /** Limite de vivos ao mesmo tempo; só vale para as entradas cronometradas das ondas de chefe. */
   maxAlive: number;
-  /** Ondas de chefe fixas (ex.: 10 → Don Pombone), têm prioridade sobre as outras. */
+  /** Ondas de chefe fixas (ex.: 10 → Toni Mantega): entradas cronometradas, têm prioridade. */
   bossWaves?: Readonly<Record<number, WaveDef>>;
+  /** Frases do narrador nas ondas comuns sem estreia. */
+  callouts: readonly string[];
   /** Crescimento linear e suave dos inimigos a cada onda (onda 1 = valores base). */
   growth?: WaveGrowth;
 }
@@ -71,45 +98,58 @@ export interface WaveState {
   total: number;
   spawned: number;
   callout: string;
+  /** Onda de chefe: entradas cronometradas e sujeitas a `maxAlive`. */
+  boss: boolean;
 }
 
-const GENERATED_CALLOUTS = [
-  'RATINGS THROUGH THE ROOF!',
-  'MORE EXTRAS ON SET!',
-  'THE PRODUCER WANTS MORE!',
-  'GOONS ON THE BLOCK!',
-  'THE GANG IS HERE!',
-  'WALL STREET SENT MORE YUPPIES!',
-  'ROLLER DISCO OF DEATH!',
-  'MIAMI VICE SQUAD ON THE TAKE!',
-  'PUMP UP THE VOLUME!',
-];
+/** Quantos vilões a onda comum `n` traz. */
+export function waveSize(n: number, size: WaveSize): number {
+  return Math.max(1, Math.min(size.max, Math.floor(size.base + size.perWave * (n - 1))));
+}
 
 /**
- * Ondas além das roteirizadas: escalada lenta, um bicho a mais a cada poucas ondas.
- * Elenco por faixa (GDD §4): pombos já vêm das roteirizadas, porcos a partir da 9.
- * Patinadores, Marombas e Policiais seguem crescendo devagar (todos já
- * estrearam nas roteirizadas).
+ * Onda comum `n`: exatamente `waveSize(n)` vilões, todos com `delay` 0 (entram
+ * juntos), em colunas espalhadas pela largura. Estreias da onda vêm primeiro;
+ * o resto é sorteado por peso entre os já liberados, respeitando `maxPerWave`.
+ * Uma esquadrilha de ninjas conta como 1 vilão.
  */
-export function generateWave(n: number, rng: Rng): WaveDef {
-  const spawns: WaveSpawn[] = [];
-  const add = (kind: EnemyKind, count: number, start: number, gapMin: number, gapMax: number) => {
-    let t = start;
-    for (let i = 0; i < count; i++) {
-      spawns.push({ kind, delay: t, x: 'random' });
-      t += rng.range(gapMin, gapMax);
-    }
+export function generateWave(n: number, cfg: WaveConfig, rng: Rng): WaveDef {
+  const total = waveSize(n, cfg.size);
+  const unlocked = cfg.roster.filter((r) => r.from <= n);
+  const counts = new Map<EnemyKind, number>();
+  const kinds: EnemyKind[] = [];
+  const push = (kind: EnemyKind) => {
+    kinds.push(kind);
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
   };
-  add('pato_pistoleiro', 2 + Math.floor(n / 6), 0, 1.4, 2.4);
-  add('galinha_rambo', Math.floor((n - 2) / 4), 2.5, 4.0, 6.0);
-  // Cada entrada de pombo é uma esquadrilha inteira.
-  add('pombo_mafioso', n >= 6 ? Math.floor((n - 3) / 4) : 0, 4, 6.0, 8.0);
-  add('porco_executivo', n >= 9 ? Math.floor((n - 5) / 4) : 0, 5, 5.0, 7.0);
-  add('vaca_loca', Math.floor((n - 1) / 4), 6, 5.0, 7.0);
-  add('patinador_assassino', Math.floor((n - 4) / 4), 3, 4.5, 6.5);
-  add('maromba_vice', Math.floor((n - 2) / 6), 2, 7.0, 9.0);
-  add('policial_corrupto', Math.floor((n - 4) / 4), 4.5, 5.0, 7.0);
-  return { spawns, callout: rng.pick(GENERATED_CALLOUTS) };
+  const debuts = unlocked.filter((r) => r.from === n);
+  for (const r of debuts) if (kinds.length < total) push(r.kind);
+  while (kinds.length < total) {
+    const open = unlocked.filter((r) => r.maxPerWave === undefined || (counts.get(r.kind) ?? 0) < r.maxPerWave);
+    if (open.length === 0) break;
+    let roll = rng.range(0, open.reduce((sum, r) => sum + r.weight, 0));
+    let pick = open[open.length - 1] as RosterEntry;
+    for (const r of open) {
+      roll -= r.weight;
+      if (roll <= 0) {
+        pick = r;
+        break;
+      }
+    }
+    push(pick.kind);
+  }
+  // Embaralha para as estreias não caírem sempre na mesma ponta.
+  for (let i = kinds.length - 1; i > 0; i--) {
+    const j = Math.floor(rng.range(0, i + 1));
+    [kinds[i], kinds[j]] = [kinds[j] as EnemyKind, kinds[i] as EnemyKind];
+  }
+  const spawns: WaveSpawn[] = kinds.map((kind, i) => ({
+    kind,
+    delay: 0,
+    x: Math.min(0.97, Math.max(0.03, (i + 0.5) / kinds.length + rng.range(-0.03, 0.03))),
+  }));
+  const debut = debuts.find((r) => r.debutCallout);
+  return { spawns, callout: debut?.debutCallout ?? rng.pick(cfg.callouts) };
 }
 
 export function createWaveState(cfg: WaveConfig): WaveState {
@@ -122,14 +162,15 @@ export function createWaveState(cfg: WaveConfig): WaveState {
     total: 0,
     spawned: 0,
     callout: '',
+    boss: false,
   };
 }
 
 export function beginWave(s: WaveState, cfg: WaveConfig, rng: Rng): void {
   s.wave++;
-  const def =
-    cfg.bossWaves?.[s.wave] ??
-    (s.wave <= cfg.scripted.length ? (cfg.scripted[s.wave - 1] as WaveDef) : generateWave(s.wave, rng));
+  const bossDef = cfg.bossWaves?.[s.wave];
+  s.boss = bossDef !== undefined;
+  const def = bossDef ?? generateWave(s.wave, cfg, rng);
   s.queue = def.spawns
     .map((sp) => ({
       kind: sp.kind,
@@ -148,7 +189,8 @@ export type WaveTickResult = 'none' | 'started' | 'cleared';
 
 /**
  * Avança a onda. `spawn` é chamado para cada inimigo que deve entrar agora.
- * Respeita `maxAlive` adiando spawns em vez de descartá-los.
+ * Onda comum: todos entram de uma vez. Onda de chefe: respeita `maxAlive`
+ * adiando os reforços em vez de descartá-los.
  */
 export function tickWaves(
   s: WaveState,
@@ -169,7 +211,7 @@ export function tickWaves(
 
   s.elapsed += dt;
   let alive = aliveCount;
-  while (s.queue.length > 0 && (s.queue[0] as ScheduledSpawn).at <= s.elapsed && alive < cfg.maxAlive) {
+  while (s.queue.length > 0 && (s.queue[0] as ScheduledSpawn).at <= s.elapsed && (!s.boss || alive < cfg.maxAlive)) {
     const next = s.queue.shift() as ScheduledSpawn;
     spawn(next.kind, next.x);
     s.spawned++;

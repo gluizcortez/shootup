@@ -109,17 +109,20 @@ describe('Atiradores novos ficam no alto', () => {
 });
 
 describe('Ritmo de estreia nas ondas', () => {
-  const firstWave = (kind: string): number => WAVES.scripted.findIndex((wv) => wv.spawns.some((s) => s.kind === kind)) + 1;
-  it('Patinador na 2, Maromba na 5 e Policial na 7', () => {
-    expect(firstWave('patinador_assassino')).toBe(2);
-    expect(firstWave('maromba_vice')).toBe(5);
-    expect(firstWave('policial_corrupto')).toBe(7);
+  const debut = (kind: string): number => WAVES.roster.find((r) => r.kind === kind)?.from ?? -1;
+  it('Patinador na 2, Maromba na 5 e Policial na 7, garantidos na estreia', () => {
+    expect(debut('patinador_assassino')).toBe(2);
+    expect(debut('maromba_vice')).toBe(5);
+    expect(debut('policial_corrupto')).toBe(7);
+    for (const kind of ['patinador_assassino', 'maromba_vice', 'policial_corrupto']) {
+      const w = generateWave(debut(kind), WAVES, new Rng(9));
+      expect(w.spawns.some((s) => s.kind === kind)).toBe(true);
+    }
   });
 
-  it('ondas geradas seguem trazendo os três', () => {
-    const wave = generateWave(12, new Rng(3));
-    for (const kind of ['patinador_assassino', 'maromba_vice', 'policial_corrupto']) {
-      expect(wave.spawns.some((s) => s.kind === kind)).toBe(true);
-    }
+  it('ondas avançadas seguem podendo trazer os três', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed < 20; seed++) for (const s of generateWave(12, WAVES, new Rng(seed)).spawns) seen.add(s.kind);
+    for (const kind of ['patinador_assassino', 'maromba_vice', 'policial_corrupto']) expect(seen.has(kind)).toBe(true);
   });
 });

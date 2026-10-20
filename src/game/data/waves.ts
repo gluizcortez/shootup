@@ -1,10 +1,12 @@
 import type { WaveConfig } from '@/core/run/waves';
 
 /**
- * Ondas do protótipo: os vilões descem do topo, poucos de cada vez, e o elenco
- * entra aos poucos. Capangas na 1, Patinador Assassino estreia na 2, Rei do
- * Topete na 3, Exterminador na 4, Maromba Miami Vice na 5, Ninjas de Asa-Delta
- * na 6, Policial Corrupto na 7 e o Tio do Cassino na 9. Onda 10: Toni Mantega.
+ * Ondas comuns: cada uma traz X vilões que entram TODOS JUNTOS pelo topo, e X
+ * cresce com as ondas (2, 2, 3, 4, 5, 5, 6, 7, 8... até 12). O elenco libera
+ * aos poucos, com estreia garantida: Capangas na 1, Patinador Assassino na 2,
+ * Rei do Topete na 3, Exterminador na 4, Maromba Miami Vice na 5, Ninjas de
+ * Asa-Delta na 6, Policial Corrupto na 7 e o Tio do Cassino na 9.
+ * Onda 10 (chefe Toni Mantega) é a exceção: entradas cronometradas.
  * Vida e velocidade dos inimigos crescem devagar a cada onda (`growth`).
  */
 export const WAVES: WaveConfig = {
@@ -14,67 +16,26 @@ export const WAVES: WaveConfig = {
   clearHeal: 0.5,
   maxAlive: 7,
   growth: { hpPerWave: 0.08, speedPerWave: 0.02, maxSpeedMult: 1.35 },
-  scripted: [
-    {
-      callout: 'GOONS ON THE BLOCK!',
-      spawns: [
-        { kind: 'pato_pistoleiro', delay: 0, x: 0.75 },
-        { kind: 'pato_pistoleiro', delay: 3, x: 0.25 },
-      ],
-    },
-    {
-      callout: 'ROLLER DISCO OF DEATH!',
-      spawns: [
-        { kind: 'pato_pistoleiro', delay: 0, x: 0.2 },
-        { kind: 'pato_pistoleiro', delay: 1.5, x: 0.8 },
-        { kind: 'patinador_assassino', delay: 4, x: 'random' },
-      ],
-    },
-    {
-      callout: 'THE KING HAS ENTERED THE BUILDING!',
-      spawns: [
-        { kind: 'pato_pistoleiro', delay: 0, x: 0.3 },
-        { kind: 'vaca_loca', delay: 2.5, x: 0.7 },
-        { kind: 'pato_pistoleiro', delay: 5, x: 'random' },
-      ],
-    },
-    {
-      callout: 'WATCH OUT: HIRED TERMINATOR!',
-      spawns: [
-        { kind: 'galinha_rambo', delay: 0, x: 0.85 },
-        { kind: 'pato_pistoleiro', delay: 3, x: 0.15 },
-        { kind: 'pato_pistoleiro', delay: 5.5, x: 'random' },
-      ],
-    },
-    {
-      callout: "SUN'S OUT, GUNS OUT!",
-      spawns: [
-        { kind: 'pato_pistoleiro', delay: 0, x: 0.15 },
-        { kind: 'maromba_vice', delay: 1.5, x: 0.5 },
-        { kind: 'patinador_assassino', delay: 3, x: 0.85 },
-        { kind: 'galinha_rambo', delay: 5, x: 'random' },
-        { kind: 'vaca_loca', delay: 7, x: 'random' },
-      ],
-    },
-    {
-      callout: 'NINJAS FROM THE SKY!',
-      spawns: [
-        { kind: 'pato_pistoleiro', delay: 0, x: 0.2 },
-        { kind: 'pombo_mafioso', delay: 2, x: 0.6 },
-        { kind: 'pato_pistoleiro', delay: 5, x: 'random' },
-        { kind: 'galinha_rambo', delay: 7, x: 'random' },
-      ],
-    },
-    {
-      callout: 'FREEZE, PUNK! THE COPS ARE CROOKED!',
-      spawns: [
-        { kind: 'policial_corrupto', delay: 0, x: 0.8 },
-        { kind: 'pato_pistoleiro', delay: 2, x: 0.2 },
-        { kind: 'patinador_assassino', delay: 4, x: 'random' },
-        { kind: 'maromba_vice', delay: 6, x: 'random' },
-        { kind: 'pato_pistoleiro', delay: 8, x: 'random' },
-      ],
-    },
+  size: { base: 2, perWave: 0.75, max: 12 },
+  roster: [
+    { kind: 'pato_pistoleiro', from: 1, weight: 3, debutCallout: 'GOONS ON THE BLOCK!' },
+    { kind: 'patinador_assassino', from: 2, weight: 2, maxPerWave: 3, debutCallout: 'ROLLER DISCO OF DEATH!' },
+    { kind: 'vaca_loca', from: 3, weight: 1.5, maxPerWave: 2, debutCallout: 'THE KING HAS ENTERED THE BUILDING!' },
+    { kind: 'galinha_rambo', from: 4, weight: 1.5, maxPerWave: 3, debutCallout: 'WATCH OUT: HIRED TERMINATOR!' },
+    { kind: 'maromba_vice', from: 5, weight: 1, maxPerWave: 2, debutCallout: "SUN'S OUT, GUNS OUT!" },
+    { kind: 'pombo_mafioso', from: 6, weight: 1, maxPerWave: 2, debutCallout: 'NINJAS FROM THE SKY!' },
+    { kind: 'policial_corrupto', from: 7, weight: 1.5, maxPerWave: 3, debutCallout: 'FREEZE, PUNK! THE COPS ARE CROOKED!' },
+    { kind: 'porco_executivo', from: 9, weight: 1, maxPerWave: 2 },
+  ],
+  callouts: [
+    'RATINGS THROUGH THE ROOF!',
+    'MORE EXTRAS ON SET!',
+    'THE PRODUCER WANTS MORE!',
+    'GOONS ON THE BLOCK!',
+    'THE GANG IS HERE!',
+    'ROLLER DISCO OF DEATH!',
+    'MIAMI VICE SQUAD ON THE TAKE!',
+    'PUMP UP THE VOLUME!',
   ],
   bossWaves: {
     10: {
