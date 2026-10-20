@@ -71,6 +71,7 @@ export interface FeedbackHooks {
   onEnemyKilled(uid: number): void;
   onCrosshairHit(crit: boolean): void;
   onCombo(multiplier: number): void;
+  onDiscoShot(): void;
 }
 
 /**
@@ -192,6 +193,34 @@ export class Feedback {
         this.shake.add(ev.golden ? 0.3 : 0.18);
         this.ring(ev.x, ev.y, tint);
         for (let i = 0, n = this.count(10); i < n; i++) this.spark(ev.x, ev.y, Math.random() * Math.PI * 2, 1.1, tint, 380);
+        return;
+      }
+      case 'echoShot':
+        // Lado B: tiro repetido, flash rosa sem tranco extra.
+        this.audio.play('shot');
+        this.emit({
+          texture: 'fx_muzzle',
+          x: ev.x + Math.cos(ev.angle) * 6,
+          y: ev.y + Math.sin(ev.angle) * 6,
+          vx: 0,
+          vy: 0,
+          life: 0.06,
+          rotation: ev.angle,
+          scaleFrom: 1.3,
+          scaleTo: 0.5,
+          tint: NEON.pink,
+          additive: true,
+          depth: 46,
+        });
+        return;
+      case 'bulletSplit':
+        for (let i = 0, n = this.count(5); i < n; i++) this.spark(ev.x, ev.y, Math.random() * Math.PI * 2, 0.8, PAL.violet, 300);
+        return;
+      case 'discoShot': {
+        this.hooks.onDiscoShot();
+        this.audio.play('ricochet');
+        const tint = ev.golden ? PAL.amber : NEON.pink;
+        for (let i = 0, n = this.count(6); i < n; i++) this.spark(ev.x, ev.y, -Math.PI * Math.random(), 0.7, tint, 260);
         return;
       }
       case 'upgradeOffer':

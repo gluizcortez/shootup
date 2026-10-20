@@ -21,6 +21,14 @@ const BASE: Stats = {
   runSpeed: 300,
   jumpVelocity: 700,
   maxHp: 5,
+  projectileRadius: 5,
+  knockback: 100,
+  wallBounce: 0,
+  echoChance: 0,
+  comboHaste: 0,
+  homing: 0,
+  splitCount: 0,
+  enemyBulletSpeed: 1,
 };
 
 function card(id: string, patch: Partial<UpgradeDef> = {}): UpgradeDef {
@@ -147,7 +155,7 @@ describe('upgrades — no World', () => {
 
   it('Gatilho Nervoso deixa a arma mais rápida', () => {
     const w = withCard('gatilho_nervoso');
-    expect(w.weapon.fireInterval).toBeCloseTo(WORLD_CONFIG.weapon.fireInterval * 0.99);
+    expect(w.weapon.fireInterval).toBeCloseTo(WORLD_CONFIG.weapon.fireInterval * 0.9865);
     expect(WORLD_CONFIG.weapon.fireInterval).toBe(0.6); // a base nunca é alterada
   });
 
@@ -162,23 +170,27 @@ describe('upgrades — no World', () => {
     expect(UPGRADE_POOL.some((c) => c.id === 'tiro_duplo')).toBe(false);
   });
 
-  it('Casco Duro dá meio coração vazio, sem curar', () => {
+  it('Casco Duro dá vida em meios corações, vazia, sem curar', () => {
     const w = new World(WORLD_CONFIG, 1);
     w.player.hp = 2;
     w.offer = [UPGRADE_POOL.find((c) => c.id === 'casco_duro') as UpgradeDef];
     w.pickUpgrade('casco_duro');
     expect(w.player.maxHp).toBe(WORLD_CONFIG.player.maxHp + 0.5);
     expect(w.player.hp).toBe(2);
+    // +0,675 por carta, arredondado para baixo em meios: 2 cartas = +1, 4 cartas = +2,5.
+    w.offer = [UPGRADE_POOL.find((c) => c.id === 'casco_duro') as UpgradeDef];
+    w.pickUpgrade('casco_duro');
+    expect(w.player.maxHp).toBe(WORLD_CONFIG.player.maxHp + 1);
   });
 
-  it('Casco Regenerado cura 1 coração sem passar do máximo', () => {
+  it('Casco Regenerado cura 1,5 coração sem passar do máximo', () => {
     const w = new World(WORLD_CONFIG, 1);
     w.player.hp = 2;
     const def = UPGRADE_POOL.find((c) => c.id === 'casco_regenerado') as UpgradeDef;
     expect(def.rarity).toBe('raro');
     w.offer = [def];
     w.pickUpgrade('casco_regenerado');
-    expect(w.player.hp).toBe(3);
+    expect(w.player.hp).toBe(3.5);
     w.player.hp = w.player.maxHp;
     w.offer = [def];
     w.pickUpgrade('casco_regenerado');
@@ -229,7 +241,7 @@ describe('upgrades — no World', () => {
     expect(hits).toEqual([a!.uid, b!.uid]);
   });
 
-  it('Sinuca Mortal: a bala quica no inimigo atingido para um lado qualquer, com metade do dano', () => {
+  it('Sinuca Mortal: a bala quica no inimigo atingido para um lado qualquer, com 67,5% do dano', () => {
     const w = withCard('sinuca_mortal');
     const [a] = hoveringPatos(w, [400], 160);
     const p = w.projectiles.spawn('player', 400, 300, 0, -900, 4, 10, false, 0, 1, 'pistol');
@@ -242,7 +254,7 @@ describe('upgrades — no World', () => {
     }
     expect(ricochets).toBe(1);
     expect(p.active).toBe(true);
-    expect(p.damage).toBe(5);
+    expect(p.damage).toBeCloseTo(6.75);
     expect(p.lastHitUid).toBe(a!.uid);
   });
 

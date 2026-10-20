@@ -25,6 +25,12 @@ export interface Projectile {
   ricochetLeft: number;
   /** Último inimigo atingido (não acerta o mesmo duas vezes seguidas). */
   lastHitUid: number;
+  /** Quiques restantes em chão, paredes e teto. */
+  wallBounceLeft: number;
+  /** Curva máxima em direção ao inimigo mais perto (rad/s; 0 = reta). */
+  homing: number;
+  /** Estilhaços que solta no próximo acerto (estilhaços não se dividem). */
+  splitCount: number;
 }
 
 /**
@@ -57,6 +63,9 @@ export class ProjectilePool {
       pierceLeft: 0,
       ricochetLeft: 0,
       lastHitUid: -1,
+      wallBounceLeft: 0,
+      homing: 0,
+      splitCount: 0,
     }));
   }
 
@@ -90,6 +99,9 @@ export class ProjectilePool {
     p.pierceLeft = 0;
     p.ricochetLeft = 0;
     p.lastHitUid = -1;
+    p.wallBounceLeft = 0;
+    p.homing = 0;
+    p.splitCount = 0;
     return p;
   }
 

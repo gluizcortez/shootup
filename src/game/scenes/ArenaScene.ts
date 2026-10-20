@@ -21,6 +21,7 @@ import type { EnemyVisual } from '../rendering/EnemyView';
 import { VacaView } from '../rendering/VacaView';
 import { PlayerView } from '../rendering/PlayerView';
 import { ProjectileRenderer } from '../rendering/ProjectileRenderer';
+import { DiscoBallView } from '../rendering/DiscoBallView';
 import { Stage } from '../rendering/stage';
 import { TEX_SCALE } from '../rendering/textures';
 import { AudioSystem } from '../systems/AudioSystem';
@@ -64,6 +65,7 @@ export class ArenaScene extends Phaser.Scene {
   private stage!: Stage;
   private playerView!: PlayerView;
   private projectileRenderer!: ProjectileRenderer;
+  private discoBall!: DiscoBallView;
   private particles!: Particles;
   private texts!: FloatingText;
   private readonly shake = new ScreenShake();
@@ -114,6 +116,7 @@ export class ArenaScene extends Phaser.Scene {
     this.world = this.newWorld();
     this.playerView = new PlayerView(this, WORLD_CONFIG.player.hh, WORLD_CONFIG.player.shoulder, this.groundAt);
     this.projectileRenderer = new ProjectileRenderer(this, this.world.projectiles);
+    this.discoBall = new DiscoBallView(this);
     this.particles = new Particles(this, PARTICLE_CAPACITY[this.settings.vfxQuality], this.groundAt);
     this.texts = new FloatingText(this);
     this.input2 = new InputSystem(this, { x: VIEW_WIDTH / 2 + 200, y: ARENA.floorY - 30 });
@@ -156,6 +159,7 @@ export class ArenaScene extends Phaser.Scene {
         onCombo: (mult) => {
           this.stage.excitement = Math.min(1, (mult - 1) / 2);
         },
+        onDiscoShot: () => this.discoBall.pulse(),
       },
       VIEW_WIDTH,
       VIEW_HEIGHT,
@@ -348,6 +352,7 @@ export class ArenaScene extends Phaser.Scene {
     this.shake.reset();
     this.stepper.reset();
     this.projectileRenderer.reset();
+    this.discoBall.reset();
     this.input2.releaseAll();
     this.playerView.reset();
     this.hitstop = 0;
@@ -448,6 +453,7 @@ export class ArenaScene extends Phaser.Scene {
     }
     this.playerView.update(w, alpha, running ? dt : 0);
     this.projectileRenderer.update(w.projectiles, alpha, running ? dt : 0);
+    this.discoBall.update(w, alpha, running ? dt : 0, this.reducedMotion);
 
     if (phase !== 'PAUSED') {
       this.particles.update(dt);

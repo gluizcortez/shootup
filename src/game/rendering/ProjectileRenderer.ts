@@ -45,7 +45,9 @@ export class ProjectileRenderer {
         if (!enemy) s.setRotation(0);
         if (p.crit) s.setTint(0xfff3c4);
         else if (p.sourceId === 'explosivo') s.setTint(0xff5964);
-        else if (p.sourceId === 'explosivo_dourado') s.setTint(0xffe08a);
+        else if (p.sourceId === 'explosivo_dourado' || p.sourceId === 'disco_dourado') s.setTint(0xffe08a);
+        else if (p.sourceId === 'disco') s.setTint(0xff2fa8);
+        else if (p.sourceId === 'fragmento') s.setTint(0xb37cff);
         else s.clearTint();
         s.setVisible(true);
       }

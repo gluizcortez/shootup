@@ -45,6 +45,10 @@ export interface UpgradeConfig {
   bossWeights?: Record<Rarity, number>;
   /** Dano da bala depois de cada ricochete (Sinuca Mortal), como fração. */
   ricochetDamageMult: number;
+  /** Dano de cada estilhaço (Bala Cluster), como fração do dano da bala que acertou. */
+  splitDamageFrac: number;
+  /** Teto da cadência extra por combo (Trilha de Montagem), como fração. */
+  comboHasteMax: number;
   clamps: Partial<Record<StatKey, StatClamp>>;
   /** Cartas por oferta entre ondas. */
   offerSize: number;
@@ -135,6 +139,17 @@ export class World {
   /** Habilidades épicas ativas (recalculadas junto com os atributos). */
   private explode: { count: number; damageFrac: number; speedFrac: number; lifetime: number; golden: boolean } | null = null;
   private bleed: { damage: number; duration: number; interval: number; golden: boolean } | null = null;
+  /** Globo de Discoteca (épica): lido também pela renderização. */
+  disco: {
+    count: number;
+    interval: number;
+    damageFrac: number;
+    speedFrac: number;
+    lifetime: number;
+    height: number;
+    golden: boolean;
+    timer: number;
+  } | null = null;
 
   private nextUid = 1;
   private nextSquad = 1;
@@ -257,6 +272,7 @@ export class World {
     }
     this.stats.time += dt;
     this.stepPlayer(input, dt);
+    this.stepDisco(dt);
     this.stepEnemies(dt);
     this.stepBleed(dt);
     this.stepProjectiles(dt);
@@ -282,31 +298,98 @@ export class World {
     p.aimAngle = Math.atan2(input.aimY - sy, input.aimX - sx);
 
     const w = this.weapon;
-    const shots = tickWeapon(p.weapon, w, input.fireHeld, dt);
+    // Trilha de Montagem: o combo acelera o cooldown (sem passar do limite de cadência).
+    const shots = tickWeapon(p.weapon, w, input.fireHeld, dt * (1 + this.comboHaste()));
+    const echo = this.effective.echoChance;
     for (let s = 0; s < shots; s++) {
       const mx = sx + Math.cos(p.aimAngle) * w.barrelLength;
       const my = sy + Math.sin(p.aimAngle) * w.barrelLength;
-      for (const a of pelletAngles(w, p.aimAngle, this.rng, this.angleScratch)) {
-        const roll = rollDamage(w, this.rng);
-        const bullet = this.projectiles.spawn(
-          'player',
-          mx,
-          my,
-          Math.cos(a) * w.projectileSpeed,
-          Math.sin(a) * w.projectileSpeed,
-          w.projectileRadius,
-          roll.amount,
-          roll.crit,
-          w.knockback,
-          w.projectileLifetime,
-          w.id,
-        );
-        bullet.pierceLeft = w.pierce;
-        bullet.ricochetLeft = w.ricochet;
-      }
+      this.fireVolley(mx, my, p.aimAngle, 0);
       this.stats.shotsFired++;
       this.emit({ type: 'shot', x: mx, y: my, angle: p.aimAngle, weaponId: w.id });
+      // Lado B: cada 100% é uma repetição garantida; o resto é chance. Repetições não contam na precisão.
+      if (echo > 0) {
+        let extra = Math.floor(echo);
+        if (this.rng.chance(echo - extra)) extra++;
+        for (let k = 0; k < extra; k++) {
+          this.fireVolley(mx, my, p.aimAngle, this.rng.range(-0.07, 0.07));
+          this.emit({ type: 'echoShot', x: mx, y: my, angle: p.aimAngle });
+        }
+      }
     }
+  }
+
+  /** Um disparo da arma (todas as balas do tiro), com desvio extra opcional. */
+  private fireVolley(x: number, y: number, aim: number, jitter: number): void {
+    const w = this.weapon;
+    for (const a of pelletAngles(w, aim + jitter, this.rng, this.angleScratch)) {
+      this.spawnPlayerBullet(x, y, a, w.projectileSpeed, 1, w.projectileLifetime, w.id);
+    }
+  }
+
+  /** Bala do jogador com todos os modificadores de carta (perfura, quica, persegue, divide). */
+  private spawnPlayerBullet(
+    x: number,
+    y: number,
+    angle: number,
+    speed: number,
+    damageFrac: number,
+    life: number,
+    sourceId: string,
+  ): Projectile {
+    const w = this.weapon;
+    const st = this.effective;
+    const roll = rollDamage(w, this.rng);
+    const b = this.projectiles.spawn(
+      'player',
+      x,
+      y,
+      Math.cos(angle) * speed,
+      Math.sin(angle) * speed,
+      w.projectileRadius,
+      roll.amount * damageFrac,
+      roll.crit,
+      w.knockback,
+      life,
+      sourceId,
+    );
+    b.pierceLeft = w.pierce;
+    b.ricochetLeft = w.ricochet;
+    b.wallBounceLeft = st.wallBounce;
+    b.homing = st.homing;
+    b.splitCount = st.splitCount;
+    return b;
+  }
+
+  /** Cadência extra do combo, como fração (0 = nenhuma). */
+  comboHaste(): number {
+    const per = this.effective.comboHaste;
+    if (per <= 0 || this.combo.count <= 0) return 0;
+    const minInterval = this.config.upgrades.clamps.fireInterval?.min ?? 0;
+    const room = minInterval > 0 ? Math.max(0, this.weapon.fireInterval / minInterval - 1) : Infinity;
+    return Math.min(per * this.combo.count, this.config.upgrades.comboHasteMax, room);
+  }
+
+  /** Globo de Discoteca: rajadas em leque para cima, sozinho, enquanto o jogador vive. */
+  private stepDisco(dt: number): void {
+    const d = this.disco;
+    if (!d) return;
+    d.timer -= dt;
+    if (d.timer > 0) return;
+    d.timer += d.interval;
+    const m = this.player.motor;
+    const x = m.x;
+    const y = m.y - d.height;
+    const speed = this.weapon.projectileSpeed * d.speedFrac;
+    // Arco de cima: um pouco abaixo do horizontal de cada lado até o teto.
+    const from = -Math.PI - 0.25;
+    const span = Math.PI + 0.5;
+    const offset = this.rng.range(0, span / d.count);
+    for (let i = 0; i < d.count; i++) {
+      const a = from + offset + (i / d.count) * span;
+      this.spawnPlayerBullet(x, y, a, speed, d.damageFrac, d.lifetime, d.golden ? 'disco_dourado' : 'disco');
+    }
+    this.emit({ type: 'discoShot', x, y, count: d.count, golden: d.golden });
   }
 
   private stepEnemies(dt: number): void {
@@ -341,7 +424,7 @@ export class World {
   private enemyFire(e: Enemy, angle: number, speedScale: number): void {
     const d = rangedDef(e);
     const m = muzzlePosition(e);
-    const speed = d.bulletSpeed * speedScale;
+    const speed = d.bulletSpeed * speedScale * this.effective.enemyBulletSpeed;
     this.projectiles.spawn(
       'enemy',
       m.x,
@@ -366,6 +449,7 @@ export class World {
       if (!p.active) continue;
       p.px = p.x;
       p.py = p.y;
+      if (p.homing > 0) this.steer(p, dt);
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.life -= dt;
@@ -379,6 +463,7 @@ export class World {
       // Impacto em chão/paredes/teto ou fim de vida.
       const groundY = this.terrain.groundAt(p.x);
       const hitFloor = p.y + p.radius >= groundY;
+      if (p.wallBounceLeft > 0 && this.bounceWalls(p, groundY)) continue;
       const out = p.x < b.left - 60 || p.x > b.right + 60 || p.y < b.ceilingY - 60;
       if (hitFloor) {
         this.emit({ type: 'projectileImpact', x: p.x, y: groundY, team: p.team, angle: Math.atan2(p.vy, p.vx) });
@@ -431,6 +516,7 @@ export class World {
         e.bleedInterval = bl.interval;
       }
       if (e.hp <= 0) this.killEnemy(e, p.crit);
+      if (p.splitCount > 0) this.splitBullet(p, e.uid, dirX, dirY);
 
       p.lastHitUid = e.uid;
       if (p.pierceLeft > 0) {
@@ -457,6 +543,89 @@ export class World {
     p.damage *= this.config.upgrades.ricochetDamageMult;
     p.life = Math.max(p.life, 0.8);
     this.emit({ type: 'ricochet', x: p.x, y: p.y, angle });
+  }
+
+  /** Bala Bate-Volta: quica em chão, paredes e teto. Devolve true se quicou. */
+  private bounceWalls(p: Projectile, groundY: number): boolean {
+    const b = this.config.bounds;
+    let bounced = false;
+    if (p.y + p.radius >= groundY) {
+      p.y = groundY - p.radius;
+      p.vy = -Math.abs(p.vy);
+      bounced = true;
+    } else if (p.y - p.radius <= b.ceilingY) {
+      p.y = b.ceilingY + p.radius;
+      p.vy = Math.abs(p.vy);
+      bounced = true;
+    }
+    if (p.x - p.radius <= b.left) {
+      p.x = b.left + p.radius;
+      p.vx = Math.abs(p.vx);
+      bounced = true;
+    } else if (p.x + p.radius >= b.right) {
+      p.x = b.right - p.radius;
+      p.vx = -Math.abs(p.vx);
+      bounced = true;
+    }
+    if (!bounced) return false;
+    p.wallBounceLeft--;
+    p.px = p.x;
+    p.py = p.y;
+    // Depois de quicar pode voltar a acertar o mesmo inimigo.
+    p.lastHitUid = -1;
+    p.life = Math.max(p.life, 0.6);
+    this.emit({ type: 'ricochet', x: p.x, y: p.y, angle: Math.atan2(p.vy, p.vx) });
+    return true;
+  }
+
+  /** Teleguiada: vira a bala para o inimigo mais perto, até `homing` rad/s. */
+  private steer(p: Projectile, dt: number): void {
+    let best: Enemy | null = null;
+    let bestD = Infinity;
+    for (const e of this.enemies) {
+      if (!e.alive || e.state === 'incoming' || e.uid === p.lastHitUid) continue;
+      const d = (e.x - p.x) ** 2 + (e.y - p.y) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = e;
+      }
+    }
+    if (!best) return;
+    const speed = Math.hypot(p.vx, p.vy);
+    const cur = Math.atan2(p.vy, p.vx);
+    let diff = Math.atan2(best.y - p.y, best.x - p.x) - cur;
+    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+    const max = p.homing * dt;
+    const a = cur + Math.max(-max, Math.min(max, diff));
+    p.vx = Math.cos(a) * speed;
+    p.vy = Math.sin(a) * speed;
+  }
+
+  /** Bala Cluster: ao acertar, solta estilhaços em leque para a frente. Estilhaços não se dividem. */
+  private splitBullet(p: Projectile, hitUid: number, dirX: number, dirY: number): void {
+    const n = p.splitCount;
+    const base = Math.atan2(dirY, dirX);
+    const spread = 1.8;
+    const speed = Math.hypot(p.vx, p.vy) * 0.85;
+    for (let i = 0; i < n; i++) {
+      const a = n === 1 ? base + this.rng.range(-0.5, 0.5) : base - spread / 2 + (i / (n - 1)) * spread;
+      const f = this.projectiles.spawn(
+        'player',
+        p.x,
+        p.y,
+        Math.cos(a) * speed,
+        Math.sin(a) * speed,
+        Math.max(3, p.radius * 0.75),
+        p.damage * this.config.upgrades.splitDamageFrac,
+        false,
+        p.knockback * 0.4,
+        0.55,
+        'fragmento',
+      );
+      f.lastHitUid = hitUid;
+      f.homing = p.homing;
+    }
+    this.emit({ type: 'bulletSplit', x: p.x, y: p.y, count: n });
   }
 
   /** Sangramento da carta Vampiresco: ignora escudo e pode matar. */
@@ -641,6 +810,14 @@ export class World {
       runSpeed: p.motor.runSpeed,
       jumpVelocity: p.motor.jumpVelocity,
       maxHp: p.maxHp,
+      projectileRadius: w.projectileRadius,
+      knockback: w.knockback,
+      wallBounce: 0,
+      echoChance: 0,
+      comboHaste: 0,
+      homing: 0,
+      splitCount: 0,
+      enemyBulletSpeed: 1,
     };
   }
 
@@ -658,6 +835,8 @@ export class World {
     w.projectileSpeed = st.projectileSpeed;
     w.pierce = st.pierce;
     w.ricochet = st.ricochet;
+    w.projectileRadius = st.projectileRadius;
+    w.knockback = st.knockback;
     this.motorTuning.runSpeed = st.runSpeed;
     this.motorTuning.jumpVelocity = st.jumpVelocity;
     this.player.maxHp = st.maxHp;
@@ -668,6 +847,8 @@ export class World {
   private recomputeEffects(): void {
     this.explode = null;
     this.bleed = null;
+    const prevDisco = this.disco;
+    this.disco = null;
     for (const [id, stacks] of this.owned) {
       const def = this.upgradeDefs.get(id);
       const fx = def?.effect;
@@ -680,6 +861,18 @@ export class World {
           speedFrac: fx.speedFrac,
           lifetime: fx.lifetime,
           golden,
+        };
+      } else if (fx.kind === 'disco') {
+        const interval = golden ? fx.goldenInterval : fx.interval;
+        this.disco = {
+          count: fx.baseCount + fx.perStack * (stacks - 1),
+          interval,
+          damageFrac: golden ? fx.goldenDamageFrac : fx.damageFrac,
+          speedFrac: fx.speedFrac,
+          lifetime: fx.lifetime,
+          height: fx.height,
+          golden,
+          timer: Math.min(prevDisco?.timer ?? interval, interval),
         };
       } else {
         this.bleed = {

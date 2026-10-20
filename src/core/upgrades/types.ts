@@ -1,7 +1,7 @@
 /**
  * Atributos que as cartas podem alterar. Todos numéricos; os inteiros
- * (projéteis por tiro, perfuração, ricochete, vida) são arredondados para
- * baixo depois do cálculo.
+ * (projéteis por tiro, perfuração, ricochete, quiques, estilhaços) são
+ * arredondados para baixo depois do cálculo, e a vida para baixo em meios corações.
  */
 export type StatKey =
   | 'fireInterval'
@@ -15,7 +15,23 @@ export type StatKey =
   | 'ricochet'
   | 'runSpeed'
   | 'jumpVelocity'
-  | 'maxHp';
+  | 'maxHp'
+  /** Raio da bala do jogador (px). */
+  | 'projectileRadius'
+  /** Empurrão da bala no inimigo (px/s). */
+  | 'knockback'
+  /** Quiques da bala em chão, paredes e teto. */
+  | 'wallBounce'
+  /** Chance de o tiro sair repetido; cada 100% é uma repetição garantida. */
+  | 'echoChance'
+  /** Fração de cadência extra por inimigo no combo (Trilha de Montagem). */
+  | 'comboHaste'
+  /** Curva máxima da bala em direção ao inimigo mais perto (rad/s). */
+  | 'homing'
+  /** Estilhaços que a bala solta ao acertar. */
+  | 'splitCount'
+  /** Multiplicador da velocidade das balas inimigas. */
+  | 'enemyBulletSpeed';
 
 export type Stats = Record<StatKey, number>;
 
@@ -74,6 +90,22 @@ export type UpgradeEffect =
       tickInterval: number;
       goldenTickInterval: number;
       goldenAt: number;
+    }
+  | {
+      /** Globo de discoteca sobre o jogador dispara leques de balas sozinho. */
+      kind: 'disco';
+      baseCount: number;
+      perStack: number;
+      /** Segundos entre rajadas (normal e dourada). */
+      interval: number;
+      goldenInterval: number;
+      damageFrac: number;
+      goldenDamageFrac: number;
+      goldenAt: number;
+      speedFrac: number;
+      lifetime: number;
+      /** Altura do globo acima do centro do jogador (px). */
+      height: number;
     };
 
 export interface StatClamp {

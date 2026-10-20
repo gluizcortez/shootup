@@ -1,8 +1,9 @@
 import type { Rng } from '../math/rng';
 import type { Owned, Rarity, StatClamp, StatKey, Stats, UpgradeDef } from './types';
 
-// maxHp não é inteiro: há meios corações.
-const INTEGER_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['pellets', 'pierce', 'ricochet']);
+const INTEGER_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['pellets', 'pierce', 'ricochet', 'wallBounce', 'splitCount']);
+/** Vida anda em meios corações. */
+const HALF_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['maxHp']);
 
 /**
  * Calcula os atributos finais. Ordem fixa (documentada e testada):
@@ -10,7 +11,7 @@ const INTEGER_STATS: ReadonlySet<StatKey> = new Set<StatKey>(['pellets', 'pierce
  *   2. + soma de todos os `add` (value × stacks)
  *   3. × produto de todos os `mul` (value ^ stacks)
  *   4. limite [min, max] do atributo
- *   5. atributos inteiros arredondados para baixo
+ *   5. atributos inteiros arredondados para baixo (vida: para baixo em meios)
  * Somar antes de multiplicar evita que a ordem de escolha das cartas mude o resultado.
  */
 export function computeStats(
@@ -38,7 +39,9 @@ export function computeStats(
     let v = (base[k] + add[k]) * mul[k];
     const c = clamps[k];
     if (c) v = Math.min(c.max, Math.max(c.min, v));
-    out[k] = INTEGER_STATS.has(k) ? Math.floor(v + 1e-9) : v;
+    if (INTEGER_STATS.has(k)) v = Math.floor(v + 1e-9);
+    else if (HALF_STATS.has(k)) v = Math.floor(v * 2 + 1e-9) / 2;
+    out[k] = v;
   }
   return out;
 }

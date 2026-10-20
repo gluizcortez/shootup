@@ -26,6 +26,9 @@ export type GameEvent =
   | { type: 'ricochet'; x: number; y: number; angle: number }
   | { type: 'enemyBled'; uid: number; x: number; y: number; damage: number; golden: boolean }
   | { type: 'enemyExploded'; x: number; y: number; count: number; golden: boolean }
+  | { type: 'echoShot'; x: number; y: number; angle: number }
+  | { type: 'bulletSplit'; x: number; y: number; count: number }
+  | { type: 'discoShot'; x: number; y: number; count: number; golden: boolean }
   | { type: 'enemyBuffed'; uid: number; x: number; y: number; targets: readonly number[] }
   | { type: 'shieldBroken'; uid: number; x: number; y: number }
   | { type: 'bossEnraged'; uid: number; kind: EnemyKind; x: number; y: number }

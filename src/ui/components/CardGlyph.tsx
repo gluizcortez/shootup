@@ -15,6 +15,16 @@ const GLYPHS: Record<string, string> = {
   explosivo: 'M20 2l4 10 10-4-5 10 10 4-10 4 5 10-10-4-4 10-4-10-10 4 5-10-10-4 10-4-5-10 10 4z',
   vampiresco: 'M4 8h32c0 10-6 16-16 16S4 18 4 8zM10 14l3 10 3-8zM24 16l3 8 3-10zM19 28c-2 4-3 6-3 8a4 4 0 0 0 8 0c0-2-1-4-3-8z',
   casco_duro: 'M20 36 6 22C1 17 3 8 11 8c4 0 7 2 9 6 2-4 5-6 9-6 8 0 10 9 5 14z',
+  cartucho_pirata: 'M4 10h32v20H4zM9 15a3 3 0 1 0 0.01 0zM31 15a3 3 0 1 0 0.01 0zM14 16h12v8H14z',
+  bala_laque: 'M14 2h12v6H14zM12 10h16v28H12zM6 4l4 4-2 2-4-4zM34 4l-4 4 2 2 4-4z',
+  soco_filme_b: 'M8 14c0-4 4-6 8-6h10c4 0 8 3 8 8v8c0 6-4 10-10 10h-6c-6 0-10-4-10-10zM2 18h4v2H2zM0 24h6v2H0z',
+  bate_volta: 'M2 34h36v4H2zM6 30 14 8l8 22 8-22 4 2-12 26-8-20-6 16z',
+  lado_b: 'M20 2a18 18 0 1 0 0.01 0zm0 13a5 5 0 1 1-0.01 0zM17 9h3c3 0 4 1.5 4 3s-1 2-2 2.4c1.4.4 2.5 1.4 2.5 3 0 2-1.5 3.6-4.5 3.6h-3z',
+  trilha_montagem: 'M12 6h20v4H16v18a5 5 0 1 1-4-4.9zM28 10h4v14a5 5 0 1 1-4-4.9z',
+  teleguiada: 'M4 34C8 18 18 10 30 8l-2-5 10 7-9 6v-5C19 12 11 20 8 34z',
+  bala_cluster: 'M20 14a6 6 0 1 0 0.01 0zM6 6l5 2-2 3zM34 6l-3 5-2-3zM4 26l6-2v4zM36 26l-6 2v-4zM18 32h4l-2 6z',
+  camera_lenta: 'M4 12h22v16H4zM26 17l10-6v18l-10-6zM10 4a5 5 0 1 0 0.01 0zM20 4a5 5 0 1 0 0.01 0z',
+  globo_discoteca: 'M19 0h2v8h-2zM20 9a14 14 0 1 0 0.01 0zM8 18h24v2H8zM9 25h22v2H9zM19 9h2v28h-2z',
 };
 
 export function CardGlyph({ card }: { card: CardInfo }) {
