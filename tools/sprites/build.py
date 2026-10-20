@@ -20,12 +20,25 @@ sys.path.insert(0, HERE)
 OUT = os.path.join(HERE, '..', '..', 'public', 'sprites')
 
 import johnny  # noqa: E402
+import v_boss  # noqa: E402
+import v_brawlers  # noqa: E402
+import v_casino  # noqa: E402
+import v_cop  # noqa: E402
+import v_goon  # noqa: E402
+import v_king  # noqa: E402
+import v_maromba  # noqa: E402
+import v_ninja  # noqa: E402
+import v_roller  # noqa: E402
+import v_showbiz  # noqa: E402
+import v_terminator  # noqa: E402
 
 CHARACTERS = {'johnny': johnny}
+# Elenco: cada quadro substitui a textura de mesmo nome desenhada em código.
+CAST = [v_goon, v_terminator, v_king, v_ninja, v_casino, v_maromba, v_roller, v_cop, v_brawlers, v_showbiz, v_boss]
 
 
-def pack(frames, cols=10):
-    """Grade simples; quadros do mesmo tamanho ficam juntos."""
+def pack(frames, cols=10, group_sizes=True):
+    """Linhas simples; com group_sizes, cada tamanho de quadro abre linha nova."""
     items = list(frames.items())
     x = y = row_h = 0
     width = 0
@@ -34,7 +47,7 @@ def pack(frames, cols=10):
     last_size = None
     for name, (img, _) in items:
         w, h = img.size
-        if (last_size and (w, h) != last_size) or col == cols:
+        if (group_sizes and last_size and (w, h) != last_size) or col == cols:
             x, y, col = 0, y + row_h, 0
             row_h = 0
         rects[name] = (x, y, w, h)
@@ -53,7 +66,27 @@ def pack(frames, cols=10):
 
 def build(cid, mod):
     frames = mod.frames()
-    sheet, rects = pack(frames)
+    write_atlas(cid, frames)
+    meta = dict(mod.META)
+    meta['anchors'] = {n: a for n, (_, a) in frames.items() if a}
+    with open(os.path.join(OUT, f'{cid}.meta.json'), 'w') as f:
+        json.dump(meta, f, separators=(',', ':'))
+    print(f'{cid}: {len(frames)} quadros')
+
+
+def build_cast():
+    frames = {}
+    for mod in CAST:
+        for key, fn in mod.TEXTURES.items():
+            frames[key] = (fn(), None)
+    # agrupa por altura para a folha ficar compacta
+    frames = dict(sorted(frames.items(), key=lambda kv: (kv[1][0].height, kv[1][0].width)))
+    write_atlas('cast', frames, cols=12, group_sizes=False)
+    print(f'cast: {len(frames)} texturas')
+
+
+def write_atlas(cid, frames, cols=10, group_sizes=True):
+    sheet, rects = pack(frames, cols, group_sizes)
     os.makedirs(OUT, exist_ok=True)
     sheet.save(os.path.join(OUT, f'{cid}.png'), optimize=True)
     atlas = {
@@ -67,11 +100,6 @@ def build(cid, mod):
     }
     with open(os.path.join(OUT, f'{cid}.json'), 'w') as f:
         json.dump(atlas, f, separators=(',', ':'))
-    meta = dict(mod.META)
-    meta['anchors'] = {n: a for n, (_, a) in frames.items() if a}
-    with open(os.path.join(OUT, f'{cid}.meta.json'), 'w') as f:
-        json.dump(meta, f, separators=(',', ':'))
-    print(f'{cid}: {len(frames)} quadros, folha {sheet.width}x{sheet.height}')
 
 
 if __name__ == '__main__':
@@ -79,3 +107,5 @@ if __name__ == '__main__':
     for cid, mod in CHARACTERS.items():
         if not only or cid in only:
             build(cid, mod)
+    if not only or 'cast' in only:
+        build_cast()

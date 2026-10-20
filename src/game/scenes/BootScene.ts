@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { loadPixelFonts } from '../rendering/fonts';
-import { preloadSprites } from '../rendering/sprites';
+import { installCast, preloadSprites } from '../rendering/sprites';
 import { generateTextures } from '../rendering/textures';
 import { generateViceTextures } from '../rendering/texturesVice';
 import { generateVice2Textures } from '../rendering/texturesVice2';
@@ -16,6 +16,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    installCast(this);
     generateTextures(this);
     generateViceTextures(this);
     generateVice2Textures(this);

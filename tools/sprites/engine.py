@@ -59,6 +59,15 @@ def poly(pts):
     return np.array(img) > 0
 
 
+def rrect(x, y, w, h, r):
+    """Retangulo de cantos arredondados (x, y = canto superior esquerdo)."""
+    r = max(0.0, min(r, w / 2, h / 2))
+    cx = np.clip(PX, x + r, x + w - r)
+    cy = np.clip(PY, y + r, y + h - r)
+    return (PX - cx) ** 2 + (PY - cy) ** 2 <= r * r + 1e-6 if r > 0 else (
+        (PX >= x) & (PX <= x + w) & (PY >= y) & (PY <= y + h))
+
+
 def ellipse(c, rx, ry, ang=0.0):
     cx, cy = c
     ca, sa = math.cos(ang), math.sin(ang)
@@ -106,7 +115,7 @@ def ik(hip, ankle, l1, l2, bend=1):
 # ---------- parts ----------
 class Part:
     def __init__(self, mask, rmp, group=None, R=3.0, bias=0.0, dither=0.0,
-                 grad=(0.0, 0.0), shift=0, tex=None, lines=True, k=2.4, shadow=True):
+                 grad=(0.0, 0.0), shift=0, tex=None, lines=True, k=2.4, shadow=True, light=None):
         self.mask = mask
         self.ramp = rmp
         self.group = group
@@ -119,10 +128,12 @@ class Part:
         self.lines = lines
         self.k = k
         self.shadow = shadow
+        # mascara usada para o relevo (por padrao a propria); pecas que dividem um volume passam a mesma
+        self.light = light
 
 
 def shade(p):
-    m = p.mask
+    m = p.mask if p.light is None else p.light
     n = len(p.ramp)
     if not m.any():
         return np.zeros((H, W), int)
@@ -198,12 +209,14 @@ def render(parts, decals=(), outline_tint=(18, 8, 30), outline_k=0.35, rim=None)
         edge = opaque & ~np.roll(opaque, 1, 1)
         edge &= np.roll(opaque, -1, 1)
         img[edge, :3] = (img[edge, :3] * (1 - alpha) + np.array(col) * alpha).astype(np.uint8)
-    # outer outline, tinted by neighbour colour
+    # outer outline, tinted by neighbour colour (sem dar a volta nas bordas do quadro)
     ol = np.zeros((H, W, 3), float)
     cnt = np.zeros((H, W))
+    pad_o = np.pad(opaque, 1)
+    pad_c = np.pad(img[:, :, :3], ((1, 1), (1, 1), (0, 0)))
     for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
-        nb_o = np.roll(np.roll(opaque, dy, 0), dx, 1)
-        nb_c = np.roll(np.roll(img[:, :, :3], dy, 0), dx, 1)
+        nb_o = pad_o[1 - dy:1 - dy + H, 1 - dx:1 - dx + W]
+        nb_c = pad_c[1 - dy:1 - dy + H, 1 - dx:1 - dx + W]
         sel = ~opaque & nb_o
         ol[sel] += nb_c[sel]
         cnt[sel] += 1
@@ -212,7 +225,7 @@ def render(parts, decals=(), outline_tint=(18, 8, 30), outline_k=0.35, rim=None)
     col = col * outline_k + np.array(outline_tint) * (1 - outline_k)
     img[sel, :3] = col.astype(np.uint8)
     img[sel, 3] = 255
-    return Image.fromarray(img, 'RGBA')
+    return Image.fromarray(img, 'RGBA').copy()
 
 
 def pattern(rows, origin, cmap):
