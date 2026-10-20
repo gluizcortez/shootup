@@ -110,10 +110,10 @@ describe('Atiradores novos ficam no alto', () => {
 
 describe('Ritmo de estreia nas ondas', () => {
   const debut = (kind: string): number => WAVES.roster.find((r) => r.kind === kind)?.from ?? -1;
-  it('Patinador na 2, Maromba na 5 e Policial na 7, garantidos na estreia', () => {
+  it('Patinador na 2, Maromba na 6 e Policial na 9, garantidos na estreia', () => {
     expect(debut('patinador_assassino')).toBe(2);
-    expect(debut('maromba_vice')).toBe(5);
-    expect(debut('policial_corrupto')).toBe(7);
+    expect(debut('maromba_vice')).toBe(6);
+    expect(debut('policial_corrupto')).toBe(9);
     for (const kind of ['patinador_assassino', 'maromba_vice', 'policial_corrupto']) {
       const w = generateWave(debut(kind), WAVES, new Rng(9));
       expect(w.spawns.some((s) => s.kind === kind)).toBe(true);

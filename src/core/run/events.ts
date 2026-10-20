@@ -31,6 +31,8 @@ export type GameEvent =
   | { type: 'discoShot'; x: number; y: number; count: number; golden: boolean }
   | { type: 'enemyBuffed'; uid: number; x: number; y: number; targets: readonly number[] }
   | { type: 'shieldBroken'; uid: number; x: number; y: number }
+  | { type: 'enemyShout'; uid: number; kind: EnemyKind; x: number; y: number; text: string }
+  | { type: 'enemyPoof'; uid: number; kind: EnemyKind; x: number; y: number }
   | { type: 'bossEnraged'; uid: number; kind: EnemyKind; x: number; y: number }
   | { type: 'upgradeOffer'; wave: number; cards: readonly string[] }
   | { type: 'upgradePicked'; id: string; stacks: number };

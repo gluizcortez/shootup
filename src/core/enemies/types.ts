@@ -10,7 +10,12 @@ export type EnemyKind =
   | 'don_pombone'
   | 'maromba_vice'
   | 'patinador_assassino'
-  | 'policial_corrupto';
+  | 'policial_corrupto'
+  | 'breaker_boombox'
+  | 'lutador_mamute'
+  | 'dj_neon'
+  | 'magico_vegas'
+  | 'vendedor_tv';
 
 /**
  * Papel tático (estrutura do Seraph's Last Stand):
@@ -38,6 +43,8 @@ interface EnemyBaseDef {
   descendSpeed: number;
   /** Chefe: barra de vida própria no HUD. */
   boss?: boolean;
+  /** Vida fixa: não cresce com as ondas (ex.: Maromba sempre com 1). */
+  fixedHp?: boolean;
 }
 
 /** Atirador que paira no alto. */
@@ -220,6 +227,102 @@ export interface PolicialDef extends RangedDef {
   shotCooldown: number;
 }
 
+/**
+ * Breakdancer do Boombox (melee): o único que PERSEGUE andando o tempo todo,
+ * mais devagar que o jogador. De tempos em tempos se agacha (telegraph) e sai
+ * girando de cabeça (headspin) atrás do jogador, bem mais rápido.
+ */
+export interface BreakerDef extends EnemyBaseDef {
+  role: 'melee';
+  behaviour: 'breaker';
+  gravity: number;
+  walkSpeed: number;
+  walkAccel: number;
+  /** Segundos andando entre um giro e outro. */
+  spinEvery: number;
+  crouchTime: number;
+  spinSpeed: number;
+  spinAccel: number;
+  spinTime: number;
+  /** Tonto depois do giro. */
+  restTime: number;
+}
+
+/**
+ * Lutador Mamute (melee): astro de luta-livre. Agacha (telegraph), salta em
+ * arco até onde o jogador está e cai de barriga: o impacto solta uma onda de
+ * choque rasteira para os dois lados (pule por cima).
+ */
+export interface LutadorDef extends EnemyBaseDef {
+  role: 'melee';
+  behaviour: 'lutador';
+  gravity: number;
+  /** Pose de provocação no chão entre saltos. */
+  tauntTime: number;
+  crouchTime: number;
+  /** Velocidade vertical do salto (para cima). */
+  jumpSpeed: number;
+  maxLeapVx: number;
+  shockSpeed: number;
+  shockRadius: number;
+  shockDamage: number;
+  shockLifetime: number;
+  /** Altura da onda de choque acima do chão (centro da bala). */
+  shockHeight: number;
+  shout: string;
+}
+
+/**
+ * DJ Neon (atirador): paira com caixas de som. Anuncia o "drop" (telegraph) e
+ * solta leques de notas musicais em semicírculo para baixo, em duas batidas
+ * defasadas (a segunda preenche os buracos da primeira).
+ */
+export interface DjDef extends RangedDef {
+  behaviour: 'dj';
+  aimTime: number;
+  ringCount: number;
+  ringFromDeg: number;
+  ringToDeg: number;
+  beats: number;
+  beatGap: number;
+  recoverTime: number;
+  shotCooldown: number;
+  shout: string;
+}
+
+/**
+ * Mágico de Las Vegas (atirador): some numa nuvem de fumaça, reaparece em
+ * outro ponto do alto, faz floreio (telegraph) e arremessa um leque de cartas.
+ */
+export interface MagicoDef extends RangedDef {
+  behaviour: 'magico';
+  vanishTime: number;
+  aimTime: number;
+  cardCount: number;
+  cardSpreadDeg: number;
+  recoverTime: number;
+  shotCooldown: number;
+  shout: string;
+}
+
+/**
+ * Vendedor de Infomercial (suporte): paira com um telefone gigante. Atira
+ * caixas de produto devagar e, de tempos em tempos, grita "LIGUE JÁ!"
+ * (telegraph) e chama um capanga pelo telefone. Prioridade de abate.
+ */
+export interface VendedorDef extends RangedDef {
+  behaviour: 'vendedor';
+  aimTime: number;
+  recoverTime: number;
+  shotCooldown: number;
+  callEvery: number;
+  callTime: number;
+  summonKind: EnemyKind;
+  /** Não chama mais se já houver este tanto de `summonKind` vivo. */
+  summonMax: number;
+  shout: string;
+}
+
 export type EnemyDef =
   | PatoDef
   | GalinhaDef
@@ -229,8 +332,23 @@ export type EnemyDef =
   | PomboneDef
   | MarombaDef
   | PatinadorDef
-  | PolicialDef;
-export type RangedEnemyDef = PatoDef | GalinhaDef | PomboDef | PorcoDef | PomboneDef | PatinadorDef | PolicialDef;
+  | PolicialDef
+  | BreakerDef
+  | LutadorDef
+  | DjDef
+  | MagicoDef
+  | VendedorDef;
+export type RangedEnemyDef =
+  | PatoDef
+  | GalinhaDef
+  | PomboDef
+  | PorcoDef
+  | PomboneDef
+  | PatinadorDef
+  | PolicialDef
+  | DjDef
+  | MagicoDef
+  | VendedorDef;
 
 /** Ataques do chefe (índice em `Enemy.attack`). */
 export const POMBONE_ATTACKS = ['summon', 'vshot', 'sweep'] as const;
@@ -252,7 +370,11 @@ export type EnemyStateName =
   | 'buff'
   | 'flex'
   | 'crouch'
-  | 'dash';
+  | 'dash'
+  | 'walk'
+  | 'spin'
+  | 'leap'
+  | 'vanish';
 
 export interface Enemy {
   uid: number;
@@ -319,4 +441,10 @@ export interface EnemyContext {
   buffed(source: Enemy, targets: readonly Enemy[]): void;
   /** Chefe entrou na segunda fase. */
   enraged(e: Enemy): void;
+  /** Bala solta de qualquer ponto (ex.: onda de choque de quem não tem arma). */
+  spawnBullet(e: Enemy, x: number, y: number, vx: number, vy: number, radius: number, damage: number, lifetime: number): void;
+  /** Bordão em balão de gibi (só visual). */
+  shout(e: Enemy, text: string): void;
+  /** Nuvem de fumaça em (x, y) (sumiço/aparição; só visual). */
+  poof(e: Enemy, x: number, y: number): void;
 }

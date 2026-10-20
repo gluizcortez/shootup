@@ -3,6 +3,7 @@ import type { Enemy, EnemyKind } from '@/core/enemies/types';
 import { lerp } from '@/core/math/scalar';
 import { TEX, TEX_SCALE } from './textures';
 import { VICE_TEX } from './texturesVice';
+import { VICE2_TEX } from './texturesVice2';
 import { normalizeAngle, Spring } from './spring';
 
 const INV = 1 / TEX_SCALE;
@@ -86,6 +87,12 @@ export class EnemyView implements EnemyVisual {
         return this.buildPatinador(scene);
       case 'policial_corrupto':
         return this.buildPolicial(scene);
+      case 'dj_neon':
+        return this.buildDj(scene);
+      case 'magico_vegas':
+        return this.buildMagico(scene);
+      case 'vendedor_tv':
+        return this.buildVendedor(scene);
       case 'pato_pistoleiro':
         return this.buildPato(scene);
       case 'galinha_rambo':
@@ -118,6 +125,48 @@ export class EnemyView implements EnemyVisual {
     const glow = scene.add.image(27, -36, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
     const excl = scene.add.image(-6, -64, 'fx_excl').setScale(INV).setVisible(false);
     return { lift, flame, body, prop, gun, gunX: 4, gunY: -36, glow, excl, exclY: -64 };
+  }
+
+  private buildDj(scene: Phaser.Scene): Rig {
+    const t = VICE2_TEX.djBody;
+    const lift = scene.add.image(0, 5, 'dj_deck').setScale(INV); // mesa de som voadora sob os pés
+    const body = scene.add.image(0, 0, 'dj_body').setOrigin(t.fx / t.w, t.fy / t.h).setScale(INV);
+    const prop = scene.add.image(2, -40, 'dj_phones').setScale(INV);
+    const gun = scene.add
+      .image(4, -30, 'dj_gun')
+      .setOrigin(VICE2_TEX.djGun.pivotX / VICE2_TEX.djGun.w, 0.5)
+      .setScale(INV);
+    const glow = scene.add.image(23, -30, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const excl = scene.add.image(-9, -62, 'fx_excl').setScale(INV).setVisible(false);
+    return { lift, flame: null, body, prop, gun, gunX: 4, gunY: -30, glow, excl, exclY: -62 };
+  }
+
+  private buildMagico(scene: Phaser.Scene): Rig {
+    const t = VICE2_TEX.magicoBody;
+    const lift = scene.add.image(0, 4, 'magico_card').setScale(INV); // ás de copas voador
+    const body = scene.add.image(0, 0, 'magico_body').setOrigin(t.fx / t.w, t.fy / t.h).setScale(INV);
+    const prop = scene.add.image(2, -44, 'magico_hat').setOrigin(0.5, 0.92).setScale(INV).setRotation(-0.1);
+    const gun = scene.add
+      .image(5, -30, 'magico_gun')
+      .setOrigin(VICE2_TEX.magicoGun.pivotX / VICE2_TEX.magicoGun.w, 0.5)
+      .setScale(INV);
+    const glow = scene.add.image(25, -30, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const excl = scene.add.image(-9, -64, 'fx_excl').setScale(INV).setVisible(false);
+    return { lift, flame: null, body, prop, gun, gunX: 5, gunY: -30, glow, excl, exclY: -64 };
+  }
+
+  private buildVendedor(scene: Phaser.Scene): Rig {
+    const t = VICE2_TEX.vendedorBody;
+    const lift = scene.add.image(-8, -20, 'vendedor_tv').setScale(INV); // TV de tubo voadora atrás dele
+    const body = scene.add.image(0, 0, 'vendedor_body').setOrigin(t.fx / t.w, t.fy / t.h).setScale(INV);
+    const prop = scene.add.image(1.5, -47, 'vendedor_toupee').setScale(INV).setRotation(0.05);
+    const gun = scene.add
+      .image(5, -31, 'vendedor_gun')
+      .setOrigin(VICE2_TEX.vendedorGun.pivotX / VICE2_TEX.vendedorGun.w, 0.5)
+      .setScale(INV);
+    const glow = scene.add.image(28, -31, 'fx_glow').setScale(0).setBlendMode(Phaser.BlendModes.ADD);
+    const excl = scene.add.image(-12, -62, 'fx_excl').setScale(INV).setVisible(false);
+    return { lift, flame: null, body, prop, gun, gunX: 5, gunY: -31, glow, excl, exclY: -62 };
   }
 
   private buildPolicial(scene: Phaser.Scene): Rig {
@@ -332,6 +381,24 @@ export class EnemyView implements EnemyVisual {
       else r.lift.setTint(blink ? 0xffd0d6 : 0xd0dcff);
       const boost = e.state === 'descend' ? 1.4 : 1;
       r.flame.setScale(INV * (0.7 + Math.random() * 0.4) * boost, INV * (0.6 + Math.random() * 0.5) * boost);
+    } else if (this.kind === 'dj_neon') {
+      // Fones e mesa pulsam na batida (mais forte no "drop").
+      const bpm = e.state === 'aim' || e.state === 'burst' ? 16 : 8;
+      const beat = reducedMotion ? 0 : Math.max(0, Math.sin(this.time * bpm)) ** 4;
+      r.prop.setScale(INV * (1 + beat * 0.12));
+      r.lift.setScale(INV * (1 + beat * 0.05), INV);
+      r.body.rotation = reducedMotion ? 0 : Math.sin(this.time * bpm * 0.5) * 0.05;
+    } else if (this.kind === 'magico_vegas') {
+      // Some e reaparece num piscar: a nuvem de fumaça vem dos eventos.
+      const fade = e.state === 'vanish' ? Math.max(0, e.stateTimer / 0.45) : 1;
+      this.root.setAlpha(fade);
+      r.lift.rotation = reducedMotion ? 0 : Math.sin(this.time * 2.4) * 0.06;
+    } else if (this.kind === 'vendedor_tv') {
+      // A TV chia; no "LIGUE JÁ!" pisca forte.
+      const calling = e.state === 'buff';
+      const flick = reducedMotion ? 1 : Math.floor(this.time * (calling ? 16 : 5)) % 2 === 0 ? 1 : 0.82;
+      r.lift.setAlpha(flick);
+      r.lift.rotation = reducedMotion ? 0 : Math.sin(this.time * 1.7) * 0.05;
     } else if (this.kind === 'porco_executivo') {
       r.lift.scaleX = INV * Math.cos(this.time * 45);
     } else if (r.flame) {

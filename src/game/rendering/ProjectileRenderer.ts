@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { Projectile, ProjectilePool } from '@/core/combat/projectiles';
 import { lerp } from '@/core/math/scalar';
 import { TEX_SCALE } from './textures';
+import { ENEMY_BULLET_TEXTURE } from './texturesVice2';
 
 const INV = 1 / TEX_SCALE;
 
@@ -41,8 +42,9 @@ export class ProjectileRenderer {
         this.lastUid[i] = p.uid;
         const enemy = p.team === 'enemy';
         const coin = p.sourceId === 'porco_executivo';
-        s.setTexture(enemy ? (coin ? 'b_coin' : 'b_enemy') : 'b_player').setDepth(enemy ? 45 : 40);
-        if (!enemy) s.setRotation(0);
+        const themed = enemy ? ENEMY_BULLET_TEXTURE[p.sourceId] : undefined;
+        s.setTexture(enemy ? (coin ? 'b_coin' : (themed ?? 'b_enemy')) : 'b_player').setDepth(enemy ? 45 : 40);
+        if (!enemy || p.sourceId === 'lutador_mamute') s.setRotation(0);
         if (p.crit) s.setTint(0xfff3c4);
         else if (p.sourceId === 'explosivo') s.setTint(0xff5964);
         else if (p.sourceId === 'explosivo_dourado' || p.sourceId === 'disco_dourado') s.setTint(0xffe08a);
@@ -60,7 +62,10 @@ export class ProjectileRenderer {
       } else if (p.team === 'enemy') {
         const pulse = 1 + Math.sin(this.time * 18 + p.uid) * 0.08;
         s.setScale(pulse * INV * (p.radius / 6.5));
-        s.rotation += dt * 6;
+        // Onda de choque desliza no chão; notas balançam; cartas e caixas giram.
+        if (p.sourceId === 'dj_neon') s.rotation = Math.sin(this.time * 9 + p.uid) * 0.35;
+        else if (p.sourceId !== 'lutador_mamute') s.rotation += dt * (p.sourceId === 'magico_vegas' ? 14 : 6);
+        else s.setFlipX(p.vx < 0);
       } else {
         // Bolinha: diâmetro um pouco maior que a colisão para ler bem.
         const crit = p.crit ? 1.35 : 1;

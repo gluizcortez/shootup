@@ -25,6 +25,11 @@ const FEATHER_TINT: Record<EnemyKind, number[]> = {
   patinador_assassino: [NEON.pink, NEON.cyan, 0xffe14d, 0x9b5cff],
   // Policial: blazer pastel, camisa turquesa e dinheiro sujo.
   policial_corrupto: [0xffb8d0, 0x42dec4, 0x7bd389, PAL.gold],
+  breaker_boombox: [0x2d6bff, 0xd8192e, 0xff2fa8, PAL.gold],
+  lutador_mamute: [0xffe14d, 0xd8192e, 0xe08b4a, PAL.gold],
+  dj_neon: [NEON.cyan, NEON.pink, 0xffe14d, 0x1b1724],
+  magico_vegas: [0x7b2cbf, 0xb37cff, 0xffffff, 0xff2d3d],
+  vendedor_tv: [0xf08a3c, 0x42dec4, NEON.yellow, 0xffffff],
 };
 
 const KILL_SFX: Record<EnemyKind, SfxId> = {
@@ -37,6 +42,11 @@ const KILL_SFX: Record<EnemyKind, SfxId> = {
   maromba_vice: 'killVaca',
   patinador_assassino: 'killPombo',
   policial_corrupto: 'killGalinha',
+  breaker_boombox: 'killPombo',
+  lutador_mamute: 'killVaca',
+  dj_neon: 'killGalinha',
+  magico_vegas: 'killPombo',
+  vendedor_tv: 'killPorco',
 };
 const KILL_PROP: Record<EnemyKind, string> = {
   pato_pistoleiro: 'pato_hat',
@@ -48,6 +58,11 @@ const KILL_PROP: Record<EnemyKind, string> = {
   maromba_vice: 'maromba_tails',
   patinador_assassino: 'patinador_visor',
   policial_corrupto: 'policial_donut',
+  breaker_boombox: 'breaker_spin',
+  lutador_mamute: 'lutador_flop',
+  dj_neon: 'dj_phones',
+  magico_vegas: 'magico_hat',
+  vendedor_tv: 'vendedor_toupee',
 };
 /** Onomatopeias de gibi no abate, por vilão. */
 const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
@@ -60,6 +75,11 @@ const COMIC_WORDS: Record<EnemyKind, readonly string[]> = {
   maromba_vice: ['NO PAIN NO GAIN!', 'SKIPPED LEG DAY!', 'DEFLATED!', 'DO YOU EVEN LIFT?'],
   patinador_assassino: ['WIPEOUT!', 'TOTALLY BOGUS!', 'BAILED!', 'GAG ME!'],
   policial_corrupto: ['BADGE REVOKED!', 'CASE CLOSED!', 'OFF DUTY!', 'INTERNAL AFFAIRS!'],
+  breaker_boombox: ['BREAK DOWN!', 'OUT OF BATTERIES!', 'WORD UP!', 'SCRATCHED!'],
+  lutador_mamute: ['DOWN FOR THE COUNT!', '1, 2, 3!', 'TAP OUT!', 'BRUTHER!'],
+  dj_neon: ['RECORD SCRATCH!', 'NEEDLE DROP!', 'LAST SONG!', 'MIC DROP!'],
+  magico_vegas: ['NOW YOU DON\'T!', 'POOF!', 'ABRACADA-BLAM!', 'SAWED IN HALF!'],
+  vendedor_tv: ['OUT OF STOCK!', 'NO REFUNDS!', 'LINES CLOSED!', 'CANCELLED!'],
 };
 const COMIC_COLORS = [CSS.amber, CSS.coral, CSS.turquoise, CSS.violet];
 
@@ -73,6 +93,11 @@ const TELEGRAPH_SFX: Record<EnemyKind, SfxId> = {
   maromba_vice: 'stomp',
   patinador_assassino: 'whistle',
   policial_corrupto: 'telegraphPato',
+  breaker_boombox: 'stomp',
+  lutador_mamute: 'stomp',
+  dj_neon: 'telegraphGalinha',
+  magico_vegas: 'telegraphPato',
+  vendedor_tv: 'phone',
 };
 /** Bordões no pouso do Maromba. */
 const MAROMBA_LINES = ['FLEX!', 'BEACH BOD!', "SUN'S OUT, GUNS OUT!", 'LOOK AT THESE!', 'PUMP!'];
@@ -168,6 +193,14 @@ export class Feedback {
         this.ring(ev.x, ev.y, PAL.gold);
         for (let i = 0, n = this.count(8); i < n; i++) this.spark(ev.x, ev.y, Math.random() * Math.PI * 2, 1, PAL.gold, 260);
         return;
+      case 'enemyShout':
+        this.texts.comic(ev.x, ev.y - 22, ev.text, COMIC_COLORS[Math.floor(Math.random() * COMIC_COLORS.length)] as string, 20);
+        return;
+      case 'enemyPoof':
+        this.audio.play('boing');
+        for (let i = 0, n = this.count(6); i < n; i++) this.puff(ev.x + (Math.random() - 0.5) * 26, ev.y + (Math.random() - 0.5) * 30, 1.6, 0.5);
+        for (let i = 0, n = this.count(6); i < n; i++) this.star(ev.x, ev.y, i % 2 ? PAL.violet : PAL.warmWhite);
+        return;
       case 'bossEnraged':
         this.audio.play('bossRage');
         this.shake.add(0.6);
@@ -178,7 +211,9 @@ export class Feedback {
         this.hooks.onEnemyLanded(ev.uid, ev.speed);
         const k = Math.min(1, ev.speed / 800);
         this.audio.play('slam');
-        this.shake.add(0.15 + k * 0.25 + (ev.kind === 'maromba_vice' ? 0.25 : 0));
+        const heavyLand = ev.kind === 'maromba_vice' || ev.kind === 'lutador_mamute';
+        this.shake.add(0.15 + k * 0.25 + (heavyLand ? 0.25 : 0));
+        if (ev.kind === 'lutador_mamute') this.ring(ev.x, ev.y, PAL.amber);
         if (ev.kind === 'maromba_vice') {
           const line = MAROMBA_LINES[Math.floor(Math.random() * MAROMBA_LINES.length)] as string;
           this.texts.comic(ev.x, ev.y - 84, line, CSS.coral, 24);
@@ -400,7 +435,7 @@ export class Feedback {
     for (let i = 0, m = this.count(6); i < m; i++) this.star(ev.x, ev.y, i % 2 ? PAL.amber : PAL.warmWhite);
     for (let i = 0, m = this.count(4); i < m; i++) this.puff(ev.x + (Math.random() - 0.5) * 20, ev.y, 1.4, 0.6);
     this.ring(ev.x, ev.y, PAL.warmWhite);
-    if (ev.kind === 'porco_executivo' || ev.kind === 'policial_corrupto') {
+    if (ev.kind === 'porco_executivo' || ev.kind === 'policial_corrupto' || ev.kind === 'vendedor_tv') {
       for (let i = 0, m = this.count(16); i < m; i++) this.money(ev.x, ev.y);
     }
     if (ev.kind === 'pato_pistoleiro') {

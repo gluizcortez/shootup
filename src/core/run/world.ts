@@ -12,6 +12,11 @@ import { updatePombone } from '../enemies/donPombone';
 import { updateMaromba } from '../enemies/marombaVice';
 import { updatePatinador } from '../enemies/patinadorAssassino';
 import { updatePolicial } from '../enemies/policialCorrupto';
+import { updateBreaker } from '../enemies/breakerBoombox';
+import { updateLutador } from '../enemies/lutadorMamute';
+import { updateDj } from '../enemies/djNeon';
+import { updateMagico } from '../enemies/magicoVegas';
+import { updateVendedor } from '../enemies/vendedorTv';
 import type { Enemy, EnemyContext, EnemyDef, EnemyKind } from '../enemies/types';
 import { Rng } from '../math/rng';
 import { boxesOverlap, sweptCircleHitsBox } from '../physics/collision';
@@ -211,6 +216,12 @@ export class World {
       buffed: (src, targets) =>
         this.emit({ type: 'enemyBuffed', uid: src.uid, x: src.x, y: src.y, targets: targets.map((t) => t.uid) }),
       enraged: (e) => this.emit({ type: 'bossEnraged', uid: e.uid, kind: e.def.id, x: e.x, y: e.y }),
+      spawnBullet: (e, x, y, vx, vy, radius, damage, lifetime) => {
+        const k = this.effective.enemyBulletSpeed;
+        this.projectiles.spawn('enemy', x, y, vx * k, vy * k, radius, damage, false, 0, lifetime, e.def.id);
+      },
+      shout: (e, text) => this.emit({ type: 'enemyShout', uid: e.uid, kind: e.def.id, x: e.x, y: e.y - e.def.hh, text }),
+      poof: (e, x, y) => this.emit({ type: 'enemyPoof', uid: e.uid, kind: e.def.id, x, y }),
       telegraph: (e, duration) =>
         this.emit({ type: 'enemyTelegraph', uid: e.uid, kind: e.def.id, state: e.state, duration }),
     };
@@ -413,6 +424,11 @@ export class World {
         else if (def.behaviour === 'maromba') updateMaromba(e, def, this.ctx, dt);
         else if (def.behaviour === 'patinador') updatePatinador(e, def, this.ctx, dt);
         else if (def.behaviour === 'policial') updatePolicial(e, def, this.ctx, dt);
+        else if (def.behaviour === 'breaker') updateBreaker(e, def, this.ctx, dt);
+        else if (def.behaviour === 'lutador') updateLutador(e, def, this.ctx, dt);
+        else if (def.behaviour === 'dj') updateDj(e, def, this.ctx, dt);
+        else if (def.behaviour === 'magico') updateMagico(e, def, this.ctx, dt);
+        else if (def.behaviour === 'vendedor') updateVendedor(e, def, this.ctx, dt);
         else updatePombone(e, def, this.ctx, dt);
       } else {
         e.vx *= 0.9;

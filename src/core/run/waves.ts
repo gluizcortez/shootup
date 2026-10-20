@@ -75,7 +75,8 @@ export function scaleForWave(def: EnemyDef, wave: number, g: WaveGrowth | undefi
   if (!g || steps === 0) return def;
   const hpMult = 1 + g.hpPerWave * steps;
   const speedMult = Math.min(g.maxSpeedMult, 1 + g.speedPerWave * steps);
-  const scaled: EnemyDef & { bulletSpeed?: number; chargeSpeed?: number } = { ...def, maxHp: Math.round(def.maxHp * hpMult) };
+  const maxHp = def.fixedHp ? def.maxHp : Math.round(def.maxHp * hpMult);
+  const scaled: EnemyDef & { bulletSpeed?: number; chargeSpeed?: number } = { ...def, maxHp };
   if ('bulletSpeed' in def) scaled.bulletSpeed = def.bulletSpeed * speedMult;
   if (def.behaviour === 'vaca') scaled.chargeSpeed = def.chargeSpeed * speedMult;
   return scaled;

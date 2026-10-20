@@ -21,6 +21,7 @@ import { EnemyView } from '../rendering/EnemyView';
 import type { EnemyVisual } from '../rendering/EnemyView';
 import { VacaView } from '../rendering/VacaView';
 import { MarombaView } from '../rendering/MarombaView';
+import { BrawlerView } from '../rendering/BrawlerView';
 import { PlayerView } from '../rendering/PlayerView';
 import { ProjectileRenderer } from '../rendering/ProjectileRenderer';
 import { DiscoBallView } from '../rendering/DiscoBallView';
@@ -95,6 +96,11 @@ export class ArenaScene extends Phaser.Scene {
     maromba_vice: [],
     patinador_assassino: [],
     policial_corrupto: [],
+    breaker_boombox: [],
+    lutador_mamute: [],
+    dj_neon: [],
+    magico_vegas: [],
+    vendedor_tv: [],
   };
   private readonly liveViews = new Map<number, EnemyVisual>();
   private trailTimer = 0;
@@ -289,6 +295,17 @@ export class ArenaScene extends Phaser.Scene {
         this.world.spawnEnemy('patinador_assassino', 0.15);
         this.world.spawnEnemy('policial_corrupto', 0.85);
       });
+      // F10: um de cada dos cinco vilões mais novos.
+      kb.on('keydown-F10', (e: KeyboardEvent) => {
+        e.preventDefault();
+        if (this.phase.phase !== 'PLAYING') return;
+        this.world.debugTainted = true;
+        this.world.spawnEnemy('breaker_boombox', 0.1);
+        this.world.spawnEnemy('lutador_mamute', 0.9);
+        this.world.spawnEnemy('dj_neon', 0.3);
+        this.world.spawnEnemy('magico_vegas', 0.55);
+        this.world.spawnEnemy('vendedor_tv', 0.75);
+      });
       // F7: pose do crítico do Johnny, para conferir a animação.
       kb.on('keydown-F7', (e: KeyboardEvent) => {
         e.preventDefault();
@@ -430,7 +447,9 @@ export class ArenaScene extends Phaser.Scene {
         ? new VacaView(this, this.groundAt)
         : kind === 'maromba_vice'
           ? new MarombaView(this, this.groundAt)
-          : new EnemyView(this, kind, this.groundAt));
+          : kind === 'breaker_boombox' || kind === 'lutador_mamute'
+            ? new BrawlerView(this, kind, this.groundAt)
+            : new EnemyView(this, kind, this.groundAt));
     this.liveViews.set(uid, view);
     return view;
   }
